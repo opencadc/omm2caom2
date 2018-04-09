@@ -2,7 +2,7 @@ import logging
 #from caom2 import Chunk, TemporalWCS, SpectralWCS, SpatialWCS
 from caom2 import TargetType, ObservationIntentType, CalibrationLevel
 from caom2 import ProductType
-from caom2utils import fits2caom2, ObsBlueprint
+from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
 
 
 def accumulate_obs(bp):
@@ -230,11 +230,19 @@ def _get_telescope_z(header):
 
 
 def main_app():
+    args = get_gen_proc_arg_parser().parse_args()
+
     blueprint = ObsBlueprint()
     accumulate_time(blueprint)
     accumulate_energy(blueprint)
     accumulate_position(blueprint)
     accumulate_obs(blueprint)
+
+    blueprints = {}
+    blueprints['1'] = blueprint
+
+    gen_proc(args, blueprints)
+    logging.debug('Done omm2caom2 processing.')
     # chunk = Chunk()
     # chunk.time = accumulate_time()
     # chunk.energy = accumulate_energy()
