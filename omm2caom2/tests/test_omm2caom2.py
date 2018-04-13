@@ -20,53 +20,49 @@ TEST_URI = 'ad:OMM/imm_file.fits'
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 TESTDATA_DIR = os.path.join(THIS_DIR, 'data')
 
+count = 0
 
-# @pytest.mark.parametrize('test_name',
-#                          ['C120902_sh2-132_J_old_SCIRED.fits.header',
-#                           'C170323_0172_CAL.fits.header',
-#                           'C170217_0228_SCI.fits.header',
-#                           'C170323_domeflat_K_CALRED.fits.header',
-#                           'C170318_0002_FOCUS.fits.header',
-#                           'C170324_0028_FOCUS.fits.header',
-#                           'C170318_0121_SCI.fits.header',
-#                           'C170324_0054_SCI.fits.header'])
-def test_main_app():
+def pytest_generate_tests(metafunc):
     files = [os.path.join(TESTDATA_DIR, name) for name in
              os.listdir(TESTDATA_DIR) if name.endswith('header')]
-    uris = ['ad:OMM/{}'.format(name.split('.header')[0]) for name in
-            os.listdir(TESTDATA_DIR) if name.endswith('header')]
-    for i, file in enumerate(files):
-        product_id = os.path.basename(file).split('.fits')[0]
-        lineage = '{}/{}'.format(product_id, uris[i])
-        output_file = '{}.actual.xml'.format(file)
+    metafunc.parametrize('test_name', files)
 
-        with patch('caom2utils.fits2caom2.CadcDataClient') as data_client_mock:
-            def get_file_info(archive, file_id):
-                archive = 'ignored'
-                file_id = 'ignored'
-                meta = {}
-                meta['size'] = 37
-                meta['md5sum'] = md5('-37'.encode()).hexdigest()
-                meta['type'] = 'application/octet-stream'
-                return meta
-            data_client_mock.return_value.get_file_info.side_effect = \
-                get_file_info
 
-            sys.argv = \
-                ('omm2caom2 --ignorePartialWCS --local {} '
-                 '--observation OMM test_obsid{} -o {} --lineage {}'.
-                format(file, i, output_file, lineage)).split()
-            print(sys.argv)
-            main_app()
-            obs_path = file.replace('header', 'xml')
-            expected = _read_obs(obs_path)
-            actual = _read_obs(output_file)
-            result = get_differences(expected, actual, 'Observation')
-            if result:
-                msg = 'Differences found in observation {}\n{}'. \
-                    format(expected.observation_id, '\n'.join(
-                    [r for r in result]))
-                # raise AssertionError(msg)
+def test_main_app(test_name):
+    basename = os.path.basename(test_name)
+    product_id = basename.split('.fits')[0]
+    lineage = '{}/ad:OMM/{}'.format(product_id, basename.split('.header')[0])
+    output_file = '{}.actual.xml'.format(test_name)
+
+    global count
+    if count > 0:
+        return
+
+    with patch('caom2utils.fits2caom2.CadcDataClient') as data_client_mock:
+        def get_file_info(archive, file_id):
+           return {'size': 37,
+                   'md5sum': md5('-37'.encode()).hexdigest(),
+                   'type': 'application/octet-stream'}
+        data_client_mock.return_value.get_file_info.side_effect = \
+            get_file_info
+
+        sys.argv = \
+            ('omm2caom2 --debug --ignorePartialWCS --local {} '
+             '--observation OMM {} -o {} --lineage {}'.
+            format(test_name, product_id, output_file, lineage)).split()
+        print(sys.argv)
+        main_app()
+        obs_path = test_name.replace('header', 'xml')
+        expected = _read_obs(obs_path)
+        actual = _read_obs(output_file)
+        result = get_differences(expected, actual, 'Observation')
+        count = 1
+        if result:
+            msg = 'Differences found in observation {}\n{}'. \
+                format(expected.observation_id, '\n'.join(
+                [r for r in result]))
+            raise AssertionError(msg)
+        # assert False # cause I want to see logging messages
 
 
 def _read_obs(fname):

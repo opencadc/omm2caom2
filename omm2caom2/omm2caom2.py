@@ -22,7 +22,7 @@ def accumulate_obs(bp):
     #
     bp.set_fits_attribute('Observation.instrument.name', ['INSTRUME'])
     bp.set_fits_attribute('Observation.instrument.keywords', ['DETECTOR'])
-    bp.set_default('Observation.instrument.keywords', 'CPAPIR-HAWAII-2')
+    bp.set('Observation.instrument.keywords', 'DETECTOR=CPAPIR_HAWAII-2')
     #
     # 'Observation.proposal.id',
     # 'Observation.proposal.pi',
@@ -45,7 +45,7 @@ def accumulate_obs(bp):
     #
     bp.set_fits_attribute('Observation.telescope.name', ['TELESCOP'])
     bp.set_fits_attribute('Observation.telescope.geoLocationX', ['OBS_LAT'])
-    bp.set_fits_attribute('Observation.telescope.geoLocationY', ['OBS_LONG'])
+    bp.set_fits_attribute('Observation.telescope.geoLocationY', ['OBS_LON'])
     bp.set('Observation.telescope.geoLocationZ', 'get_telescope_z(header)')
     bp.set_fits_attribute('Observation.telescope.keywords', ['OBSERVER'])
     bp.set_default('Observation.telescope.keywords', 'UNKNOW')
@@ -62,6 +62,15 @@ def accumulate_obs(bp):
 def accumulate_plane(bp):
     bp.set('Plane.dataProductType', 'get_plane_data_product_type(header)')
     bp.set('Plane.calibrationLevel', 'get_plane_cal_level(header)')
+    bp.set_fits_attribute('Plane.provenance.name', ['INSTRUME'])
+    bp.set_fits_attribute('Plane.provenance.runID', ['NIGHTID'])
+    bp.set('Plane.provenance.version', '1.0')
+    # TODO not in the model bp.set('Plane.provenance.product', 'Artigau')
+    # TODO set in defaults
+    # bp.set_fits_attribute('Plane.provenance.producer', ['ORIGIN'])
+    bp.set('Plane.provenance.reference', 'http://genesis.astro.umontreal.ca')
+    # bp.set('Plane.provenance.project', 'Standard Pipeline')
+    bp.set('Plane.provenance.project', 'Standard Pipelin')
 
 
 def accumulate_time(bp):
@@ -252,8 +261,7 @@ def main_app():
     accumulate_obs(blueprint)
     accumulate_plane(blueprint)
 
-    blueprints = {}
-    blueprints['1'] = blueprint
+    blueprints = {'1': blueprint}
 
     try:
         gen_proc(args, blueprints)
