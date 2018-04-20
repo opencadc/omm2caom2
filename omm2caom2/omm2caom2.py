@@ -1,16 +1,25 @@
 import logging
+import os
 import sys
 import traceback
 
+from datetime import datetime
+
 #from caom2 import Chunk, TemporalWCS, SpectralWCS, SpatialWCS
 from caom2 import TargetType, ObservationIntentType, CalibrationLevel
-from caom2 import DataProductType
+from caom2 import DataProductType, Observation, Chunk
+from caom2 import CoordRange1D, RefCoord, CoordPolygon2D, ValueCoord2D
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
+
+from astropy.time import Time, TimeDelta
+
+from . import footprintfinder
+
 import importlib
 
 
 def accumulate_obs(bp):
-    logging.error('accumulate_obs')
+    logging.debug('Begin accumulate_obs.')
     # 'Observation.observationID',
     bp.set('Observation.type', 'get_obs_type(header)')
     bp.set('Observation.intent', 'get_obs_intent(header)')
@@ -60,6 +69,7 @@ def accumulate_obs(bp):
 
 
 def accumulate_plane(bp):
+    logging.debug('Begin accumulate_plane.')
     bp.set('Plane.dataProductType', 'get_plane_data_product_type(header)')
     bp.set('Plane.calibrationLevel', 'get_plane_cal_level(header)')
     bp.set_fits_attribute('Plane.provenance.name', ['INSTRUME'])
@@ -69,12 +79,11 @@ def accumulate_plane(bp):
     # TODO set in defaults
     # bp.set_fits_attribute('Plane.provenance.producer', ['ORIGIN'])
     bp.set('Plane.provenance.reference', 'http://genesis.astro.umontreal.ca')
-    # bp.set('Plane.provenance.project', 'Standard Pipeline')
-    bp.set('Plane.provenance.project', 'Standard Pipelin')
+    bp.set('Plane.provenance.project', 'Standard Pipeline')
 
 
 def accumulate_time(bp):
-    logging.error('accumulate_time')
+    logging.debug('Begin accumulate_time.')
     bp.configure_time_axis(4)
     bp.set_fits_attribute('Chunk.time.exposure', ['TEXP'])
     # 'Chunk.time.resolution',
@@ -92,13 +101,14 @@ def accumulate_time(bp):
     # 'Chunk.time.axis.function.refCoord.val',
     bp.set('Chunk.time.axis.range.start.pix', 0.5)
     bp.set_fits_attribute('Chunk.time.axis.range.start.val', ['MJD_STAR'])
+    # bp.set('Chunk.time.axis.range.start.val', 'get_mjd_star(header)')
     bp.set('Chunk.time.axis.range.end.pix', 1.5)
     bp.set_fits_attribute('Chunk.time.axis.range.end.val', ['MJD_END'])
-    # return TemporalWCS()
+    # bp.set('Chunk.time.axis.range.end.val', 'get_mjd_end(header)')
 
 
 def accumulate_energy(bp):
-    logging.error('accumulate_energy')
+    logging.debug('Begin accumulate_energy.')
     bp.configure_energy_axis(3)
     bp.set('Chunk.energy.specsys', 'TOPOCENT')
     bp.set('Chunk.energy.ssysobs', 'TOPOCENT')
@@ -134,11 +144,9 @@ def accumulate_energy(bp):
     bp.set('Chunk.energy.axis.range.end.pix', 1.5)
     bp.set('Chunk.energy.axis.range.end.val', 'get_end_ref_coord_val(header)')
 
-    # return SpectralWCS()
-
 
 def accumulate_position(bp):
-    logging.error('accumulate_position')
+    logging.debug('Begin accumulate_position.')
     bp.configure_position_axes((1, 2))
     bp.set('Chunk.position.coordsys', 'ICRS')
     # 'Chunk.position.equinox',
@@ -246,13 +254,131 @@ def get_telescope_z(header):
     return None
 
 
+def update(observation, **kwargs):
+    logging.debug('Begin update.')
+
+    assert observation, 'non-null observation parameter'
+    assert isinstance(observation, Observation), \
+        'observation parameter of type Observation'
+
+    for plane in observation.planes:
+        for artifact in observation.planes[plane].artifacts:
+            for part in observation.planes[plane].artifacts[artifact].parts:
+                for chunk in \
+                    observation.planes[plane].artifacts[artifact].parts[
+                        part].chunks:
+                    _update_position(chunk, **kwargs)
+                    _update_time(chunk, **kwargs)
+
+    logging.debug('Done update.')
+
+
+def _update_position(chunk, **kwargs):
+    logging.debug('Begin _update_position')
+    assert isinstance(chunk, Chunk), 'Expecting type Chunk'
+
+    if ('omm_science_file' in kwargs and chunk.position is not None
+            and chunk.position.axis is not None):
+        logging.debug('position exists, calculate footprints.')
+        oms = kwargs['omm_science_file'].replace('.header', '')
+        full_area, footprint_xc, footprint_yc, ra_bary, dec_bary, \
+            footprintstring, stc = footprintfinder.main(
+                '-r -f  {}'.format(oms))
+        logging.debug('footprintfinder result: full area {} '
+                      'footprint xc {} footprint yc {} ra bary {} '
+                      'dec_bary {} footprintstring {} stc {}'.format(
+                        full_area, footprint_xc, footprint_yc, ra_bary,
+                        dec_bary, footprintstring, stc))
+        bounds = CoordPolygon2D()
+        coords = footprintstring.split(',')
+        index = 0
+        while index < len(coords):
+            vertex = ValueCoord2D(_to_float(coords[index]),
+                                  _to_float(coords[index + 1]))
+            bounds.vertices.append(vertex)
+            index += 2
+            logging.debug('Adding vertex\n{}'.format(vertex))
+        chunk.position.axis.bounds = bounds
+    logging.debug('Done _update_position.')
+
+
+def _update_time(chunk, **kwargs):
+    logging.debug('Begin _update_time.')
+    assert isinstance(chunk, Chunk), 'Expecting type Chunk'
+
+    if ('headers' in kwargs and chunk.time is not None
+            and chunk.time.axis is not None):
+        logging.debug('time axis exists, calculate range.')
+        headers = kwargs['headers']
+        mjd_start = headers[0].get('MJD_STAR')
+        mjd_end = headers[0].get('MJD_END')
+        if mjd_start is None or mjd_end is None:
+            mjd_start, mjd_end = _convert_time(headers)
+        logging.debug(
+            'Calculating range with start {} and end {}.'.format(
+                mjd_start, mjd_start))
+        start = RefCoord(0.5, mjd_start)
+        end = RefCoord(1.5, mjd_end)
+        chunk.time.axis.range = CoordRange1D(start, end)
+    logging.debug('Done _update_time.')
+
+
+# TODO - this can be moved to 'the common library code'
+def _convert_time(headers):
+    logging.debug('Begin _convert_time.')
+    date = headers[0].get('DATE-OBS')
+    exposure = headers[0].get('TEXP')
+    if date is not None and exposure is not None:
+        logging.debug(
+            'Use date {} and exposure {} to convert time.'.format(date,
+                                                                  exposure))
+        t_start = Time(_get_datetime(date))
+        dt = TimeDelta(exposure, format='sec')
+        t_end = t_start + dt
+        t_start.format = 'mjd'
+        t_end.format = 'mjd'
+        mjd_start = t_start.value
+        mjd_end = t_end.value
+        return mjd_start, mjd_end
+    return None, None
+
+
+# TODO - this can be moved to 'the common library code'
 def _to_float(value):
     return float(value) if value is not None else None
+
+
+# TODO - this can be moved to 'the common library code'
+def _get_datetime(from_value):
+    """
+    Ensure datetime values are in MJD.
+    :param from_value:
+    :return:
+    """
+
+    if from_value:
+        try:
+            return datetime.strptime(from_value, '%Y-%m-%dT%H:%M:%S')
+        except ValueError:
+            try:
+                return datetime.strptime(from_value,
+                                         '%Y-%m-%d %H:%M:%S.%f')
+            except ValueError:
+                try:
+                    return datetime.strptime(from_value, '%Y-%m-%d')
+                except ValueError:
+                    logging.error(
+                        'Cannot parse datetime {}'.format(from_value))
+                    return None
+    else:
+        return None
 
 
 def main_app():
     args = get_gen_proc_arg_parser().parse_args()
 
+    # how the one-to-one values between the blueprint and the data are
+    # programatically determined
     module = importlib.import_module(__name__)
     blueprint = ObsBlueprint(module=module)
     accumulate_time(blueprint)
@@ -263,8 +389,10 @@ def main_app():
 
     blueprints = {'1': blueprint}
 
+    omm_science_file = args.local[0]
+
     try:
-        gen_proc(args, blueprints)
+        gen_proc(args, blueprints, omm_science_file=omm_science_file)
     except Exception as e:
         logging.error('Failed caom2gen execution.')
         logging.error(e)
