@@ -180,7 +180,6 @@ def get_plane_cal_level(header):
 def get_part_product_type(header):
     lookup = ProductType.CALIBRATION
     datatype = header[0].get('DATATYPE')
-    logging.error('datatype is {}'.format(datatype))
     if 'SCIENCE' in datatype or 'REDUC' in datatype:
         lookup = ProductType.SCIENCE
     return lookup
@@ -205,7 +204,6 @@ def get_start_ref_coord_val(header):
 
 def get_telescope_z(header):
     telescope = header[0].get('TELESCOP')
-    logging.error('telescope is {}'.format(telescope))
     if 'OMM' in telescope:
         return 1100.
     elif 'CTIO' in telescope:
@@ -226,57 +224,19 @@ def update(observation, **kwargs):
                 for chunk in \
                     observation.planes[plane].artifacts[artifact].parts[
                         part].chunks:
-                    _update_position(chunk, **kwargs)
                     _update_time(chunk, **kwargs)
 
     logging.debug('Done update.')
-
-
-def _update_position(chunk, **kwargs):
-    logging.debug('Begin _update_position')
-    assert isinstance(chunk, Chunk), 'Expecting type Chunk'
-
-    if ('omm_science_file' in kwargs and chunk.position is not None
-            and chunk.position.axis is not None):
-        oms = kwargs['omm_science_file'].replace('.header', '.gz')
-        if os.path.exists(oms):
-            logging.debug(
-                'position exists, calculate footprints for {}.'.format(oms))
-            full_area, footprint_xc, footprint_yc, ra_bary, dec_bary, \
-                footprintstring, stc = footprintfinder.main(
-                    '-r -f  {}'.format(oms))
-            logging.debug('footprintfinder result: full area {} '
-                          'footprint xc {} footprint yc {} ra bary {} '
-                          'dec_bary {} footprintstring {} stc {}'.format(
-                            full_area, footprint_xc, footprint_yc, ra_bary,
-                            dec_bary, footprintstring, stc))
-            bounds = CoordPolygon2D()
-            coords = stc.split('Polygon FK5')[1].split()
-            index = 0
-            while index < len(coords):
-                vertex = ValueCoord2D(_to_float(coords[index]),
-                                      _to_float(coords[index + 1]))
-                bounds.vertices.append(vertex)
-                index += 2
-                logging.debug('Adding vertex\n{}'.format(vertex))
-            chunk.position.axis.bounds = bounds
-        else:
-            logging.debug(
-                '{} does not exist. Cannot do footprint finding.'.format(oms))
-    logging.debug('Done _update_position.')
 
 
 def _update_time(chunk, **kwargs):
     logging.debug('Begin _update_time.')
     assert isinstance(chunk, Chunk), 'Expecting type Chunk'
 
-    if 'headers' in kwargs:
-        # TODO figure out what the entry conditions should actually be for
-        # this if statement
-        # if ('headers' in kwargs and chunk.time is not None
-        #         and chunk.time.axis is not None):
-        # logging.debug('time axis exists, calculate range.')
-
+    # it's acceptable to manufacture time WCS when other WCS axes already
+    # exist, because it implies the file wcs was reasonable
+    if 'headers' in kwargs and (
+            chunk.position is not None or chunk.energy is not None):
         headers = kwargs['headers']
         mjd_start = headers[0].get('MJD_STAR')
         mjd_end = headers[0].get('MJD_END')
@@ -390,9 +350,20 @@ def main_app():
 
 
 def main_app_kwargs(**kwargs):
+
+    # the logic to identify cardinality is here - it's very specific to OMM,
+    # and won't be re-used anywhere else that I can currently think of ;)
+    # that means defining lineage, uris, observations, product ids is all
+    # done here
+
     logging.error(kwargs['params'])
-    lineage = kwargs['params']['lineage']
-    product_id, artifact_uri = lineage.split('/', 1)
+    fname = kwargs['params']['fname'].replace('.fits', '')
+    out_obs_xml = kwargs['params']['out_obs_xml']
+    collection = kwargs['params']['collection']
+    netrc = kwargs['params']['netrc']
+
+    product_id = fname
+    artifact_uri = 'ad:{}/{}.fits.gz'.format(collection, fname)
 
     omm_science_file = artifact_uri
 
@@ -403,12 +374,11 @@ def main_app_kwargs(**kwargs):
     kwargs['params']['dump_config'] = False
     kwargs['params']['ignore_partial_wcs'] = True
     kwargs['params']['plugin'] = ''
-    kwargs['params']['out_obs_xml'] = '{}.xml'.format(product_id)
-    this_dir = '/root/airflow'
-    fname = 'file://{}'.format(os.path.join(this_dir,
-                                            artifact_uri.split('/')[1].replace(
-                                                '.gz', '.header')))
-    kwargs['params']['local'] = [fname]
+    kwargs['params']['out_obs_xml'] = out_obs_xml
+    kwargs['params']['observation'] = product_id
+    kwargs['params']['product_id'] = product_id
+    kwargs['params']['uri'] = artifact_uri
+    kwargs['params']['netrc'] = netrc
     try:
         gen_proc_no_args(**kwargs)
     except Exception as e:
