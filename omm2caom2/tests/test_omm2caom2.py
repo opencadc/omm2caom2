@@ -82,9 +82,4 @@ def _get_local(test_name):
 
 
 def _get_lineage(product_id, basename):
-    fname = basename.split('.header')[0]
-    froot = fname.split('.fits')[0]
-    # return '{}/ad:OMM/{} {}/ad:OMM/{}_prev.jpg ' \
-    #        '{}/ad:OMM/{}_prev_256.jpg'.format(product_id, fname, product_id,
-    #                                           froot, product_id, froot)
     return '{}/ad:OMM/{}.fits.gz'.format(product_id, product_id)

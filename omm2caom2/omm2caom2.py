@@ -35,7 +35,7 @@ def accumulate_obs(bp):
     bp.set('Observation.intent', 'get_obs_intent(header)')
     bp.set_fits_attribute('Observation.instrument.name', ['INSTRUME'])
     bp.set_fits_attribute('Observation.instrument.keywords', ['DETECTOR'])
-    bp.set('Observation.instrument.keywords', 'DETECTOR=CPAPIR_HAWAII-2')
+    bp.set('Observation.instrument.keywords', 'DETECTOR=CPAPIR-HAWAII-2')
     bp.set_fits_attribute('Observation.target.name', ['OBJECT'])
     bp.set('Observation.target.type', TargetType.OBJECT)
     bp.set('Observation.target.standard', False)
@@ -43,13 +43,12 @@ def accumulate_obs(bp):
     bp.set_fits_attribute('Observation.target_position.point.cval2', ['DEC'])
     bp.set('Observation.target_position.coordsys', 'ICRS')
     bp.set_fits_attribute('Observation.target_position.equinox', ['EQUINOX'])
-    bp.set_default('Observation.target_position.equinox', '2000')
+    bp.set_default('Observation.target_position.equinox', '2000.0')
     bp.set_fits_attribute('Observation.telescope.name', ['TELESCOP'])
     bp.set_fits_attribute('Observation.telescope.geoLocationX', ['OBS_LAT'])
     bp.set_fits_attribute('Observation.telescope.geoLocationY', ['OBS_LON'])
     bp.set('Observation.telescope.geoLocationZ', 'get_telescope_z(header)')
     bp.set_fits_attribute('Observation.telescope.keywords', ['OBSERVER'])
-    bp.set_default('Observation.telescope.keywords', 'UNKNOW')
     bp.set('Observation.environment.ambientTemp',
            'get_obs_env_ambient_temp(header)')
 
@@ -79,27 +78,10 @@ def accumulate_part(bp):
     bp.set('Part.productType', 'get_part_product_type(header)')
 
 
-def accumulate_chunk(bp):
-    logging.debug('Begin accumulate chunk.')
-    bp.set('Chunk.naxis', '4')
-    bp.set('Chunk.time.resolution', '0.1')
-    # TODO - waiting for an answer from Daniel on what value matters here
-    # bp.set('Chunk.position.equinox', 'None')
-
-
-# def accumulate_time(bp):
-#     logging.debug('Begin accumulate_time.')
-#     bp.configure_time_axis(4)
-#     bp.set_fits_attribute('Chunk.time.exposure', ['TEXP'])
-#     bp.set('Chunk.time.timesys', 'UTC')
-#     bp.set('Chunk.time.trefpos', 'TOPOCENTER')
-#     bp.set('Chunk.time.axis.axis.ctype', 'TIME')
-#     bp.set('Chunk.time.axis.axis.cunit', 'd')
-#     bp.set('Chunk.time.axis.function.naxis', 4)
-#     bp.set('Chunk.time.axis.range.start.pix', 0.5)
-#     bp.set_fits_attribute('Chunk.time.axis.range.start.val', ['MJD_STAR'])
-#     bp.set('Chunk.time.axis.range.end.pix', 1.5)
-#     bp.set_fits_attribute('Chunk.time.axis.range.end.val', ['MJD_END'])
+# def accumulate_chunk(bp):
+#     logging.debug('Begin accumulate chunk.')
+#     bp.set('Chunk.naxis', '4')
+    # bp.set('Chunk.time.resolution', '0.1')
 
 
 def accumulate_energy(bp):
@@ -225,6 +207,10 @@ def update(observation, **kwargs):
                     observation.planes[plane].artifacts[artifact].parts[
                         part].chunks:
                     _update_time(chunk, **kwargs)
+                    if chunk.position is None:
+                        chunk.naxis = 2
+                    else:
+                        chunk.naxis = 4
 
     logging.debug('Done update.')
 
@@ -255,6 +241,7 @@ def _update_time(chunk, **kwargs):
         chunk.time.resolution = 0.1
         chunk.time.timesys = 'UTC'
         chunk.time.trefpos = 'TOPOCENTER'
+        chunk.time_axis = 4
     logging.debug('Done _update_time.')
 
 
@@ -323,7 +310,7 @@ def _build_blueprints(uri):
     accumulate_plane(blueprint)
     accumulate_artifact(blueprint)
     accumulate_part(blueprint)
-    accumulate_chunk(blueprint)
+    # accumulate_chunk(blueprint)
 
     # manage multiple blueprints - one for the fits file, one for the preview,
     # and one for the thumbnail
@@ -366,20 +353,21 @@ def main_app_kwargs(**kwargs):
     artifact_uri = 'ad:{}/{}.fits.gz'.format(collection, fname)
 
     omm_science_file = artifact_uri
-
-    blueprints = _build_blueprints(artifact_uri)
-    kwargs['params']['blueprints'] = blueprints
-    kwargs['params']['omm_science_file'] = omm_science_file
-    kwargs['params']['no_validate'] = True
-    kwargs['params']['dump_config'] = False
-    kwargs['params']['ignore_partial_wcs'] = True
-    kwargs['params']['plugin'] = ''
-    kwargs['params']['out_obs_xml'] = out_obs_xml
-    kwargs['params']['observation'] = product_id
-    kwargs['params']['product_id'] = product_id
-    kwargs['params']['uri'] = artifact_uri
-    kwargs['params']['netrc'] = netrc
     try:
+        blueprints = _build_blueprints(artifact_uri)
+        kwargs['params']['blueprints'] = blueprints
+        kwargs['params']['omm_science_file'] = omm_science_file
+        kwargs['params']['no_validate'] = True
+        kwargs['params']['dump_config'] = False
+        kwargs['params']['ignore_partial_wcs'] = True
+        kwargs['params']['plugin'] = ''
+        if os.path.exists(out_obs_xml):
+            kwargs['params']['in_obs_xml'] = out_obs_xml
+        kwargs['params']['out_obs_xml'] = out_obs_xml
+        kwargs['params']['observation'] = product_id
+        kwargs['params']['product_id'] = product_id
+        kwargs['params']['uri'] = artifact_uri
+        kwargs['params']['netrc'] = netrc
         gen_proc_no_args(**kwargs)
     except Exception as e:
         logging.error('Failed caom2gen execution.')

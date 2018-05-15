@@ -62,119 +62,83 @@
 #  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 #                                       <http://www.gnu.org/licenses/>.
 #
-#  $Revision: 4 $
 #
 # ***********************************************************************
-#
-
+import logging
 import os
+import subprocess
 
-from mock import Mock, patch
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
 
-from astropy.io import fits
+from caom2 import get_differences, obs_reader_writer
 
-from omm2caom2 import omm_composable
-from caom2utils import fits2caom2
-import omm_preview_augmentation
-import omm_footprint_augmentation
-from caom2 import obs_reader_writer, SimpleObservation, Algorithm
+RESOURCE_ID = 'ivo://cadc.nrc.ca/sc2repo'
 
 
-THIS_DIR = os.path.dirname(os.path.realpath(__file__))
-TESTDATA_DIR = os.path.join(THIS_DIR, 'data')
+def compare_obs():
+    logging.getLogger().setLevel(logging.INFO)
+    parser = ArgumentParser(add_help=False,
+                            formatter_class=RawDescriptionHelpFormatter)
+    parser.description = ('Call get_differences for an observation, '
+                          'one from Operations, and one from the sandbox. '
+                          'Assumes there is a $HOME/.netrc file for '
+                          'access control. Cleans up after itself. '
+                          'Expected is the operational version, actual '
+                          'is the sandbox version.')
+    parser.add_argument('--collection', help='For example, OMM')
+    parser.add_argument('--observationID', help=('The one that might contain '
+                                                 'words, not the UUID.'))
+    args = parser.parse_args()
+    logging.info(args)
+    cwd = os.getcwd()
+    sb_model_fqn = os.path.join(cwd, '{}.sb.xml'.format(args.observationID))
+    ops_model_fqn = os.path.join(cwd, '{}.ops.xml'.format(args.observationID))
+    sb_obs = _get_obs(args.collection, args.observationID, sb_model_fqn,
+                      RESOURCE_ID)
+    ops_obs = _get_obs(args.collection, args.observationID, ops_model_fqn)
+    result = get_differences(ops_obs, sb_obs, parent=None)
+    if result is not None:
+        logging.error('::')
+        logging.error('::')
+        logging.error('Expected is from the operational version, actual is '
+                      'the sandbox version.')
+        logging.error('\n'.join(x for x in result))
+    else:
+        logging.info('The observations appear to be the same')
 
 
-def test_meta_execute():
-    test_obs_id = 'test_obs_id'
-    test_dir = os.path.join(THIS_DIR, test_obs_id)
-    test_output_fname = os.path.join(test_dir,
-                                     '{}.fits.xml'.format(test_obs_id))
-
-    # clean up from previous tests
-    if os.path.exists(test_dir):
-        for ii in os.listdir(test_dir):
-            os.remove(os.path.join(test_dir, ii))
-        os.rmdir(test_dir)
-    netrc = os.path.join(THIS_DIR, 'test_netrc')
-    assert os.path.exists(netrc)
-
-    # mocks for this test
-    fits2caom2._get_cadc_meta = Mock(return_value={'size': 37,
-            'md5sum': 'e330482de75d5c4c88ce6f6ef99035ea',
-            'type': 'applicaton/octect-stream'})
-    fits2caom2.get_cadc_headers = Mock(side_effect=_get_headers)
-
-    # run the test
-    with patch('subprocess.Popen') as subprocess_mock:
-        subprocess_mock.return_value.communicate.side_effect = _communicate
-        test_executor = omm_composable.Omm2Caom2Meta(test_obs_id, THIS_DIR,
-                                                     'OMM', 'test_netrc')
-        try:
-            test_executor.execute(None)
-        except omm_composable.CadcException as e:
-            assert False, e
-
-    # check that things worked as expected
-    assert os.path.exists(test_dir)
-    assert os.path.exists(test_output_fname)
+def _get_obs(collection, obs_id, model_fqn, rid=None):
+    _read_to_file(collection, obs_id, model_fqn, rid)
+    return _read_obs(model_fqn)
 
 
-def test_data_execute():
-    test_obs_id = 'test_obs_id'
-    test_dir = os.path.join(THIS_DIR, test_obs_id)
-    test_model_fqn = os.path.join(test_dir,
-                                  '{}.fits.xml'.format(test_obs_id))
-    test_fits_fqn = os.path.join(test_dir,
-                                 '{}.fits.gz'.format(test_obs_id))
-    precondition = open(test_fits_fqn, 'w')
-    precondition.close()
+def _read_to_file(collection, obs_id, model_fqn, rid):
+    """Retrieve the existing observaton model metadata."""
+    if rid is not None:
+        repo_cmd = 'caom2-repo read --resource-id {} -n ' \
+                   '{} {} -o {}'.format(rid, collection, obs_id,
+                                        model_fqn).split()
+    else:
+        repo_cmd = 'caom2-repo read -n {} {} -o {}'.format(
+            collection, obs_id, model_fqn).split()
 
-    omm_footprint_augmentation.visit = Mock()
-    omm_preview_augmentation.visit = Mock()
-    obs_reader_writer.ObservationReader.read = Mock(side_effect=_read_obs)
-
-    # run the test
-    with patch('subprocess.Popen') as subprocess_mock:
-        subprocess_mock.return_value.communicate.side_effect = _communicate
-        test_executor = omm_composable.Omm2Caom2Data(test_obs_id, THIS_DIR,
-                                                     'OMM', 'test_netrc')
-        try:
-            test_executor.execute(None)
-        except omm_composable.CadcException as e:
-            assert False, e
-
-    # check that things worked as expected
-    assert os.path.exists(test_dir)
-    assert os.path.exists(test_model_fqn)
+    try:
+        output, outerr = subprocess.Popen(
+            repo_cmd, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE).communicate()
+        logging.info(
+            'Command {} had output {}'.format(repo_cmd, output))
+    except Exception as e:
+        logging.error(
+            'Error with command {}:: {}'.format(repo_cmd, e))
+        raise RuntimeError('broken')
 
 
-def _communicate():
-    return ['return status', None]
+def _read_obs(model_fqn):
+    reader = obs_reader_writer.ObservationReader(False)
+    result = reader.read(model_fqn)
+    return result
 
 
-def _get_headers(uri, subject):
-    x = """SIMPLE  =                    T / Written by IDL:  Fri Oct  6 01:48:35 2017      
-BITPIX  =                  -32 / Bits per pixel                                 
-NAXIS   =                    2 / Number of dimensions                           
-NAXIS1  =                 2048 /                                                
-NAXIS2  =                 2048 /                                                
-DATATYPE= 'REDUC   '           /Data type, SCIENCE/CALIB/REJECT/FOCUS/TEST
-END
-"""
-    delim = '\nEND'
-    extensions = \
-        [e + delim for e in x.split(delim) if e.strip()]
-    headers = [fits.Header.fromstring(e, sep='\n') for e in extensions]
-    return headers
-
-
-def _get_test_metadata(subject, path):
-    return {'size': 37,
-            'md5sum': 'e330482de75d5c4c88ce6f6ef99035ea',
-            'type': 'applicaton/octect-stream'}
-
-
-def _read_obs(arg1):
-    return SimpleObservation(collection='test_collection',
-                             observation_id='test_obs_id',
-                             algorithm=Algorithm(str('exposure')))
+if __name__ == "__main__":
+    compare_obs()

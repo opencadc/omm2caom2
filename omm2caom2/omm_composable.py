@@ -101,7 +101,7 @@ class CaomExecute(object):
         self.working_dir = os.path.join(self.root_dir, self.obs_id)
         self.fname = '{}.fits'.format(obs_id)
         self.model_fqn = os.path.join(self.working_dir,
-                                        '{}.xml'.format(self.fname))
+                                      '{}.xml'.format(self.fname))
         self.netrc = os.path.join(root_dir, netrc)
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)
@@ -122,9 +122,10 @@ class CaomExecute(object):
 
     def _repo_cmd_read(self):
         """Retrieve the existing observaton model metadata."""
-        repo_cmd = 'caom2-repo --resource-id {} --netrc {} ' \
-                   '{} {} > {}'.format(RESOURCE_ID, self.netrc, self.collection,
-                                       self.obs_id, self.model_fqn).split()
+        repo_cmd = 'caom2-repo read --resource-id {} --netrc {} ' \
+                   '{} {} -o {}'.format(
+                       RESOURCE_ID, self.netrc, self.collection,
+                       self.obs_id, self.model_fqn).split()
         try:
             output, outerr = subprocess.Popen(
                 repo_cmd, stdout=subprocess.PIPE,
@@ -173,6 +174,12 @@ class Omm2Caom2Meta(CaomExecute):
         self.logger.debug('create the work space, if it does not exist')
         self._create_dir()
 
+        self.logger.debug('get the existing observation as xml, if it exists')
+        self._repo_cmd_read()
+
+        use_update = False
+        if os.path.exists(self.model_fqn):
+            use_update = True
         self.logger.debug('generate the xml, as the main_app will retrieve '
                           'the headers')
         kwargs = {'params': {
@@ -183,7 +190,8 @@ class Omm2Caom2Meta(CaomExecute):
         main_app_kwargs(**kwargs)
 
         self.logger.debug('store the xml')
-        self._repo_cmd('create')
+        operation = 'update' if use_update else 'create'
+        self._repo_cmd(operation)
 
         self.logger.debug('End execute for {}'.format(__name__))
 
@@ -205,7 +213,7 @@ class Omm2Caom2Data(CaomExecute):
         self.logger.debug('create the work space, if it does not exist')
         self._create_dir()
 
-        self.logger.debug('get the input file, if it does not exist')
+        self.logger.debug('get the input file')
         self._cadc_data_get()
 
         self.logger.debug('get the observation for the existing model')
@@ -231,7 +239,8 @@ class Omm2Caom2Data(CaomExecute):
         omm_preview_augmentation.visit(observation, **kwargs)
 
     def _generate_footprint(self, observation):
-        kwargs = {'working_directory': self.working_dir}
+        kwargs = {'working_directory': self.working_dir,
+                  'science_file': '{}.gz'.format(self.fname)}
         omm_footprint_augmentation.visit(observation, **kwargs)
 
     def _read_model(self):
@@ -247,14 +256,17 @@ class Omm2Caom2Data(CaomExecute):
         """Retrieve a collection file, even if it already exists. This might
         ensure that the latest version of the file is retrieved from
         storage."""
+        fqn = os.path.join(self.working_dir, '{}.gz'.format(self.fname))
         data_cmd = 'cadc-data get --netrc ' \
-                   '{} {} {}'.format(self.netrc, self.collection,
-                                     self.obs_id).split()
+                   '{} {} {} -o {}'.format(self.netrc, self.collection,
+                                           self.obs_id, fqn).split()
         try:
             output, outerr = subprocess.Popen(
                 data_cmd, stdout=subprocess.PIPE).communicate()
             self.logger.debug(
                 'Command {} had output {}'.format(data_cmd, output))
+            if not os.path.exists(fqn):
+                raise CadcException('Did not retrieve {}'.format(fqn))
         except Exception as e:
             self.logger.debug(
                 'Error writing files {}:: {}'.format(self.model_fqn, e))

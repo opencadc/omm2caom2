@@ -26,14 +26,11 @@
     <caom2:geoLocationX>-30.1687583334</caom2:geoLocationX>
     <caom2:geoLocationY>-70.8066250001</caom2:geoLocationY>
     <caom2:geoLocationZ>2200.0</caom2:geoLocationZ>
-    <caom2:keywords>
-      <caom2:keyword>UNKNOW</caom2:keyword>
-    </caom2:keywords>
   </caom2:telescope>
   <caom2:instrument>
     <caom2:name>CPAPIR</caom2:name>
     <caom2:keywords>
-      <caom2:keyword>DETECTOR=CPAPIR_HAWAII-2</caom2:keyword>
+      <caom2:keyword>DETECTOR=CPAPIR-HAWAII-2</caom2:keyword>
     </caom2:keywords>
   </caom2:instrument>
   <caom2:planes>
@@ -69,6 +66,7 @@
                   <caom2:positionAxis1>1</caom2:positionAxis1>
                   <caom2:positionAxis2>2</caom2:positionAxis2>
                   <caom2:energyAxis>3</caom2:energyAxis>
+                  <caom2:timeAxis>4</caom2:timeAxis>
                   <caom2:position>
                     <caom2:axis>
                       <caom2:axis1>
@@ -102,6 +100,7 @@
                     </caom2:axis>
                     <caom2:coordsys>ICRS</caom2:coordsys>
                     <caom2:equinox>2000.0</caom2:equinox>
+                    <caom2:resolution>0.80828049218</caom2:resolution>
                   </caom2:position>
                   <caom2:energy>
                     <caom2:axis>
