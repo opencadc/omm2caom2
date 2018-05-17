@@ -279,7 +279,7 @@ class Omm2Caom2Data(CaomExecute):
 
     def _generate_footprint(self, observation):
         kwargs = {'working_directory': self.working_dir,
-                  'science_file': '{}.gz'.format(self.fname)}
+                  'science_file': '{}'.format(self.fname)}
         omm_footprint_augmentation.visit(observation, **kwargs)
 
     def _read_model(self):
