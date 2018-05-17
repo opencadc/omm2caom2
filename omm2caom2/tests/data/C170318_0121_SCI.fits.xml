@@ -12,6 +12,7 @@
     <caom2:name>J1638+6422</caom2:name>
     <caom2:type>object</caom2:type>
     <caom2:standard>false</caom2:standard>
+    <caom2:moving>false</caom2:moving>
   </caom2:target>
   <caom2:targetPosition>
     <caom2:coordsys>ICRS</caom2:coordsys>
@@ -65,6 +66,7 @@
               <caom2:productType>science</caom2:productType>
               <caom2:chunks>
                 <caom2:chunk caom2:id="00000000-0000-0000-9414-ebd933ff2397">
+                  <caom2:productType>science</caom2:productType>
                   <caom2:naxis>4</caom2:naxis>
                   <caom2:positionAxis1>1</caom2:positionAxis1>
                   <caom2:positionAxis2>2</caom2:positionAxis2>
@@ -108,7 +110,7 @@
                     <caom2:axis>
                       <caom2:axis>
                         <caom2:ctype>WAVE</caom2:ctype>
-                        <caom2:cunit>m</caom2:cunit>
+                        <caom2:cunit>um</caom2:cunit>
                       </caom2:axis>
                       <caom2:range>
                         <caom2:start>
@@ -120,14 +122,6 @@
                           <caom2:val>2.3</caom2:val>
                         </caom2:end>
                       </caom2:range>
-                      <caom2:function>
-                        <caom2:naxis>3</caom2:naxis>
-                        <caom2:delta>1e-06</caom2:delta>
-                        <caom2:refCoord>
-                          <caom2:pix>0.0</caom2:pix>
-                          <caom2:val>0.0</caom2:val>
-                        </caom2:refCoord>
-                      </caom2:function>
                     </caom2:axis>
                     <caom2:specsys>TOPCENT</caom2:specsys>
                     <caom2:ssysobs>TOPCENT</caom2:ssysobs>

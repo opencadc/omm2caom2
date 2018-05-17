@@ -12,6 +12,7 @@
     <caom2:name>sh2-132</caom2:name>
     <caom2:type>object</caom2:type>
     <caom2:standard>false</caom2:standard>
+    <caom2:moving>false</caom2:moving>
   </caom2:target>
   <caom2:targetPosition>
     <caom2:coordsys>ICRS</caom2:coordsys>
@@ -62,6 +63,7 @@
               <caom2:productType>science</caom2:productType>
               <caom2:chunks>
                 <caom2:chunk caom2:id="00000000-0000-0000-aa3d-afee35e0b426">
+                  <caom2:productType>science</caom2:productType>
                   <caom2:naxis>4</caom2:naxis>
                   <caom2:positionAxis1>1</caom2:positionAxis1>
                   <caom2:positionAxis2>2</caom2:positionAxis2>
@@ -77,6 +79,14 @@
                         <caom2:ctype>DEC--TAN</caom2:ctype>
                         <caom2:cunit>deg</caom2:cunit>
                       </caom2:axis2>
+                      <caom2:error1>
+                        <caom2:syser>0.0</caom2:syser>
+                        <caom2:rnder>0.41760658828</caom2:rnder>
+                      </caom2:error1>
+                      <caom2:error2>
+                        <caom2:syser>0.0</caom2:syser>
+                        <caom2:rnder>0.41760658828</caom2:rnder>
+                      </caom2:error2>
                       <caom2:function>
                         <caom2:dimension>
                           <caom2:naxis1>5095</caom2:naxis1>
@@ -100,13 +110,12 @@
                     </caom2:axis>
                     <caom2:coordsys>ICRS</caom2:coordsys>
                     <caom2:equinox>2000.0</caom2:equinox>
-                    <caom2:resolution>0.41760658828</caom2:resolution>
                   </caom2:position>
                   <caom2:energy>
                     <caom2:axis>
                       <caom2:axis>
                         <caom2:ctype>WAVE</caom2:ctype>
-                        <caom2:cunit>m</caom2:cunit>
+                        <caom2:cunit>um</caom2:cunit>
                       </caom2:axis>
                       <caom2:range>
                         <caom2:start>
@@ -118,14 +127,6 @@
                           <caom2:val>1.33</caom2:val>
                         </caom2:end>
                       </caom2:range>
-                      <caom2:function>
-                        <caom2:naxis>3</caom2:naxis>
-                        <caom2:delta>1e-06</caom2:delta>
-                        <caom2:refCoord>
-                          <caom2:pix>0.0</caom2:pix>
-                          <caom2:val>0.0</caom2:val>
-                        </caom2:refCoord>
-                      </caom2:function>
                     </caom2:axis>
                     <caom2:specsys>TOPCENT</caom2:specsys>
                     <caom2:ssysobs>TOPCENT</caom2:ssysobs>

@@ -1,20 +1,16 @@
 import logging
-import os
 import sys
 import traceback
 
 from datetime import datetime
 
 from caom2 import TargetType, ObservationIntentType, CalibrationLevel
-from caom2 import DataProductType, ProductType, Observation, Chunk
-from caom2 import CoordRange1D, RefCoord, CoordPolygon2D, ValueCoord2D
-from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS
+from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
+from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
 from caom2utils import gen_proc_no_args
 
 from astropy.time import Time, TimeDelta
-
-from . import footprintfinder
 
 import importlib
 
@@ -39,6 +35,7 @@ def accumulate_obs(bp):
     bp.set_fits_attribute('Observation.target.name', ['OBJECT'])
     bp.set('Observation.target.type', TargetType.OBJECT)
     bp.set('Observation.target.standard', False)
+    bp.set('Observation.target.moving', False)
     bp.set_fits_attribute('Observation.target_position.point.cval1', ['RA'])
     bp.set_fits_attribute('Observation.target_position.point.cval2', ['DEC'])
     bp.set('Observation.target_position.coordsys', 'ICRS')
@@ -61,64 +58,33 @@ def accumulate_plane(bp):
     bp.set_fits_attribute('Plane.provenance.runID', ['NIGHTID'])
     bp.set_fits_attribute('Plane.metaRelease', ['DATE-OBS'])
     bp.set('Plane.provenance.version', '1.0')
-    # TODO not in the model bp.set('Plane.provenance.product', 'Artigau')
-    # TODO set in defaults
-    # bp.set_fits_attribute('Plane.provenance.producer', ['ORIGIN'])
     bp.set('Plane.provenance.reference', 'http://genesis.astro.umontreal.ca')
     bp.set('Plane.provenance.project', 'Standard Pipeline')
 
 
 def accumulate_artifact(bp):
     logging.debug('Begin accumulate_artifact.')
-    bp.set('Artifact.productType', 'get_artifact_product_type(uri)')
+    bp.set('Artifact.productType', 'get_product_type(header)')
 
 
 def accumulate_part(bp):
     logging.debug('Begin accumulate part.')
-    bp.set('Part.productType', 'get_part_product_type(header)')
-
-
-# def accumulate_chunk(bp):
-#     logging.debug('Begin accumulate chunk.')
-#     bp.set('Chunk.naxis', '4')
-    # bp.set('Chunk.time.resolution', '0.1')
-
-
-def accumulate_energy(bp):
-    logging.debug('Begin accumulate_energy.')
-    bp.configure_energy_axis(3)
-    bp.set('Chunk.energy.specsys', 'TOPCENT')
-    bp.set('Chunk.energy.ssysobs', 'TOPCENT')
-    bp.set('Chunk.energy.ssyssrc', 'TOPCENT')
-    bp.set_fits_attribute('Chunk.energy.bandpassName', ['FILTER'])
-    bp.set('Chunk.energy.axis.axis.ctype', 'WAVE')
-    bp.set('Chunk.energy.axis.axis.cunit', 'um')
-    bp.set('Chunk.energy.axis.function.naxis', 3)
-    bp.set('Chunk.energy.axis.range.start.pix', 0.5)
-    bp.set('Chunk.energy.axis.range.start.val',
-           'get_start_ref_coord_val(header)')
-    bp.set('Chunk.energy.axis.range.end.pix', 1.5)
-    bp.set('Chunk.energy.axis.range.end.val', 'get_end_ref_coord_val(header)')
+    bp.set('Part.productType', 'get_product_type(header)')
 
 
 def accumulate_position(bp):
     logging.debug('Begin accumulate_position.')
     bp.configure_position_axes((1, 2))
     bp.set('Chunk.position.coordsys', 'ICRS')
-    bp.set('Chunk.position.resolution', 'get_position_resolution(header)')
+    bp.set('Chunk.position.axis.error1.rnder',
+           'get_position_resolution(header)')
+    bp.set('Chunk.position.axis.error1.syser', 0.0)
+    bp.set('Chunk.position.axis.error2.rnder',
+           'get_position_resolution(header)')
+    bp.set('Chunk.position.axis.error2.syser', 0.0)
     bp.set('Chunk.position.axis.axis1.ctype', 'RA---TAN')
     bp.set('Chunk.position.axis.axis1.cunit', 'deg')
     bp.set('Chunk.position.axis.axis2.cunit', 'deg')
-
-
-def get_artifact_product_type(uri):
-    logging.debug('uri is {}'.format(uri))
-    if '_prev_256' in uri:
-        return 'thumbnail'
-    elif '_prev' in uri:
-        return 'preview'
-    else:
-        return 'science'
 
 
 def get_end_ref_coord_val(header):
@@ -159,7 +125,7 @@ def get_plane_cal_level(header):
     return lookup
 
 
-def get_part_product_type(header):
+def get_product_type(header):
     lookup = ProductType.CALIBRATION
     datatype = header[0].get('DATATYPE')
     if 'SCIENCE' in datatype or 'REDUC' in datatype:
@@ -203,45 +169,69 @@ def update(observation, **kwargs):
     for plane in observation.planes:
         for artifact in observation.planes[plane].artifacts:
             for part in observation.planes[plane].artifacts[artifact].parts:
-                for chunk in \
-                    observation.planes[plane].artifacts[artifact].parts[
-                        part].chunks:
-                    _update_time(chunk, **kwargs)
-                    if chunk.position is None:
-                        chunk.naxis = 2
-                    else:
+                p = observation.planes[plane].artifacts[artifact].parts[part]
+                if len(p.chunks) == 0:
+                    # always have a time axis, and usually an energy axis as
+                    # well, so create a chunk
+                    part.chunks.append(Chunk())
+
+                for chunk in p.chunks:
+                    if 'headers' in kwargs:
                         chunk.naxis = 4
+                        headers = kwargs['headers']
+                        chunk.product_type = get_product_type(headers)
+                        _update_energy(chunk, headers)
+                        _update_time(chunk, headers)
 
     logging.debug('Done update.')
+    return True
 
 
-def _update_time(chunk, **kwargs):
+def _update_energy(chunk, headers):
+    logging.debug('Begin _update_energy')
+    assert isinstance(chunk, Chunk), 'Expecting type Chunk'
+    wlen = headers[0].get('WLEN')
+    bandpass = headers[0].get('BANDPASS')
+    if wlen < 0 or bandpass < 0:
+        chunk.energy = None
+        chunk.energy_axis = None
+        logging.debug(
+            'Setting chunk energy to None because WLEN {} and '
+            'BANDPASS {}'.format(wlen, bandpass))
+    else:
+        naxis = CoordAxis1D(Axis('WAVE', 'um'))
+        start_ref_coord = RefCoord(0.5, get_start_ref_coord_val(headers))
+        end_ref_coord = RefCoord(1.5, get_end_ref_coord_val(headers))
+        naxis.range = CoordRange1D(start_ref_coord, end_ref_coord)
+        chunk.energy = SpectralWCS(naxis, specsys='TOPCENT',
+                                   ssysobs='TOPCENT', ssyssrc='TOPCENT',
+                                   bandpass_name=headers[0].get('FILTER'))
+        chunk.energy_axis = 3
+        logging.debug('Setting chunk energy range (CoordRange1D).')
+
+
+def _update_time(chunk, headers):
     logging.debug('Begin _update_time.')
     assert isinstance(chunk, Chunk), 'Expecting type Chunk'
 
-    # it's acceptable to manufacture time WCS when other WCS axes already
-    # exist, because it implies the file wcs was reasonable
-    if 'headers' in kwargs and (
-            chunk.position is not None or chunk.energy is not None):
-        headers = kwargs['headers']
-        mjd_start = headers[0].get('MJD_STAR')
-        mjd_end = headers[0].get('MJD_END')
-        if mjd_start is None or mjd_end is None:
-            mjd_start, mjd_end = _convert_time(headers)
-        logging.debug(
-            'Calculating range with start {} and end {}.'.format(
-                mjd_start, mjd_start))
-        start = RefCoord(0.5, mjd_start)
-        end = RefCoord(1.5, mjd_end)
-        time_cf = CoordFunction1D(1, headers[0].get('TEXP'), start)
-        time_axis = CoordAxis1D(Axis('TIME', 'd'), function=time_cf)
-        time_axis.range = CoordRange1D(start, end)
-        chunk.time = TemporalWCS(time_axis)
-        chunk.time.exposure = headers[0].get('TEXP')
-        chunk.time.resolution = 0.1
-        chunk.time.timesys = 'UTC'
-        chunk.time.trefpos = 'TOPOCENTER'
-        chunk.time_axis = 4
+    mjd_start = headers[0].get('MJD_STAR')
+    mjd_end = headers[0].get('MJD_END')
+    if mjd_start is None or mjd_end is None:
+        mjd_start, mjd_end = _convert_time(headers)
+    logging.debug(
+        'Calculating range with start {} and end {}.'.format(
+            mjd_start, mjd_start))
+    start = RefCoord(0.5, mjd_start)
+    end = RefCoord(1.5, mjd_end)
+    time_cf = CoordFunction1D(1, headers[0].get('TEXP'), start)
+    time_axis = CoordAxis1D(Axis('TIME', 'd'), function=time_cf)
+    time_axis.range = CoordRange1D(start, end)
+    chunk.time = TemporalWCS(time_axis)
+    chunk.time.exposure = headers[0].get('TEXP')
+    chunk.time.resolution = 0.1
+    chunk.time.timesys = 'UTC'
+    chunk.time.trefpos = 'TOPOCENTER'
+    chunk.time_axis = 4
     logging.debug('Done _update_time.')
 
 
@@ -301,21 +291,12 @@ def _build_blueprints(uri):
     # programatically determined
     module = importlib.import_module(__name__)
     blueprint = ObsBlueprint(module=module)
-
-    # configure the main blueprint
-    # accumulate_time(blueprint) - done later ...
-    accumulate_energy(blueprint)
     accumulate_position(blueprint)
     accumulate_obs(blueprint)
     accumulate_plane(blueprint)
     accumulate_artifact(blueprint)
     accumulate_part(blueprint)
-    # accumulate_chunk(blueprint)
-
-    # manage multiple blueprints - one for the fits file, one for the preview,
-    # and one for the thumbnail
-    blueprints = {}
-    blueprints[uri] = blueprint
+    blueprints = {uri: blueprint}
     return blueprints
 
 
@@ -343,7 +324,6 @@ def main_app_kwargs(**kwargs):
     # that means defining lineage, uris, observations, product ids is all
     # done here
 
-    logging.error(kwargs['params'])
     fname = kwargs['params']['fname'].replace('.fits', '')
     out_obs_xml = kwargs['params']['out_obs_xml']
     collection = kwargs['params']['collection']
@@ -356,13 +336,11 @@ def main_app_kwargs(**kwargs):
     try:
         blueprints = _build_blueprints(artifact_uri)
         kwargs['params']['blueprints'] = blueprints
-        kwargs['params']['omm_science_file'] = omm_science_file
+        kwargs['params']['visit_args'] = {'omm_science_file': omm_science_file}
         kwargs['params']['no_validate'] = True
         kwargs['params']['dump_config'] = False
         kwargs['params']['ignore_partial_wcs'] = True
-        kwargs['params']['plugin'] = ''
-        if os.path.exists(out_obs_xml):
-            kwargs['params']['in_obs_xml'] = out_obs_xml
+        kwargs['params']['plugin'] = __name__
         kwargs['params']['out_obs_xml'] = out_obs_xml
         kwargs['params']['observation'] = product_id
         kwargs['params']['product_id'] = product_id

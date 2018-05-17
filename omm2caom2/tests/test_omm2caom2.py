@@ -65,7 +65,7 @@ def test_main_app(test_name):
                 format(expected.observation_id, '\n'.join(
                 [r for r in result]))
             raise AssertionError(msg)
-        # assert False # cause I want to see logging messages
+        # assert False  # cause I want to see logging messages
 
 
 def _read_obs(fname):

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<caom2:Observation xmlns:caom2="http://www.opencadc.org/caom2/xml/v2.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:SimpleObservation" caom2:id="00000000-0000-0000-83f4-76cebd5692ed">
+<caom2:Observation xmlns:caom2="http://www.opencadc.org/caom2/xml/v2.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:SimpleObservation" caom2:id="00000000-0000-0000-8508-0427358ee560">
   <caom2:collection>OMM</caom2:collection>
   <caom2:observationID>C071128_0740_FOCUS</caom2:observationID>
   <caom2:metaRelease>2007-11-29T02:56:16.000</caom2:metaRelease>
@@ -12,6 +12,7 @@
     <caom2:name>focus_21710_t_13.8d</caom2:name>
     <caom2:type>object</caom2:type>
     <caom2:standard>false</caom2:standard>
+    <caom2:moving>false</caom2:moving>
   </caom2:target>
   <caom2:targetPosition>
     <caom2:coordsys>ICRS</caom2:coordsys>
@@ -34,7 +35,7 @@
     </caom2:keywords>
   </caom2:instrument>
   <caom2:planes>
-    <caom2:plane caom2:id="00000000-0000-0000-8ef6-10c7e46ee1f8">
+    <caom2:plane caom2:id="00000000-0000-0000-8322-d43e2be2ca94">
       <caom2:productID>C071128_0740_FOCUS</caom2:productID>
       <caom2:metaRelease>2007-11-29T05:56:16.000</caom2:metaRelease>
       <caom2:dataRelease>2009-05-29T00:00:00.000</caom2:dataRelease>
@@ -49,19 +50,20 @@
         <caom2:reference>http://genesis.astro.umontreal.ca</caom2:reference>
       </caom2:provenance>
       <caom2:artifacts>
-        <caom2:artifact caom2:id="00000000-0000-0000-b283-993c7cc6e738">
+        <caom2:artifact caom2:id="00000000-0000-0000-a023-a44513cee1eb">
           <caom2:uri>ad:OMM/C071128_0740_FOCUS.fits.gz</caom2:uri>
-          <caom2:productType>science</caom2:productType>
+          <caom2:productType>calibration</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
           <caom2:contentType>application/octet-stream</caom2:contentType>
           <caom2:contentLength>37</caom2:contentLength>
           <caom2:contentChecksum>md5:e330482de75d5c4c88ce6f6ef99035ea</caom2:contentChecksum>
           <caom2:parts>
-            <caom2:part caom2:id="00000000-0000-0000-bdba-38e067e19f78">
+            <caom2:part caom2:id="00000000-0000-0000-9426-ca3d384161c9">
               <caom2:name>0</caom2:name>
               <caom2:productType>calibration</caom2:productType>
               <caom2:chunks>
-                <caom2:chunk caom2:id="00000000-0000-0000-bfe4-dc3a4ed90d0f">
+                <caom2:chunk caom2:id="00000000-0000-0000-883e-713e0a57dc68">
+                  <caom2:productType>calibration</caom2:productType>
                   <caom2:naxis>4</caom2:naxis>
                   <caom2:positionAxis1>1</caom2:positionAxis1>
                   <caom2:positionAxis2>2</caom2:positionAxis2>
@@ -77,6 +79,14 @@
                         <caom2:ctype>DEC--TAN</caom2:ctype>
                         <caom2:cunit>deg</caom2:cunit>
                       </caom2:axis2>
+                      <caom2:error1>
+                        <caom2:syser>0.0</caom2:syser>
+                        <caom2:rnder>0.80828049218</caom2:rnder>
+                      </caom2:error1>
+                      <caom2:error2>
+                        <caom2:syser>0.0</caom2:syser>
+                        <caom2:rnder>0.80828049218</caom2:rnder>
+                      </caom2:error2>
                       <caom2:function>
                         <caom2:dimension>
                           <caom2:naxis1>2048</caom2:naxis1>
@@ -100,13 +110,12 @@
                     </caom2:axis>
                     <caom2:coordsys>ICRS</caom2:coordsys>
                     <caom2:equinox>2000.0</caom2:equinox>
-                    <caom2:resolution>0.80828049218</caom2:resolution>
                   </caom2:position>
                   <caom2:energy>
                     <caom2:axis>
                       <caom2:axis>
                         <caom2:ctype>WAVE</caom2:ctype>
-                        <caom2:cunit>m</caom2:cunit>
+                        <caom2:cunit>um</caom2:cunit>
                       </caom2:axis>
                       <caom2:range>
                         <caom2:start>
@@ -118,14 +127,6 @@
                           <caom2:val>2.3</caom2:val>
                         </caom2:end>
                       </caom2:range>
-                      <caom2:function>
-                        <caom2:naxis>3</caom2:naxis>
-                        <caom2:delta>1e-06</caom2:delta>
-                        <caom2:refCoord>
-                          <caom2:pix>0.0</caom2:pix>
-                          <caom2:val>0.0</caom2:val>
-                        </caom2:refCoord>
-                      </caom2:function>
                     </caom2:axis>
                     <caom2:specsys>TOPCENT</caom2:specsys>
                     <caom2:ssysobs>TOPCENT</caom2:ssysobs>
