@@ -296,7 +296,7 @@ class Omm2Caom2Data(CaomExecute):
         ensure that the latest version of the file is retrieved from
         storage."""
         fqn = os.path.join(self.working_dir, '{}.gz'.format(self.fname))
-        data_cmd = 'cadc-data get --netrc ' \
+        data_cmd = 'cadc-data get -z --netrc ' \
                    '{} {} {} -o {}'.format(self.netrc, self.collection,
                                            self.obs_id, fqn).split()
         try:
@@ -311,3 +311,4 @@ class Omm2Caom2Data(CaomExecute):
                 'Error writing files {}:: {}'.format(self.model_fqn, e))
             raise CadcException('Could not store the observation in {}'.format(
                 self.model_fqn))
+
