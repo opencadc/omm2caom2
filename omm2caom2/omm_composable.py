@@ -71,7 +71,7 @@ import logging
 import os
 import subprocess
 
-import omm_preview_augmentation, omm_footprint_augmentation
+from omm2caom2 import omm_preview_augmentation, omm_footprint_augmentation
 from omm2caom2 import main_app_kwargs
 from caom2 import obs_reader_writer
 
@@ -114,6 +114,13 @@ class CaomExecute(object):
                 raise CadcException(
                     'Could not mkdir {}'.format(self.working_dir))
 
+    def _cleanup(self):
+        """Remove a directory and all its contents."""
+        if os.path.exists(self.working_dir):
+            for ii in os.listdir(self.working_dir):
+                os.remove(os.path.join(self.working_dir, ii))
+            os.rmdir(self.working_dir)
+
     def _check_credentials_exist(self):
         """Ensure named credentials exist in this environment."""
         if not os.path.exists(self.netrc):
@@ -135,8 +142,32 @@ class CaomExecute(object):
         except Exception as e:
             self.logger.debug(
                 'Error with command {}:: {}'.format(repo_cmd, e))
-            raise CadcException('Could not store the observation in {}'.format(
+            raise CadcException('Could not read observation in {}'.format(
                 self.model_fqn))
+
+    def _repo_cmd_delete(self):
+        """Retrieve the existing observaton model metadata."""
+        repo_cmd = 'caom2-repo delete --resource-id {} --netrc {} ' \
+                   '{} {}'.format(
+                    RESOURCE_ID, self.netrc, self.collection,
+                    self.obs_id).split()
+        try:
+            output, outerr = subprocess.Popen(
+                repo_cmd, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE).communicate()
+            self.logger.debug(
+                'Command {} had output {}'.format(repo_cmd, output))
+            if len(outerr) > 0:
+                raise CadcException(
+                    '{} failed with {}'.format(repo_cmd, outerr))
+            os.remove(self.model_fqn)
+        except Exception as e:
+            self.logger.debug(
+                'Error with command {}:: {}'.format(repo_cmd, e))
+            # TODO - how to tell the difference between 'it doesn't exist', and
+            # there's a real failure to pay attention to?
+            # raise CadcException('Could not delete the observation in {}'.format(
+            #     self.model_fqn))
 
     def _repo_cmd(self, operation):
         """This repo operation will work for either create or update."""
@@ -149,6 +180,11 @@ class CaomExecute(object):
                 stderr=subprocess.PIPE).communicate()
             self.logger.debug(
                 'Command {} had output {}'.format(repo_cmd, output))
+            if len(outerr) > 0:
+                raise CadcException(
+                    '{} failed with {}'.format(repo_cmd, outerr))
+            self.logger.debug(
+                'Command {} had outerr {}'.format(repo_cmd, outerr))
         except Exception as e:
             self.logger.debug(
                 'Error with command {}:: {}'.format(repo_cmd, e))
@@ -166,7 +202,6 @@ class Omm2Caom2Meta(CaomExecute):
 
     def execute(self, context):
         self.logger.debug('Begin execute for {}'.format(__name__))
-        self.logger.error(context)
         self.logger.debug('the steps:')
         self.logger.debug('make sure named credentials exist')
         self._check_credentials_exist()
@@ -174,12 +209,11 @@ class Omm2Caom2Meta(CaomExecute):
         self.logger.debug('create the work space, if it does not exist')
         self._create_dir()
 
-        self.logger.debug('get the existing observation as xml, if it exists')
-        self._repo_cmd_read()
+        self.logger.debug('remove the existing observation, if it exists, '
+                          'because metadata generation is less repeatable '
+                          'for updates than for creates.')
+        self._repo_cmd_delete()
 
-        use_update = False
-        if os.path.exists(self.model_fqn):
-            use_update = True
         self.logger.debug('generate the xml, as the main_app will retrieve '
                           'the headers')
         kwargs = {'params': {
@@ -190,8 +224,10 @@ class Omm2Caom2Meta(CaomExecute):
         main_app_kwargs(**kwargs)
 
         self.logger.debug('store the xml')
-        operation = 'update' if use_update else 'create'
-        self._repo_cmd(operation)
+        self._repo_cmd('create')
+
+        self.logger.debug('clean up the workspace')
+        self._cleanup()
 
         self.logger.debug('End execute for {}'.format(__name__))
 
@@ -231,6 +267,9 @@ class Omm2Caom2Data(CaomExecute):
 
         self.logger.debug('store the updated xml')
         self._repo_cmd('update')
+
+        self.logger.debug('clean up the workspace')
+        self._cleanup()
 
         self.logger.debug('End execute for {}'.format(__name__))
 
