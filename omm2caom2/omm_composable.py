@@ -295,7 +295,7 @@ class Omm2Caom2Data(CaomExecute):
         """Retrieve a collection file, even if it already exists. This might
         ensure that the latest version of the file is retrieved from
         storage."""
-        fqn = os.path.join(self.working_dir, '{}.gz'.format(self.fname))
+        fqn = os.path.join(self.working_dir, self.fname)
         data_cmd = 'cadc-data get -z --netrc ' \
                    '{} {} {} -o {}'.format(self.netrc, self.collection,
                                            self.obs_id, fqn).split()
@@ -304,6 +304,8 @@ class Omm2Caom2Data(CaomExecute):
                 data_cmd, stdout=subprocess.PIPE).communicate()
             self.logger.debug(
                 'Command {} had output {}'.format(data_cmd, output))
+            self.logger.debug(
+                'Command {} had outerr {}'.format(data_cmd, outerr))
             if not os.path.exists(fqn):
                 raise CadcException('Did not retrieve {}'.format(fqn))
         except Exception as e:
