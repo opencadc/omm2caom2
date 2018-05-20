@@ -1,5 +1,6 @@
 import logging
 import os
+import subprocess
 
 from hashlib import md5
 
@@ -29,7 +30,8 @@ def visit(observation, **kwargs):
             # DAG task for this
             if (artifact.uri.endswith('.fits.gz') or artifact.uri.endswith(
                     '.fits')):
-                file_name = artifact.uri.split('/')[1]
+                fn = artifact.uri.split('/')[1]
+                file_name = fn.split('.gz')[0]
                 file_id = file_name.split('.fits')[0]
                 logging.error(
                     'working on file id {} in working directory {} {}'.format(
@@ -90,7 +92,7 @@ def _do_prev(file_id, file_name, working_dir):
 
 
 def _put_omm_preview(file_name):
-    return
+    # return
     # TODO - make this work - how to test it lol?
 
     preview_jpg = file_name + '_prev.jpg'
