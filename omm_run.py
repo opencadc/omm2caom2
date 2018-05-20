@@ -13,7 +13,7 @@ def run_by_file():
             logging.info('Process {}'.format(obs_id))
             meta = omm2caom2.Omm2Caom2Meta(obs_id, root_dir, 'OMM', netrc_fqn)
             meta.execute(context=None)
-            data = Omm2Caom2Data(obs_id, root_dir, 'OMM', netrc_fqn)
+            data = omm2caom2.Omm2Caom2Data(obs_id, root_dir, 'OMM', netrc_fqn)
             data.execute(context=None)
 
 
