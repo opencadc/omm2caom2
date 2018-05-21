@@ -21,6 +21,8 @@ def visit(observation, **kwargs):
     working_dir = './'
     if 'working_directory' in kwargs:
         working_dir = kwargs['working_directory']
+    if 'netrc_fqn' in kwargs:
+        netrc_fqn = kwargs['netrc_fqn']
 
     for i in observation.planes:
         plane = observation.planes[i]
@@ -38,7 +40,7 @@ def visit(observation, **kwargs):
                         file_id, working_dir, file_name))
                 # all the code is written to append .fits right now ....
                 _do_prev(file_id, file_name, working_dir)
-                _put_omm_preview(file_id)
+                _put_omm_preview(file_id, netrc_fqn)
                 _augment_plane(plane, file_id, working_dir)
 
     return {'artifacts': 2}
@@ -91,7 +93,7 @@ def _do_prev(file_id, file_name, working_dir):
     logging.debug('Completed preview generation for {}.'.format(file_id))
 
 
-def _put_omm_preview(file_name):
+def _put_omm_preview(file_name, netrc_fqn):
     # return
     # TODO - make this work - how to test it lol?
 
@@ -99,7 +101,7 @@ def _put_omm_preview(file_name):
     preview_jpg256 = file_name + '_prev_256.jpg'
 
     # cmd = ['cadc-data', 'put', '--cert', _MYCERT, 'OMM', preview_jpg256, '--archive-stream', 'raw']
-    cmd = ['cadc-data', 'put', '--netrc-file', 'netrc', 'OMM', preview_jpg256,
+    cmd = ['cadc-data', 'put', '--netrc-file', netrc_fqn, 'OMM', preview_jpg256,
            '--archive-stream', 'raw']
     print('preview put: ', cmd)
     try:
@@ -110,7 +112,7 @@ def _put_omm_preview(file_name):
             preview_jpg256, str(e)))
 
     # cmd = ['cadc-data', 'put', '--cert', _MYCERT, 'OMM', preview_jpg, '--archive-stream', 'raw']
-    cmd = ['cadc-data', 'put', '--netrc-file', 'netrc', 'OMM', preview_jpg,
+    cmd = ['cadc-data', 'put', '--netrc-file', netrc_fqn, 'OMM', preview_jpg,
            '--archive-stream', 'raw']
     print('preview put: ', cmd)
     try:

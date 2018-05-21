@@ -102,7 +102,7 @@ class CaomExecute(object):
         self.fname = '{}.fits'.format(obs_id)
         self.model_fqn = os.path.join(self.working_dir,
                                       '{}.xml'.format(self.fname))
-        self.netrc = os.path.join(root_dir, netrc)
+        self.netrc_fqn = os.path.join(root_dir, netrc)
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)
 
@@ -126,15 +126,15 @@ class CaomExecute(object):
 
     def _check_credentials_exist(self):
         """Ensure named credentials exist in this environment."""
-        if not os.path.exists(self.netrc):
+        if not os.path.exists(self.netrc_fqn):
             raise CadcException(
-                'Credentials do not exist {}.'.format(self.netrc))
+                'Credentials do not exist {}.'.format(self.netrc_fqn))
 
     def _repo_cmd_read(self):
         """Retrieve the existing observaton model metadata."""
         repo_cmd = 'caom2-repo read --resource-id {} --netrc {} ' \
                    '{} {} -o {}'.format(
-                       RESOURCE_ID, self.netrc, self.collection,
+                       RESOURCE_ID, self.netrc_fqn, self.collection,
                        self.obs_id, self.model_fqn).split()
         try:
             output, outerr = subprocess.Popen(
@@ -152,7 +152,7 @@ class CaomExecute(object):
         """Retrieve the existing observaton model metadata."""
         repo_cmd = 'caom2-repo delete --resource-id {} --netrc {} ' \
                    '{} {}'.format(
-                    RESOURCE_ID, self.netrc, self.collection,
+                    RESOURCE_ID, self.netrc_fqn, self.collection,
                     self.obs_id).split()
         try:
             output, outerr = subprocess.Popen(
@@ -176,7 +176,7 @@ class CaomExecute(object):
         """This repo operation will work for either create or update."""
         repo_cmd = 'caom2-repo {} --resource-id {} --netrc ' \
                    '{} {}'.format(operation, RESOURCE_ID,
-                                  self.netrc, self.model_fqn).split()
+                                  self.netrc_fqn, self.model_fqn).split()
         try:
             output, outerr = subprocess.Popen(
                 repo_cmd, stdout=subprocess.PIPE,
@@ -221,7 +221,7 @@ class Omm2Caom2Meta(CaomExecute):
             'fname': self.fname,
             'out_obs_xml': self.model_fqn,
             'collection': self.collection,
-            'netrc': self.netrc}}
+            'netrc': self.netrc_fqn}}
         main_app_kwargs(**kwargs)
 
         self.logger.debug('store the xml')
@@ -275,7 +275,8 @@ class Omm2Caom2Data(CaomExecute):
         self.logger.debug('End execute for {}'.format(__name__))
 
     def _generate_previews(self, observation):
-        kwargs = {'working_directory': self.working_dir}
+        kwargs = {'working_directory': self.working_dir,
+                  'netrc_fqn': self.netrc_fqn}
         omm_preview_augmentation.visit(observation, **kwargs)
 
     def _generate_footprint(self, observation):
@@ -298,7 +299,7 @@ class Omm2Caom2Data(CaomExecute):
         storage."""
         fqn = os.path.join(self.working_dir, self.fname)
         data_cmd = 'cadc-data get -z --netrc ' \
-                   '{} {} {} -o {}'.format(self.netrc, self.collection,
+                   '{} {} {} -o {}'.format(self.netrc_fqn, self.collection,
                                            self.obs_id, fqn).split()
         try:
             output, outerr = subprocess.Popen(
@@ -314,4 +315,3 @@ class Omm2Caom2Data(CaomExecute):
                 'Error writing files {}:: {}'.format(self.model_fqn, e))
             raise CadcException('Could not store the observation in {}'.format(
                 self.model_fqn))
-

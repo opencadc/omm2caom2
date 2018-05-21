@@ -67,6 +67,7 @@
 # ***********************************************************************
 #
 
+import logging
 import os
 
 from mock import Mock, patch
@@ -81,6 +82,7 @@ from caom2utils import fits2caom2
 # import omm_preview_augmentation
 # import omm_footprint_augmentation
 from caom2 import obs_reader_writer, SimpleObservation, Algorithm
+from caom2 import TypedOrderedDict, Plane
 # from cadc_des_composable import CadcException
 from omm2caom2 import CadcException
 
@@ -123,8 +125,8 @@ def test_meta_execute():
             assert False, e
 
     # check that things worked as expected
-    assert fits2caom2._get_cadc_meta.assert_called_with(
-        cadcutils.net.auth.Subject(), 'OMM/test-obs_id.fits.gz')
+    assert fits2caom2._get_cadc_meta.called
+
 
 def test_data_execute():
     test_obs_id = 'test_obs_id'
@@ -133,6 +135,7 @@ def test_data_execute():
     #                               '{}.fits.xml'.format(test_obs_id))
     test_fits_fqn = os.path.join(test_dir,
                                  '{}.fits'.format(test_obs_id))
+    os.mkdir(test_dir)
     precondition = open(test_fits_fqn, 'w')
     precondition.close()
 
@@ -151,10 +154,8 @@ def test_data_execute():
             assert False, e
 
     # check that things worked as expected - cleanup should have occurred
-    # assert not os.path.exists(test_dir)
-    assert omm_footprint_augmentation.visit.assert_called_with()
-    assert omm_preview_augmentation.visit.assert_called_with()
-
+    assert omm_footprint_augmentation.visit.called
+    assert omm_preview_augmentation.visit.called
 
 
 def _communicate():
