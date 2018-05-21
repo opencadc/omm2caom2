@@ -113,6 +113,9 @@ class CaomExecute(object):
             if not os.path.exists(self.working_dir):
                 raise CadcException(
                     'Could not mkdir {}'.format(self.working_dir))
+            if not os.access(self.working_dir, os.W_OK | os.X_OK):
+                raise CadcException(
+                    '{} is not writeable.'.format(self.working_dir))
 
     def _cleanup(self):
         """Remove a directory and all its contents."""
@@ -157,7 +160,7 @@ class CaomExecute(object):
                 stderr=subprocess.PIPE).communicate()
             self.logger.debug(
                 'Command {} had output {}'.format(repo_cmd, output))
-            if len(outerr) > 0:
+            if outerr is not None and len(outerr) > 0:
                 raise CadcException(
                     '{} failed with {}'.format(repo_cmd, outerr))
             os.remove(self.model_fqn)
@@ -180,11 +183,9 @@ class CaomExecute(object):
                 stderr=subprocess.PIPE).communicate()
             self.logger.debug(
                 'Command {} had output {}'.format(repo_cmd, output))
-            if len(outerr) > 0:
+            if outerr is not None and len(outerr) > 0:
                 raise CadcException(
                     '{} failed with {}'.format(repo_cmd, outerr))
-            self.logger.debug(
-                'Command {} had outerr {}'.format(repo_cmd, outerr))
         except Exception as e:
             self.logger.debug(
                 'Error with command {}:: {}'.format(repo_cmd, e))
@@ -201,7 +202,7 @@ class Omm2Caom2Meta(CaomExecute):
             obs_id, root_dir, collection, netrc)
 
     def execute(self, context):
-        self.logger.debug('Begin execute for {}'.format(__name__))
+        self.logger.debug('Begin execute for {} Meta'.format(__name__))
         self.logger.debug('the steps:')
         self.logger.debug('make sure named credentials exist')
         self._check_credentials_exist()
@@ -242,7 +243,7 @@ class Omm2Caom2Data(CaomExecute):
             obs_id, root_dir, collection, netrc)
 
     def execute(self, context):
-        self.logger.debug('Begin execute for {}'.format(__name__))
+        self.logger.debug('Begin execute for {} Data'.format(__name__))
         self.logger.debug('make sure named credentials exist')
         self._check_credentials_exist()
 

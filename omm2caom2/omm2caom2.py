@@ -1,3 +1,72 @@
+# -*- coding: utf-8 -*-
+# ***********************************************************************
+# ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
+# *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
+#
+#  (c) 2018.                            (c) 2018.
+#  Government of Canada                 Gouvernement du Canada
+#  National Research Council            Conseil national de recherches
+#  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
+#  All rights reserved                  Tous droits réservés
+#
+#  NRC disclaims any warranties,        Le CNRC dénie toute garantie
+#  expressed, implied, or               énoncée, implicite ou légale,
+#  statutory, of any kind with          de quelque nature que ce
+#  respect to the software,             soit, concernant le logiciel,
+#  including without limitation         y compris sans restriction
+#  any warranty of merchantability      toute garantie de valeur
+#  or fitness for a particular          marchande ou de pertinence
+#  purpose. NRC shall not be            pour un usage particulier.
+#  liable in any event for any          Le CNRC ne pourra en aucun cas
+#  damages, whether direct or           être tenu responsable de tout
+#  indirect, special or general,        dommage, direct ou indirect,
+#  consequential or incidental,         particulier ou général,
+#  arising from the use of the          accessoire ou fortuit, résultant
+#  software.  Neither the name          de l'utilisation du logiciel. Ni
+#  of the National Research             le nom du Conseil National de
+#  Council of Canada nor the            Recherches du Canada ni les noms
+#  names of its contributors may        de ses  participants ne peuvent
+#  be used to endorse or promote        être utilisés pour approuver ou
+#  products derived from this           promouvoir les produits dérivés
+#  software without specific prior      de ce logiciel sans autorisation
+#  written permission.                  préalable et particulière
+#                                       par écrit.
+#
+#  This file is part of the             Ce fichier fait partie du projet
+#  OpenCADC project.                    OpenCADC.
+#
+#  OpenCADC is free software:           OpenCADC est un logiciel libre ;
+#  you can redistribute it and/or       vous pouvez le redistribuer ou le
+#  modify it under the terms of         modifier suivant les termes de
+#  the GNU Affero General Public        la “GNU Affero General Public
+#  License as published by the          License” telle que publiée
+#  Free Software Foundation,            par la Free Software Foundation
+#  either version 3 of the              : soit la version 3 de cette
+#  License, or (at your option)         licence, soit (à votre gré)
+#  any later version.                   toute version ultérieure.
+#
+#  OpenCADC is distributed in the       OpenCADC est distribué
+#  hope that it will be useful,         dans l’espoir qu’il vous
+#  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
+#  without even the implied             GARANTIE : sans même la garantie
+#  warranty of MERCHANTABILITY          implicite de COMMERCIALISABILITÉ
+#  or FITNESS FOR A PARTICULAR          ni d’ADÉQUATION À UN OBJECTIF
+#  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
+#  General Public License for           Générale Publique GNU Affero
+#  more details.                        pour plus de détails.
+#
+#  You should have received             Vous devriez avoir reçu une
+#  a copy of the GNU Affero             copie de la Licence Générale
+#  General Public License along         Publique GNU Affero avec
+#  with OpenCADC.  If not, see          OpenCADC ; si ce n’est
+#  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
+#                                       <http://www.gnu.org/licenses/>.
+#
+#  $Revision: 4 $
+#
+# ***********************************************************************
+#
+
 import logging
 import sys
 import traceback
@@ -26,6 +95,8 @@ DATATYPE_LOOKUP = {'CALIB': 'flat',
 
 
 def accumulate_obs(bp):
+    """Configure the OMM-specific ObsBlueprint at the CAOM model Observation
+    level."""
     logging.debug('Begin accumulate_obs.')
     bp.set('Observation.type', 'get_obs_type(header)')
     bp.set('Observation.intent', 'get_obs_intent(header)')
@@ -51,6 +122,8 @@ def accumulate_obs(bp):
 
 
 def accumulate_plane(bp):
+    """Configure the OMM-specific ObsBlueprint at the CAOM model Plane
+    level."""
     logging.debug('Begin accumulate_plane.')
     bp.set('Plane.dataProductType', 'image')
     bp.set('Plane.calibrationLevel', 'get_plane_cal_level(header)')
@@ -63,16 +136,22 @@ def accumulate_plane(bp):
 
 
 def accumulate_artifact(bp):
+    """Configure the OMM-specific ObsBlueprint at the CAOM model Artifact
+    level."""
     logging.debug('Begin accumulate_artifact.')
     bp.set('Artifact.productType', 'get_product_type(header)')
 
 
 def accumulate_part(bp):
+    """Configure the OMM-specific ObsBlueprint at the CAOM model Part
+    level."""
     logging.debug('Begin accumulate part.')
     bp.set('Part.productType', 'get_product_type(header)')
 
 
 def accumulate_position(bp):
+    """Configure the OMM-specific ObsBlueprint for the CAOM model
+    SpatialWCS."""
     logging.debug('Begin accumulate_position.')
     bp.configure_position_axes((1, 2))
     bp.set('Chunk.position.coordsys', 'ICRS')
@@ -88,12 +167,27 @@ def accumulate_position(bp):
 
 
 def get_end_ref_coord_val(header):
+    """Calculate the upper bound of the spectral energy coordinate from
+    FITS header values.
+
+    Called to fill a blueprint value, must have a
+    parameter named header for import_module loading and execution.
+
+    :param header Array of astropy headers"""
     wlen = header[0].get('WLEN')
     bandpass = header[0].get('BANDPASS')
-    return wlen + bandpass / 2.
-
+    if wlen is not None and bandpass is not None:
+        return wlen + bandpass / 2.
+    else:
+        return None
 
 def get_obs_type(header):
+    """Calculate the Observation-level data type from FITS header values.
+
+    Called to fill a blueprint value, must have a
+    parameter named header for import_module loading and execution.
+
+    :param header Array of astropy headers"""
     obs_type = None
     datatype = header[0].get('DATATYPE')
     if datatype in DATATYPE_LOOKUP:
@@ -102,6 +196,12 @@ def get_obs_type(header):
 
 
 def get_obs_intent(header):
+    """Calculate the Observation-level intent from FITS header values.
+
+    Called to fill a blueprint value, must have a
+    parameter named header for import_module loading and execution.
+
+    :param header Array of astropy headers"""
     lookup = ObservationIntentType.CALIBRATION
     datatype = header[0].get('DATATYPE')
     if 'SCIENCE' in datatype or 'REDUC' in datatype:
@@ -110,6 +210,13 @@ def get_obs_intent(header):
 
 
 def get_obs_env_ambient_temp(header):
+    """Calculate the ambient temperature from FITS header values. Ignore
+    what is used for default values, if they exist.
+
+    Called to fill a blueprint value, must have a
+    parameter named header for import_module loading and execution.
+
+    :param header Array of astropy headers"""
     lookup = header[0].get('TEMP_WMO')
     if ((isinstance(lookup, float) or isinstance(lookup,
                                                  int)) and lookup < -99.):
@@ -118,6 +225,12 @@ def get_obs_env_ambient_temp(header):
 
 
 def get_plane_cal_level(header):
+    """Calculate the Plane-level calibration level from FITS header values.
+
+    Called to fill a blueprint value, must have a
+    parameter named header for import_module loading and execution.
+
+    :param header Array of astropy headers"""
     lookup = CalibrationLevel.RAW_STANDARD
     datatype = header[0].get('DATATYPE')
     if 'REDUC' in datatype:
@@ -126,6 +239,13 @@ def get_plane_cal_level(header):
 
 
 def get_product_type(header):
+    """Calculate the Plane-level, Artifact-level, Part-level, and Chunk-level
+     product type from FITS header values.
+
+    Called to fill a blueprint value, must have a
+    parameter named header for import_module loading and execution.
+
+    :param header Array of astropy headers"""
     lookup = ProductType.CALIBRATION
     datatype = header[0].get('DATATYPE')
     if 'SCIENCE' in datatype or 'REDUC' in datatype:
@@ -134,6 +254,13 @@ def get_product_type(header):
 
 
 def get_position_resolution(header):
+    """Calculate the Plane-level position RNDER values from other FITS header
+    values. Ignore values used by the telescope as defaults.
+
+    Called to fill a blueprint value, must have a
+    parameter named header for import_module loading and execution.
+
+    :param header Array of astropy headers"""
     temp = None
     temp_astr = _to_float(header[0].get('RMSASTR'))
     if temp_astr != -1.0:
@@ -145,13 +272,30 @@ def get_position_resolution(header):
 
 
 def get_start_ref_coord_val(header):
+    """Calculate the lower bound of the spectral energy coordinate from
+    FITS header values.
+
+    Called to fill a blueprint value, must have a
+    parameter named header for import_module loading and execution.
+
+    :param header Array of astropy headers"""
     wlen = header[0].get('WLEN')
     bandpass = header[0].get('BANDPASS')
-    return wlen - bandpass / 2.
-
+    if wlen is not None and bandpass is not None:
+        return wlen - bandpass / 2.
+    else:
+        return None
 
 def get_telescope_z(header):
+    """Calculate the telescope elevation from FITS header values.
+
+    Called to fill a blueprint value, must have a
+    parameter named header for import_module loading and execution.
+
+    :param header Array of astropy headers"""
     telescope = header[0].get('TELESCOP')
+    if telescope is None:
+        return None
     if 'OMM' in telescope:
         return 1100.
     elif 'CTIO' in telescope:
@@ -160,6 +304,11 @@ def get_telescope_z(header):
 
 
 def update(observation, **kwargs):
+    """Called to fill multiple CAOM model elements and/or attributes, must
+    have this signature for import_module loading and execution.
+
+    :param observation A CAOM Observation model instance.
+    :param **kwargs Everything else."""
     logging.debug('Begin update.')
 
     assert observation, 'non-null observation parameter'
@@ -188,11 +337,15 @@ def update(observation, **kwargs):
 
 
 def _update_energy(chunk, headers):
+    """Create SpectralWCS information using FITS headers, if available. If
+    the WLEN and BANDPASS keyword values are set to the defaults, there is
+    no energy information."""
     logging.debug('Begin _update_energy')
     assert isinstance(chunk, Chunk), 'Expecting type Chunk'
     wlen = headers[0].get('WLEN')
     bandpass = headers[0].get('BANDPASS')
-    if wlen < 0 or bandpass < 0:
+    if (wlen is None or wlen < 0 or
+            bandpass is None or bandpass < 0):
         chunk.energy = None
         chunk.energy_axis = None
         logging.debug(
@@ -211,6 +364,8 @@ def _update_energy(chunk, headers):
 
 
 def _update_time(chunk, headers):
+    """Create TemporalWCS information using FITS header information.
+    This information should always be available from the file."""
     logging.debug('Begin _update_time.')
     assert isinstance(chunk, Chunk), 'Expecting type Chunk'
 
@@ -218,20 +373,25 @@ def _update_time(chunk, headers):
     mjd_end = headers[0].get('MJD_END')
     if mjd_start is None or mjd_end is None:
         mjd_start, mjd_end = _convert_time(headers)
-    logging.debug(
-        'Calculating range with start {} and end {}.'.format(
-            mjd_start, mjd_start))
-    start = RefCoord(0.5, mjd_start)
-    end = RefCoord(1.5, mjd_end)
-    time_cf = CoordFunction1D(1, headers[0].get('TEXP'), start)
-    time_axis = CoordAxis1D(Axis('TIME', 'd'), function=time_cf)
-    time_axis.range = CoordRange1D(start, end)
-    chunk.time = TemporalWCS(time_axis)
-    chunk.time.exposure = headers[0].get('TEXP')
-    chunk.time.resolution = 0.1
-    chunk.time.timesys = 'UTC'
-    chunk.time.trefpos = 'TOPOCENTER'
-    chunk.time_axis = 4
+    if mjd_start is None or mjd_end is None:
+        chunk.time = None
+        logging.debug('Cannot calculate mjd_start {} or mjd_end {}'.format(
+            mjd_start, mjd_end))
+    else:
+        logging.debug(
+            'Calculating range with start {} and end {}.'.format(
+                mjd_start, mjd_start))
+        start = RefCoord(0.5, mjd_start)
+        end = RefCoord(1.5, mjd_end)
+        time_cf = CoordFunction1D(1, headers[0].get('TEXP'), start)
+        time_axis = CoordAxis1D(Axis('TIME', 'd'), function=time_cf)
+        time_axis.range = CoordRange1D(start, end)
+        chunk.time = TemporalWCS(time_axis)
+        chunk.time.exposure = headers[0].get('TEXP')
+        chunk.time.resolution = 0.1
+        chunk.time.timesys = 'UTC'
+        chunk.time.trefpos = 'TOPOCENTER'
+        chunk.time_axis = 4
     logging.debug('Done _update_time.')
 
 
@@ -287,6 +447,7 @@ def _get_datetime(from_value):
 
 
 def _build_blueprints(uri):
+    """"""
     # how the one-to-one values between the blueprint and the data are
     # programatically determined
     module = importlib.import_module(__name__)
