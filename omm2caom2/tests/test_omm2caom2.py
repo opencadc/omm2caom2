@@ -58,7 +58,13 @@ def test_main_app(test_name):
         main_app()
         obs_path = test_name.replace('header', 'xml')
         expected = _read_obs(obs_path)
-        actual = _read_obs(output_file)
+        logging.error('reading {}'.format(output_file))
+        actual = None
+        try:
+            actual = _read_obs(output_file)
+        except Exception as e:
+            logging.error('wtf??????')
+            logging.error(e)
         result = get_differences(expected, actual, 'Observation')
         if result:
             msg = 'Differences found in observation {}\n{}'. \

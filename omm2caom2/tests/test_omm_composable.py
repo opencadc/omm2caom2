@@ -67,23 +67,16 @@
 # ***********************************************************************
 #
 
-import logging
 import os
 
 from mock import Mock, patch
 
 from astropy.io import fits
 
-import cadcutils
-
 from omm2caom2 import omm_composable, omm_footprint_augmentation
-from omm2caom2 import omm_preview_augmentation
+from omm2caom2 import omm_preview_augmentation, manage_composable
 from caom2utils import fits2caom2
-# import omm_preview_augmentation
-# import omm_footprint_augmentation
 from caom2 import obs_reader_writer, SimpleObservation, Algorithm
-from caom2 import TypedOrderedDict, Plane
-# from cadc_des_composable import CadcException
 from omm2caom2 import CadcException
 
 
@@ -114,11 +107,16 @@ def test_meta_execute():
             'type': 'applicaton/octect-stream'})
     fits2caom2.get_cadc_headers = Mock(side_effect=_get_headers)
 
+    test_config = manage_composable.Config()
+    test_config.working_directory = THIS_DIR
+    test_config.collection = 'OMM'
+    test_config.netrc_file = 'test_netrc'
+    test_config.work_file = 'todo.txt'
+
     # run the test
     with patch('subprocess.Popen') as subprocess_mock:
         subprocess_mock.return_value.communicate.side_effect = _communicate
-        test_executor = omm_composable.Omm2Caom2Meta(test_obs_id, THIS_DIR,
-                                                     'OMM', 'test_netrc')
+        test_executor = omm_composable.Omm2Caom2Meta(test_config, test_obs_id)
         try:
             test_executor.execute(None)
         except CadcException as e:
@@ -143,11 +141,16 @@ def test_data_execute():
     omm_preview_augmentation.visit = Mock()
     obs_reader_writer.ObservationReader.read = Mock(side_effect=_read_obs)
 
+    test_config = manage_composable.Config()
+    test_config.working_directory = THIS_DIR
+    test_config.collection = 'OMM'
+    test_config.netrc_file = 'test_netrc'
+    test_config.work_file = 'todo.txt'
+
     # run the test
     with patch('subprocess.Popen') as subprocess_mock:
         subprocess_mock.return_value.communicate.side_effect = _communicate
-        test_executor = omm_composable.Omm2Caom2Data(test_obs_id, THIS_DIR,
-                                                     'OMM', 'test_netrc')
+        test_executor = omm_composable.Omm2Caom2Data(test_config, test_obs_id)
         try:
             test_executor.execute(None)
         except CadcException as e:

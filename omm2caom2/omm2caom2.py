@@ -67,24 +67,23 @@
 # ***********************************************************************
 #
 
+import importlib
 import logging
 import sys
 import traceback
-
-from datetime import datetime
 
 from caom2 import TargetType, ObservationIntentType, CalibrationLevel
 from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
 from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
-from caom2utils import gen_proc_no_args
+from caom2utils import augment
+from omm2caom2 import astro_composable, manage_composable
 
-from astropy.time import Time, TimeDelta
 
-import importlib
+__all__ = ['main_app', 'omm_augment', 'update']
 
-__all__ = ['main_app', 'main_app_kwargs', 'update']
 
+# map the fits file values to the DataProductType enums
 DATATYPE_LOOKUP = {'CALIB': 'flat',
                    'SCIENCE': 'object',
                    'FOCUS': 'focus',
@@ -181,6 +180,7 @@ def get_end_ref_coord_val(header):
     else:
         return None
 
+
 def get_obs_type(header):
     """Calculate the Observation-level data type from FITS header values.
 
@@ -262,10 +262,10 @@ def get_position_resolution(header):
 
     :param header Array of astropy headers"""
     temp = None
-    temp_astr = _to_float(header[0].get('RMSASTR'))
+    temp_astr = manage_composable.to_float(header[0].get('RMSASTR'))
     if temp_astr != -1.0:
         temp = temp_astr
-    temp_mass = _to_float(header[0].get('RMS2MASS'))
+    temp_mass = manage_composable.to_float(header[0].get('RMS2MASS'))
     if temp_mass != -1.0:
         temp = temp_mass
     return temp
@@ -285,6 +285,7 @@ def get_start_ref_coord_val(header):
         return wlen - bandpass / 2.
     else:
         return None
+
 
 def get_telescope_z(header):
     """Calculate the telescope elevation from FITS header values.
@@ -372,7 +373,7 @@ def _update_time(chunk, headers):
     mjd_start = headers[0].get('MJD_STAR')
     mjd_end = headers[0].get('MJD_END')
     if mjd_start is None or mjd_end is None:
-        mjd_start, mjd_end = _convert_time(headers)
+        mjd_start, mjd_end = astro_composable.convert_time(headers)
     if mjd_start is None or mjd_end is None:
         chunk.time = None
         logging.debug('Cannot calculate mjd_start {} or mjd_end {}'.format(
@@ -395,61 +396,16 @@ def _update_time(chunk, headers):
     logging.debug('Done _update_time.')
 
 
-# TODO - this can be moved to 'the common library code'
-def _convert_time(headers):
-    logging.debug('Begin _convert_time.')
-    date = headers[0].get('DATE-OBS')
-    exposure = headers[0].get('TEXP')
-    if date is not None and exposure is not None:
-        logging.debug(
-            'Use date {} and exposure {} to convert time.'.format(date,
-                                                                  exposure))
-        t_start = Time(_get_datetime(date))
-        dt = TimeDelta(exposure, format='sec')
-        t_end = t_start + dt
-        t_start.format = 'mjd'
-        t_end.format = 'mjd'
-        mjd_start = t_start.value
-        mjd_end = t_end.value
-        return mjd_start, mjd_end
-    return None, None
-
-
-# TODO - this can be moved to 'the common library code'
-def _to_float(value):
-    return float(value) if value is not None else None
-
-
-# TODO - this can be moved to 'the common library code'
-def _get_datetime(from_value):
-    """
-    Ensure datetime values are in MJD.
-    :param from_value:
-    :return:
-    """
-
-    if from_value:
-        try:
-            return datetime.strptime(from_value, '%Y-%m-%dT%H:%M:%S')
-        except ValueError:
-            try:
-                return datetime.strptime(from_value,
-                                         '%Y-%m-%d %H:%M:%S.%f')
-            except ValueError:
-                try:
-                    return datetime.strptime(from_value, '%Y-%m-%d')
-                except ValueError:
-                    logging.error(
-                        'Cannot parse datetime {}'.format(from_value))
-                    return None
-    else:
-        return None
-
-
 def _build_blueprints(uri):
-    """"""
-    # how the one-to-one values between the blueprint and the data are
-    # programatically determined
+    """This application relies on the caom2utils fits2caom2 ObsBlueprint
+    definition for mapping FITS file values to CAOM model element
+    attributes. This method builds the OMM blueprint for a single
+    artifact.
+
+    The blueprint handles the mapping of values with cardinality of 1:1
+    between the blueprint entries and the model attributes.
+
+    :param uri The artifact URI for the file to be processed."""
     module = importlib.import_module(__name__)
     blueprint = ObsBlueprint(module=module)
     accumulate_position(blueprint)
@@ -461,13 +417,97 @@ def _build_blueprints(uri):
     return blueprints
 
 
+# TODO - MOVE THIS
+def _build_uri(fname):
+    return 'ad:OMM/{}.fits.gz'.format(fname)
+
+
+def _decompose_lineage(lineage):
+    result = lineage.split('/')
+    return result[0], result[1]
+
+
+def omm_augment(**kwargs):
+
+    # the logic to identify cardinality is here - it's very specific to OMM,
+    # and won't be re-used anywhere else that I can currently think of ;)
+    # that means defining observations, product ids and uris is all
+    # done here
+
+    params = kwargs['params']
+    logging.error(params)
+    # fname = params['fname'].replace('.fits', '')
+    out_obs_xml = params['out_obs_xml']
+    netrc = False
+    if 'netrc' in params:
+        netrc = params['netrc']
+        logging.error('netrc value is {}'.format(netrc))
+    if 'plugin' in params:
+        plugin = params['plugin']
+    else:
+        plugin = __name__
+
+    fname = None
+    if 'fname' in params:
+        fname = params['fname']
+
+    if 'observation' in params:
+        observation = params['observation']
+    else:
+        observation = params['fname'].replace('.fits', '')
+
+    product_id = observation
+    collection = 'OMM'
+    artifact_uri = _build_uri(observation)
+
+    omm_science_file = artifact_uri
+    if 'blueprints' in params:
+        blueprints = params['blueprints']
+    else:
+        blueprints = _build_blueprints(artifact_uri)
+    kwargs['params']['visit_args'] = {'omm_science_file': omm_science_file}
+    augment(blueprints=blueprints, no_validate=True, dump_config=False,
+            # ignore_partial_wcs=True, plugin=__name__,
+            ignore_partial_wcs=True, plugin=plugin,
+            out_obs_xml=out_obs_xml, in_obs_xml=None, collection=collection,
+            observation=observation, product_id=product_id, uri=artifact_uri,
+            file_name=fname,
+            netrc=netrc, **kwargs)
+
+    logging.debug('modified Done omm2caom2 processing.')
+
+
+def _omm_augment_mapped(args):
+    logging.error(args)
+    # omm_science_file = args.local[0]
+    if args.observation:
+        fname = args.observation[1]
+        observation = args.observation[1]
+        uri = _build_uri(fname)
+    if args.lineage:
+        # fname, uri = args.lineage[0].split('/', 1)
+        fname, uri = _decompose_lineage(args.lineage[0])
+        observation = fname
+    if args.local:
+        fname = args.local[0]  # TODO so broken I can't even lol
+
+    blueprints = _build_blueprints(uri)
+    kwargs = {'params': {'fname': fname,
+                         'out_obs_xml': args.out_obs_xml,
+                         'blueprints': blueprints,
+                         'observation': observation}}
+    if args.plugin:
+        kwargs['params']['plugin'] = args.plugin
+    if args.netrc_file:
+        kwargs['params']['netrc'] = args.netrc_file
+
+    omm_augment(**kwargs)
+
+
 def main_app():
     args = get_gen_proc_arg_parser().parse_args()
-    uri = args.lineage[0].split('/', 1)[1]
-    blueprints = _build_blueprints(uri)
-    omm_science_file = args.local[0]
     try:
-        gen_proc(args, blueprints, omm_science_file=omm_science_file)
+        _omm_augment_mapped(args)
     except Exception as e:
         logging.error('Failed caom2gen execution.')
         logging.error(e)
@@ -476,43 +516,3 @@ def main_app():
         sys.exit(-1)
 
     logging.debug('Done omm2caom2 processing.')
-
-
-def main_app_kwargs(**kwargs):
-
-    # the logic to identify cardinality is here - it's very specific to OMM,
-    # and won't be re-used anywhere else that I can currently think of ;)
-    # that means defining lineage, uris, observations, product ids is all
-    # done here
-
-    fname = kwargs['params']['fname'].replace('.fits', '')
-    out_obs_xml = kwargs['params']['out_obs_xml']
-    collection = kwargs['params']['collection']
-    netrc = kwargs['params']['netrc']
-
-    product_id = fname
-    artifact_uri = 'ad:{}/{}.fits.gz'.format(collection, fname)
-
-    omm_science_file = artifact_uri
-    try:
-        blueprints = _build_blueprints(artifact_uri)
-        kwargs['params']['blueprints'] = blueprints
-        kwargs['params']['visit_args'] = {'omm_science_file': omm_science_file}
-        kwargs['params']['no_validate'] = True
-        kwargs['params']['dump_config'] = False
-        kwargs['params']['ignore_partial_wcs'] = True
-        kwargs['params']['plugin'] = __name__
-        kwargs['params']['out_obs_xml'] = out_obs_xml
-        kwargs['params']['observation'] = product_id
-        kwargs['params']['product_id'] = product_id
-        kwargs['params']['uri'] = artifact_uri
-        kwargs['params']['netrc'] = netrc
-        gen_proc_no_args(**kwargs)
-    except Exception as e:
-        logging.error('Failed caom2gen execution.')
-        logging.error(e)
-        tb = traceback.format_exc()
-        logging.error(tb)
-        sys.exit(-1)
-
-    logging.debug('modified Done omm2caom2 processing.')

@@ -70,17 +70,19 @@
 import logging
 import os
 import subprocess
+import traceback
 
 from omm2caom2 import omm_preview_augmentation, omm_footprint_augmentation
-from omm2caom2 import main_app_kwargs
+from omm2caom2 import manage_composable
+from omm2caom2 import omm_augment
 from caom2 import obs_reader_writer
 
 
-__all__ = ['Omm2Caom2Meta', 'Omm2Caom2Data', 'CadcException']
+__all__ = ['Omm2Caom2Meta', 'Omm2Caom2Data', 'run_by_file']
 
 
-class CadcException(Exception):
-    pass
+# class CadcException(Exception):
+#     pass
 
 
 # TODO configuration information from somewhere and somehow
@@ -94,15 +96,15 @@ class CaomExecute(object):
     # TODO - a lot of this content should reside in the composable
     # library
 
-    def __init__(self, obs_id, root_dir, collection, netrc):
+    def __init__(self, config, obs_id):
         self.obs_id = obs_id
-        self.root_dir = root_dir
-        self.collection = collection
+        self.root_dir = config.working_directory
+        self.collection = config.collection
         self.working_dir = os.path.join(self.root_dir, self.obs_id)
         self.fname = '{}.fits'.format(obs_id)
         self.model_fqn = os.path.join(self.working_dir,
                                       '{}.xml'.format(self.fname))
-        self.netrc_fqn = os.path.join(root_dir, netrc)
+        self.netrc_fqn = os.path.join(self.root_dir, config.netrc_file)
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)
 
@@ -111,10 +113,10 @@ class CaomExecute(object):
         if not os.path.exists(self.working_dir):
             os.mkdir(self.working_dir)
             if not os.path.exists(self.working_dir):
-                raise CadcException(
+                raise manage_composable.CadcException(
                     'Could not mkdir {}'.format(self.working_dir))
             if not os.access(self.working_dir, os.W_OK | os.X_OK):
-                raise CadcException(
+                raise manage_composable.CadcException(
                     '{} is not writeable.'.format(self.working_dir))
 
     def _cleanup(self):
@@ -127,7 +129,7 @@ class CaomExecute(object):
     def _check_credentials_exist(self):
         """Ensure named credentials exist in this environment."""
         if not os.path.exists(self.netrc_fqn):
-            raise CadcException(
+            raise manage_composable.CadcException(
                 'Credentials do not exist {}.'.format(self.netrc_fqn))
 
     def _repo_cmd_read(self):
@@ -145,7 +147,8 @@ class CaomExecute(object):
         except Exception as e:
             self.logger.debug(
                 'Error with command {}:: {}'.format(repo_cmd, e))
-            raise CadcException('Could not read observation in {}'.format(
+            raise manage_composable.CadcException(
+                'Could not read observation in {}'.format(
                 self.model_fqn))
 
     def _repo_cmd_delete(self):
@@ -161,7 +164,7 @@ class CaomExecute(object):
             self.logger.debug(
                 'Command {} had output {}'.format(repo_cmd, output))
             if outerr is not None and len(outerr) > 0:
-                raise CadcException(
+                raise manage_composable.CadcException(
                     '{} failed with {}'.format(repo_cmd, outerr))
             os.remove(self.model_fqn)
         except Exception as e:
@@ -184,12 +187,13 @@ class CaomExecute(object):
             self.logger.debug(
                 'Command {} had output {}'.format(repo_cmd, output))
             if outerr is not None and len(outerr) > 0:
-                raise CadcException(
+                raise manage_composable.CadcException(
                     '{} failed with {}'.format(repo_cmd, outerr))
         except Exception as e:
             self.logger.debug(
                 'Error with command {}:: {}'.format(repo_cmd, e))
-            raise CadcException('Could not store the observation in {}'.format(
+            raise manage_composable.CadcException(
+                'Could not store the observation in {}'.format(
                 self.model_fqn))
 
 
@@ -197,9 +201,8 @@ class Omm2Caom2Meta(CaomExecute):
     """Defines the pipeline step for OMM ingestion of metadata into CAOM2.
     This requires access to only header information."""
 
-    def __init__(self, obs_id, root_dir, collection, netrc):
-        super(Omm2Caom2Meta, self).__init__(
-            obs_id, root_dir, collection, netrc)
+    def __init__(self, config, obs_id):
+        super(Omm2Caom2Meta, self).__init__(config, obs_id)
 
     def execute(self, context):
         self.logger.debug('Begin execute for {} Meta'.format(__name__))
@@ -222,7 +225,7 @@ class Omm2Caom2Meta(CaomExecute):
             'out_obs_xml': self.model_fqn,
             'collection': self.collection,
             'netrc': self.netrc_fqn}}
-        main_app_kwargs(**kwargs)
+        omm_augment(**kwargs)
 
         self.logger.debug('store the xml')
         self._repo_cmd('create')
@@ -238,9 +241,8 @@ class Omm2Caom2Data(CaomExecute):
     and previews into CAOM2. These are all the operations that require
     access to the file on disk, not just the header data. """
 
-    def __init__(self, obs_id, root_dir, collection, netrc):
-        super(Omm2Caom2Data, self).__init__(
-            obs_id, root_dir, collection, netrc)
+    def __init__(self, config, obs_id):
+        super(Omm2Caom2Data, self).__init__(config, obs_id)
 
     def execute(self, context):
         self.logger.debug('Begin execute for {} Data'.format(__name__))
@@ -281,7 +283,7 @@ class Omm2Caom2Data(CaomExecute):
 
     def _generate_footprint(self, observation):
         kwargs = {'working_directory': self.working_dir,
-                  'science_file': '{}'.format(self.fname)}
+                  'science_file': self.fname}
         omm_footprint_augmentation.visit(observation, **kwargs)
 
     def _read_model(self):
@@ -309,9 +311,30 @@ class Omm2Caom2Data(CaomExecute):
             self.logger.debug(
                 'Command {} had outerr {}'.format(data_cmd, outerr))
             if not os.path.exists(fqn):
-                raise CadcException('Did not retrieve {}'.format(fqn))
+                raise manage_composable.CadcException(
+                    'Did not retrieve {}'.format(fqn))
         except Exception as e:
             self.logger.debug(
                 'Error writing files {}:: {}'.format(self.model_fqn, e))
-            raise CadcException('Could not store the observation in {}'.format(
-                self.model_fqn))
+            raise manage_composable.CadcException(
+                'Could not store the observation in {}'.format(
+                    self.model_fqn))
+
+
+def run_by_file():
+    try:
+        config = manage_composable.Config()
+        config.get_executors()
+        config.collection = 'OMM'
+        with open(config.work_fqn) as f:
+            for line in f:
+                obs_id = line.strip()
+                logging.info('Process {}'.format(obs_id))
+                meta = Omm2Caom2Meta(config, obs_id)
+                meta.execute(context=None)
+                data = Omm2Caom2Data(config, obs_id)
+                data.execute(context=None)
+    except Exception as e:
+        logging.error(e)
+        tb = traceback.format_exc()
+        logging.error(tb)
