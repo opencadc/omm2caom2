@@ -427,7 +427,17 @@ def _decompose_lineage(lineage):
     return result[0], result[1]
 
 
+def _lookup(lookup, params):
+    result = None
+    if lookup in params:
+        result = params[lookup]
+    return result
+
+
 def omm_augment(**kwargs):
+    """ There needs to be one augment method that takes the **kwargs value.
+    This is accessed by the execute method of the composable Operator
+    class."""
 
     # the logic to identify cardinality is here - it's very specific to OMM,
     # and won't be re-used anywhere else that I can currently think of ;)
@@ -435,13 +445,21 @@ def omm_augment(**kwargs):
     # done here
 
     params = kwargs['params']
-    logging.error(params)
-    # fname = params['fname'].replace('.fits', '')
-    out_obs_xml = params['out_obs_xml']
+
+    out_obs_xml = _lookup('out_obs_xml', params)
+    in_obs_xml = _lookup('in_obs_xml', params)
+    dump_config = _lookup('dump_config', params)
+    no_validate = _lookup('no_validate', params)
+    collection = _lookup('collection', params)
+
+    ignore_partial_wcs = True
+    if 'ignore_partial_wcs' in params:
+        ignore_partial_wcs = params['ignore_partial_wcs']
+
     netrc = False
     if 'netrc' in params:
         netrc = params['netrc']
-        logging.error('netrc value is {}'.format(netrc))
+
     if 'plugin' in params:
         plugin = params['plugin']
     else:
@@ -455,21 +473,18 @@ def omm_augment(**kwargs):
         observation = params['observation']
     else:
         observation = params['fname'].replace('.fits', '')
-
     product_id = observation
-    collection = 'OMM'
     artifact_uri = _build_uri(observation)
 
+    blueprints = _build_blueprints(artifact_uri)
+
     omm_science_file = artifact_uri
-    if 'blueprints' in params:
-        blueprints = params['blueprints']
-    else:
-        blueprints = _build_blueprints(artifact_uri)
     kwargs['params']['visit_args'] = {'omm_science_file': omm_science_file}
-    augment(blueprints=blueprints, no_validate=True, dump_config=False,
-            # ignore_partial_wcs=True, plugin=__name__,
-            ignore_partial_wcs=True, plugin=plugin,
-            out_obs_xml=out_obs_xml, in_obs_xml=None, collection=collection,
+    augment(blueprints=blueprints, no_validate=no_validate,
+            dump_config=dump_config, ignore_partial_wcs=ignore_partial_wcs,
+            plugin=plugin,
+            out_obs_xml=out_obs_xml, in_obs_xml=in_obs_xml,
+            collection=collection,
             observation=observation, product_id=product_id, uri=artifact_uri,
             file_name=fname,
             netrc=netrc, **kwargs)
@@ -478,28 +493,40 @@ def omm_augment(**kwargs):
 
 
 def _omm_augment_mapped(args):
+    """There needs to be one augment method that takes the args value,
+    returned by argsparser.parse_args(). This is used by the main
+    method for this module."""
+
     logging.error(args)
-    # omm_science_file = args.local[0]
     if args.observation:
         fname = args.observation[1]
         observation = args.observation[1]
-        uri = _build_uri(fname)
     if args.lineage:
-        # fname, uri = args.lineage[0].split('/', 1)
         fname, uri = _decompose_lineage(args.lineage[0])
         observation = fname
     if args.local:
         fname = args.local[0]  # TODO so broken I can't even lol
 
-    blueprints = _build_blueprints(uri)
     kwargs = {'params': {'fname': fname,
-                         'out_obs_xml': args.out_obs_xml,
-                         'blueprints': blueprints,
+                         'collection': 'OMM',
                          'observation': observation}}
+
     if args.plugin:
         kwargs['params']['plugin'] = args.plugin
     if args.netrc_file:
         kwargs['params']['netrc'] = args.netrc_file
+    if args.no_validate:
+        kwargs['params']['no_validate'] = args.no_validate
+    if args.dumpconfig:
+        kwargs['params']['dump_config'] = args.dumpconfig
+    if args.in_obs_xml:
+        kwargs['params']['in_obs_xml'] = args.in_obs_xml
+    if args.out_obs_xml:
+        kwargs['params']['out_obs_xml'] = args.out_obs_xml
+    if args.ignorePartialWCS:
+        kwargs['params']['ignore_partial_wcs'] = args.ignorePartialWCS
+    if args.lineage:
+        kwargs['params']['lineage'] = args.lineage
 
     omm_augment(**kwargs)
 
