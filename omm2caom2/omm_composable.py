@@ -81,10 +81,6 @@ from caom2 import obs_reader_writer
 __all__ = ['Omm2Caom2Meta', 'Omm2Caom2Data', 'run_by_file']
 
 
-# class CadcException(Exception):
-#     pass
-
-
 # TODO configuration information from somewhere and somehow
 RESOURCE_ID = 'ivo://cadc.nrc.ca/sc2repo'
 
@@ -107,6 +103,7 @@ class CaomExecute(object):
         self.netrc_fqn = os.path.join(self.root_dir, config.netrc_file)
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)
+        logging.error('working dir is {}'.format(self.working_dir))
 
     def _create_dir(self):
         """Create the working area if it does not already exist."""
@@ -221,10 +218,11 @@ class Omm2Caom2Meta(CaomExecute):
         self.logger.debug('generate the xml, as the main_app will retrieve '
                           'the headers')
         kwargs = {'params': {
-            'fname': self.fname,
+            'observation': self.fname.split('.')[0],
             'out_obs_xml': self.model_fqn,
             'collection': self.collection,
-            'netrc': self.netrc_fqn}}
+            'netrc': self.netrc_fqn,
+            'debug': True}}
         omm_augment(**kwargs)
 
         self.logger.debug('store the xml')
@@ -326,6 +324,8 @@ def run_by_file():
         config = manage_composable.Config()
         config.get_executors()
         config.collection = 'OMM'
+        logger = logging.getLogger()
+        logger.setLevel(config.logging_level)
         with open(config.work_fqn) as f:
             for line in f:
                 obs_id = line.strip()

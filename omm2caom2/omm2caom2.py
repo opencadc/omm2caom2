@@ -439,10 +439,7 @@ def omm_augment(**kwargs):
     This is accessed by the execute method of the composable Operator
     class."""
 
-    # the logic to identify cardinality is here - it's very specific to OMM,
-    # and won't be re-used anywhere else that I can currently think of ;)
-    # that means defining observations, product ids and uris is all
-    # done here
+    logging.debug('Begin omm_augment.')
 
     params = kwargs['params']
 
@@ -483,6 +480,12 @@ def omm_augment(**kwargs):
 
     omm_science_file = artifact_uri
     kwargs['params']['visit_args'] = {'omm_science_file': omm_science_file}
+
+    # the logic to identify cardinality is here - it's very specific to OMM,
+    # and won't be re-used anywhere else that I can currently think of ;)
+    # that means defining observations, product ids and uris is all
+    # done here
+
     augment(blueprints=blueprints, no_validate=no_validate,
             dump_config=dump_config, ignore_partial_wcs=ignore_partial_wcs,
             plugin=plugin, out_obs_xml=out_obs_xml, in_obs_xml=in_obs_xml,

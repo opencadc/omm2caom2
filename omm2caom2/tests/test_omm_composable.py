@@ -90,6 +90,8 @@ TESTDATA_DIR = os.path.join(THIS_DIR, 'data')
 def test_meta_execute():
     test_obs_id = 'test_obs_id'
     test_dir = os.path.join(THIS_DIR, test_obs_id)
+    test_output_fname = os.path.join(test_dir,
+                                     '{}.fits.xml'.format(test_obs_id))
 
     # clean up from previous tests
     if os.path.exists(test_dir):
@@ -103,7 +105,7 @@ def test_meta_execute():
     fits2caom2._get_cadc_meta = Mock(return_value={'size': 37,
             'md5sum': 'e330482de75d5c4c88ce6f6ef99035ea',
             'type': 'applicaton/octect-stream'})
-    fits2caom2._get_headers_from_fits = Mock(side_effect=_get_headers)
+    fits2caom2.get_cadc_headers = Mock(side_effect=_get_headers)
 
     test_config = manage_composable.Config()
     test_config.working_directory = THIS_DIR
@@ -127,6 +129,8 @@ def test_meta_execute():
 def test_data_execute():
     test_obs_id = 'test_obs_id'
     test_dir = os.path.join(THIS_DIR, test_obs_id)
+    # test_model_fqn = os.path.join(test_dir,
+    #                               '{}.fits.xml'.format(test_obs_id))
     test_fits_fqn = os.path.join(test_dir,
                                  '{}.fits'.format(test_obs_id))
     os.mkdir(test_dir)
@@ -161,7 +165,7 @@ def _communicate():
     return ['return status', None]
 
 
-def _get_headers(subject):
+def _get_headers(uri, subject):
     x = """SIMPLE  =                    T / Written by IDL:  Fri Oct  6 01:48:35 2017      
 BITPIX  =                  -32 / Bits per pixel                                 
 NAXIS   =                    2 / Number of dimensions                           
