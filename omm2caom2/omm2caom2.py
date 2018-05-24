@@ -451,6 +451,9 @@ def omm_augment(**kwargs):
     dump_config = _lookup('dump_config', params)
     no_validate = _lookup('no_validate', params)
     collection = _lookup('collection', params)
+    verbose = _lookup('verbose', params)
+    debug = _lookup('debug', params)
+    quiet = _lookup('quiet', params)
 
     ignore_partial_wcs = True
     if 'ignore_partial_wcs' in params:
@@ -482,12 +485,10 @@ def omm_augment(**kwargs):
     kwargs['params']['visit_args'] = {'omm_science_file': omm_science_file}
     augment(blueprints=blueprints, no_validate=no_validate,
             dump_config=dump_config, ignore_partial_wcs=ignore_partial_wcs,
-            plugin=plugin,
-            out_obs_xml=out_obs_xml, in_obs_xml=in_obs_xml,
-            collection=collection,
-            observation=observation, product_id=product_id, uri=artifact_uri,
-            file_name=fname,
-            netrc=netrc, **kwargs)
+            plugin=plugin, out_obs_xml=out_obs_xml, in_obs_xml=in_obs_xml,
+            collection=collection, observation=observation,
+            product_id=product_id, uri=artifact_uri, file_name=fname,
+            netrc=netrc, verbose=verbose, debug=debug, quiet=quiet, **kwargs)
 
     logging.debug('modified Done omm2caom2 processing.')
 
@@ -497,7 +498,6 @@ def _omm_augment_mapped(args):
     returned by argsparser.parse_args(). This is used by the main
     method for this module."""
 
-    logging.error(args)
     if args.observation:
         fname = args.observation[1]
         observation = args.observation[1]
@@ -505,7 +505,9 @@ def _omm_augment_mapped(args):
         fname, uri = _decompose_lineage(args.lineage[0])
         observation = fname
     if args.local:
-        fname = args.local[0]  # TODO so broken I can't even lol
+        # TODO OMM doesn't support multi-file observations, but this isn't
+        # a general solution
+        fname = args.local[0]
 
     kwargs = {'params': {'fname': fname,
                          'collection': 'OMM',
@@ -527,6 +529,12 @@ def _omm_augment_mapped(args):
         kwargs['params']['ignore_partial_wcs'] = args.ignorePartialWCS
     if args.lineage:
         kwargs['params']['lineage'] = args.lineage
+    if args.debug:
+        kwargs['params']['debug'] = args.debug
+    if args.quiet:
+        kwargs['params']['quiet'] = args.quiet
+    if args.verbose:
+        kwargs['params']['verbose'] = args.verbose
 
     omm_augment(**kwargs)
 
