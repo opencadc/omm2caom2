@@ -1,0 +1,6 @@
+working_directory: /usr/src/app/
+netrc_filename: test_netrc
+resource_id: ivo://cadc.nrc.ca/sc2repo
+todo_file_name: todo.txt
+use_local_files: False
+logging_level: DEBUG
