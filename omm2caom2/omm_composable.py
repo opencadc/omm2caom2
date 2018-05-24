@@ -81,10 +81,6 @@ from caom2 import obs_reader_writer
 __all__ = ['Omm2Caom2Meta', 'Omm2Caom2Data', 'run_by_file']
 
 
-# TODO configuration information from somewhere and somehow
-RESOURCE_ID = 'ivo://cadc.nrc.ca/sc2repo'
-
-
 class CaomExecute(object):
     """Abstract class that defines the operations common to all OMM
     Execute classes."""
@@ -101,8 +97,9 @@ class CaomExecute(object):
         self.model_fqn = os.path.join(self.working_dir,
                                       '{}.xml'.format(self.fname))
         self.netrc_fqn = os.path.join(self.root_dir, config.netrc_file)
+        self.resource_id = config.resource_id
         self.logger = logging.getLogger()
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(config.logging_level)
         logging.error('working dir is {}'.format(self.working_dir))
 
     def _create_dir(self):
@@ -133,7 +130,7 @@ class CaomExecute(object):
         """Retrieve the existing observaton model metadata."""
         repo_cmd = 'caom2-repo read --resource-id {} --netrc {} ' \
                    '{} {} -o {}'.format(
-                       RESOURCE_ID, self.netrc_fqn, self.collection,
+                       self.resource_id, self.netrc_fqn, self.collection,
                        self.obs_id, self.model_fqn).split()
         try:
             output, outerr = subprocess.Popen(
@@ -152,7 +149,7 @@ class CaomExecute(object):
         """Retrieve the existing observaton model metadata."""
         repo_cmd = 'caom2-repo delete --resource-id {} --netrc {} ' \
                    '{} {}'.format(
-                    RESOURCE_ID, self.netrc_fqn, self.collection,
+                    self.resource_id, self.netrc_fqn, self.collection,
                     self.obs_id).split()
         try:
             output, outerr = subprocess.Popen(
@@ -175,7 +172,7 @@ class CaomExecute(object):
     def _repo_cmd(self, operation):
         """This repo operation will work for either create or update."""
         repo_cmd = 'caom2-repo {} --resource-id {} --netrc ' \
-                   '{} {}'.format(operation, RESOURCE_ID,
+                   '{} {}'.format(operation, self.resource_id,
                                   self.netrc_fqn, self.model_fqn).split()
         try:
             output, outerr = subprocess.Popen(

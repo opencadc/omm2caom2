@@ -103,6 +103,9 @@ class Config(object):
         # changes expectations of the executors for handling files on disk
         self.use_local_file = False
 
+        # which service instance to use
+        self.resource_id = None
+
         # the logging level - enforced throughout the pipeline
         self.logging_level = None
 
@@ -148,6 +151,14 @@ class Config(object):
     @use_local_file.setter
     def use_local_file(self, value):
         self._use_local_file = value
+
+    @property
+    def resource_id(self):
+        return self._resource_id
+
+    @collection.setter
+    def resource_id(self, value):
+        self._resource_id = value
 
     @property
     def logging_level(self):
