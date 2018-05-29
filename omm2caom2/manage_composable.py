@@ -69,11 +69,12 @@
 
 import logging
 import os
+import subprocess
 import yaml
 
 from datetime import datetime
 
-__all__ = ['CadcException', 'Config', 'get_datetime', 'to_float']
+__all__ = ['CadcException', 'Config', 'get_datetime', 'to_float', 'exec_cmd']
 
 
 class CadcException(Exception):
@@ -260,3 +261,47 @@ def get_datetime(from_value):
 def to_float(value):
     """Cast to float, without throwing an exception."""
     return float(value) if value is not None else None
+
+
+def exec_cmd(cmd):
+    """
+    This does command execution as a subprocess call.
+
+    :param cmd the text version of the command being executed
+    :return None
+    """
+    logging.debug(cmd)
+    cmd_array = cmd.split()
+    try:
+        output, outerr = subprocess.Popen(cmd_array, stdout=subprocess.PIPE,
+                                          stderr=subprocess.PIPE).communicate()
+        if len(output) > 0:
+            logging.debug('Command {} had output {}'.format(cmd, output))
+        if len(outerr) > 0:
+            logging.debug('Command {} had outerr {}'.format(cmd, outerr))
+    except Exception as e:
+        logging.debug('Error with command {}:: {}'.format(cmd, e))
+        raise CadcException('Could not execute cmd {}'.format(cmd))
+
+
+def exec_cmd_redirect(cmd, fqn):
+    """
+    This does command execution as a subprocess call. It redirects stdout
+    to fqn, and assumes binary output for the re-direct.
+
+    :param cmd the text version of the command being executed
+    :param fqn the fully-qualified name of the file to which stdout is
+        re-directed
+    :return None
+    """
+    logging.debug(cmd)
+    cmd_array = cmd.split()
+    try:
+        with open(fqn, 'wb') as outfile:
+            outerr = subprocess.Popen(
+                cmd_array, stdout=outfile, stderr=subprocess.PIPE).communicate()
+            if len(outerr) > 0:
+                logging.debug('Command {} had outerr {}'.format(cmd, outerr))
+    except Exception as e:
+        logging.debug('Error with command {}:: {}'.format(cmd, e))
+        raise CadcException('Could not execute cmd {}'.format(cmd))

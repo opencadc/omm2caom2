@@ -73,7 +73,7 @@ import subprocess
 import traceback
 
 from omm2caom2 import omm_preview_augmentation, omm_footprint_augmentation
-from omm2caom2 import manage_composable
+from omm2caom2 import manage_composable, OmmName
 from omm2caom2 import omm_augment
 from caom2 import obs_reader_writer
 
@@ -93,9 +93,9 @@ class CaomExecute(object):
         self.root_dir = config.working_directory
         self.collection = config.collection
         self.working_dir = os.path.join(self.root_dir, self.obs_id)
-        self.fname = '{}.fits'.format(obs_id)
+        self.fname = OmmName(obs_id).get_file_name()
         self.model_fqn = os.path.join(self.working_dir,
-                                      '{}.xml'.format(self.fname))
+                                      OmmName(obs_id).get_model_file_name())
         self.netrc_fqn = os.path.join(self.root_dir, config.netrc_file)
         self.resource_id = config.resource_id
         self.logger = logging.getLogger()

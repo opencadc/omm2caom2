@@ -80,7 +80,7 @@ from caom2utils import augment
 from omm2caom2 import astro_composable, manage_composable
 
 
-__all__ = ['main_app', 'omm_augment', 'update']
+__all__ = ['main_app', 'omm_augment', 'update', 'OmmName', 'CaomName']
 
 
 # map the fits file values to the DataProductType enums
@@ -91,6 +91,47 @@ DATATYPE_LOOKUP = {'CALIB': 'flat',
                    'TEST': 'test',
                    'REJECT': 'reject',
                    'CALRED': 'flat'}
+
+
+class OmmName(object):
+
+    def __init__(self, obs_id):
+        self.obs_id = obs_id
+
+    # TODO - MOVE THIS
+    def get_file_uri(self):
+        return 'ad:OMM/{}.gz'.format(self.get_file_name())
+
+    def get_file_name(self):
+        return '{}.fits'.format(self.obs_id)
+
+    def get_model_file_name(self):
+        return '{}.fits.xml'.format(self.obs_id)
+
+    def get_prev(self):
+        return '{}_prev.jpg'.format(self.obs_id)
+
+    def get_thumb(self):
+        return '{}_prev_256.jpg'.format(self.obs_id)
+
+    def get_prev_uri(self):
+        return self._get_uri(self.get_prev())
+
+    def get_thumb_uri(self):
+        return self._get_uri(self.get_thumb())
+
+    @staticmethod
+    def _get_uri(fname):
+        return 'ad:OMM/{}'.format(fname)
+
+
+class CaomName(object):
+
+    def __init__(self, uri):
+        self.uri = uri
+
+    def get_file_id(self):
+        return self.uri.split('/')[1].split('.')[0]
 
 
 def accumulate_obs(bp):
@@ -417,11 +458,6 @@ def _build_blueprints(uri):
     return blueprints
 
 
-# TODO - MOVE THIS
-def _build_uri(fname):
-    return 'ad:OMM/{}.fits.gz'.format(fname)
-
-
 def _decompose_lineage(lineage):
     result = lineage.split('/')
     return result[0], result[1]
@@ -474,7 +510,7 @@ def omm_augment(**kwargs):
     else:
         observation = params['fname'].replace('.fits', '')
     product_id = observation
-    artifact_uri = _build_uri(observation)
+    artifact_uri = OmmName(observation).get_file_uri()
 
     blueprints = _build_blueprints(artifact_uri)
 

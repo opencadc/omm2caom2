@@ -70,7 +70,7 @@
 import logging
 import os
 
-from mock import Mock
+from mock import Mock, patch
 
 from omm2caom2 import manage_composable, omm_composable
 
@@ -98,3 +98,21 @@ def test_run_by_file():
         omm_composable.run_by_file()
     except manage_composable.CadcException as e:
         assert False, 'but the work list is empty'
+
+
+@patch('omm2caom2.manage_composable.logging')
+def test_exec_cmd(mock_logging):
+    test_cmd = 'ls'
+    manage_composable.exec_cmd(test_cmd)
+    assert mock_logging.debug.called
+
+
+def test_exec_cmd_redirect():
+    fqn = os.path.join(TESTDATA_DIR, 'exec_cmd_redirect.txt')
+    if os.path.exists(fqn):
+        os.remove(fqn)
+
+    test_cmd = 'ls'
+    manage_composable.exec_cmd_redirect(test_cmd, fqn)
+    assert os.path.exists(fqn)
+    assert os.stat(fqn).st_size > 0

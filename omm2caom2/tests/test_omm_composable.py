@@ -77,7 +77,7 @@ from omm2caom2 import omm_composable, omm_footprint_augmentation
 from omm2caom2 import omm_preview_augmentation, manage_composable
 from caom2utils import fits2caom2
 from caom2 import obs_reader_writer, SimpleObservation, Algorithm
-from omm2caom2 import CadcException
+from omm2caom2 import CadcException, OmmName
 
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -90,8 +90,6 @@ TESTDATA_DIR = os.path.join(THIS_DIR, 'data')
 def test_meta_execute():
     test_obs_id = 'test_obs_id'
     test_dir = os.path.join(THIS_DIR, test_obs_id)
-    test_output_fname = os.path.join(test_dir,
-                                     '{}.fits.xml'.format(test_obs_id))
 
     # clean up from previous tests
     if os.path.exists(test_dir):
@@ -130,16 +128,17 @@ def test_meta_execute():
 def test_data_execute():
     test_obs_id = 'test_obs_id'
     test_dir = os.path.join(THIS_DIR, test_obs_id)
-    # test_model_fqn = os.path.join(test_dir,
-    #                               '{}.fits.xml'.format(test_obs_id))
     test_fits_fqn = os.path.join(test_dir,
-                                 '{}.fits'.format(test_obs_id))
+                                 OmmName(test_obs_id).get_file_name())
     os.mkdir(test_dir)
     precondition = open(test_fits_fqn, 'w')
     precondition.close()
 
+    footprint_orig = omm_footprint_augmentation.visit
     omm_footprint_augmentation.visit = Mock()
+    preview_orig = omm_preview_augmentation.visit
     omm_preview_augmentation.visit = Mock()
+    read_orig = obs_reader_writer.ObservationReader.read
     obs_reader_writer.ObservationReader.read = Mock(side_effect=_read_obs)
 
     test_config = manage_composable.Config()
@@ -161,6 +160,9 @@ def test_data_execute():
     # check that things worked as expected - cleanup should have occurred
     assert omm_footprint_augmentation.visit.called
     assert omm_preview_augmentation.visit.called
+    obs_reader_writer.ObservationReader.read = read_orig
+    omm_footprint_augmentation.visit = footprint_orig
+    omm_preview_augmentation.visit = preview_orig
 
 
 def _communicate():
