@@ -203,6 +203,9 @@ class Config(object):
             self.use_local_file = bool(
                 self._lookup(config, 'use_local_files', False))
             self.logging_level = self._lookup(config, 'logging_level', 'DEBUG')
+            self.collection = self._lookup(config, 'collection', 'TEST')
+            self.resource_id = self._lookup(
+                config, 'resource_id', 'ivo://cadc.nrc.ca/sc2repo')
             logging.error(self)
         except KeyError as e:
             raise CadcException(
