@@ -156,7 +156,7 @@ class Config(object):
     def resource_id(self):
         return self._resource_id
 
-    @collection.setter
+    @resource_id.setter
     def resource_id(self, value):
         self._resource_id = value
 
