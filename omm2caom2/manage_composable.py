@@ -157,7 +157,7 @@ class Config(object):
     def resource_id(self):
         return self._resource_id
 
-    @collection.setter
+    @resource_id.setter
     def resource_id(self, value):
         self._resource_id = value
 
@@ -187,9 +187,10 @@ class Config(object):
                'work_fqn:: \'{}\' ' \
                'netrc_file:: \'{}\' ' \
                'collection:: \'{}\' ' \
+               'resource_id:: \'{}\' ' \
                'logging_level:: \'{}\''.format(
                 self.working_directory, self.work_fqn, self.netrc_file,
-                self.collection, self.logging_level)
+                self.collection, self.resource_id, self.logging_level)
 
     def get_executors(self):
         """Look up the configuration values in the data structure extracted
@@ -204,6 +205,9 @@ class Config(object):
             self.use_local_file = bool(
                 self._lookup(config, 'use_local_files', False))
             self.logging_level = self._lookup(config, 'logging_level', 'DEBUG')
+            self.collection = self._lookup(config, 'collection', 'TEST')
+            self.resource_id = self._lookup(
+                config, 'resource_id', 'ivo://cadc.nrc.ca/sc2repo')
             logging.error(self)
         except KeyError as e:
             raise CadcException(
@@ -275,9 +279,9 @@ def exec_cmd(cmd):
     try:
         output, outerr = subprocess.Popen(cmd_array, stdout=subprocess.PIPE,
                                           stderr=subprocess.PIPE).communicate()
-        if len(output) > 0:
+        if output is not None and len(output) > 0:
             logging.debug('Command {} had output {}'.format(cmd, output))
-        if len(outerr) > 0:
+        if outerr is not None and len(outerr) > 0:
             logging.debug('Command {} had outerr {}'.format(cmd, outerr))
     except Exception as e:
         logging.debug('Error with command {}:: {}'.format(cmd, e))

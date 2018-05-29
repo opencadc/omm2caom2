@@ -148,21 +148,24 @@ def test_data_execute():
     test_config.work_file = 'todo.txt'
     test_config.logging_level = 'DEBUG'
 
-    # run the test
-    with patch('subprocess.Popen') as subprocess_mock:
-        subprocess_mock.return_value.communicate.side_effect = _communicate
-        test_executor = omm_composable.Omm2Caom2Data(test_config, test_obs_id)
-        try:
-            test_executor.execute(None)
-        except CadcException as e:
-            assert False, e
+    try:
+        # run the test
+        with patch('subprocess.Popen') as subprocess_mock:
+            subprocess_mock.return_value.communicate.side_effect = _communicate
+            test_executor = omm_composable.Omm2Caom2Data(test_config,
+                                                         test_obs_id)
+            try:
+                test_executor.execute(None)
+            except CadcException as e:
+                assert False, e
 
-    # check that things worked as expected - cleanup should have occurred
-    assert omm_footprint_augmentation.visit.called
-    assert omm_preview_augmentation.visit.called
-    obs_reader_writer.ObservationReader.read = read_orig
-    omm_footprint_augmentation.visit = footprint_orig
-    omm_preview_augmentation.visit = preview_orig
+        # check that things worked as expected
+        assert omm_footprint_augmentation.visit.called
+        assert omm_preview_augmentation.visit.called
+    finally:
+        obs_reader_writer.ObservationReader.read = read_orig
+        omm_footprint_augmentation.visit = footprint_orig
+        omm_preview_augmentation.visit = preview_orig
 
 
 def _communicate():

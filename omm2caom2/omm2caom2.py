@@ -529,7 +529,7 @@ def omm_augment(**kwargs):
             product_id=product_id, uri=artifact_uri, file_name=fname,
             netrc=netrc, verbose=verbose, debug=debug, quiet=quiet, **kwargs)
 
-    logging.debug('modified Done omm2caom2 processing.')
+    logging.debug('Done omm_augment.')
 
 
 def _omm_augment_mapped(args):
