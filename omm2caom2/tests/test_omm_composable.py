@@ -84,9 +84,6 @@ THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 TESTDATA_DIR = os.path.join(THIS_DIR, 'data')
 
 
-# TODO make this work with the delete/create behaviour that seems to make
-# the web service behaviour more reproducible
-#
 def test_meta_execute():
     test_obs_id = 'test_obs_id'
     test_dir = os.path.join(THIS_DIR, test_obs_id)

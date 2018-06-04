@@ -46,7 +46,7 @@ def test_main_app(test_name):
             get_file_info
 
         sys.argv = \
-            ('omm2caom2 --no_validate --ignorePartialWCS --local {} '
+            ('omm2caom2 --no_validate --local {} '
              '--plugin {} --observation OMM {} -o {} --lineage {}'.
             format(local, plugin, product_id, output_file,
                    lineage)).split()
