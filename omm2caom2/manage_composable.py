@@ -101,7 +101,7 @@ class Config(object):
         self.collection = None
 
         # changes expectations of the executors for handling files on disk
-        self.use_local_file = False
+        self.use_local_files = False
 
         # which service instance to use
         self.resource_id = None
@@ -145,18 +145,18 @@ class Config(object):
         self._collection = value
 
     @property
-    def use_local_file(self):
-        return self._use_local_file
+    def use_local_files(self):
+        return self._use_local_files
 
-    @use_local_file.setter
-    def use_local_file(self, value):
-        self._use_local_file = value
+    @use_local_files.setter
+    def use_local_files(self, value):
+        self._use_local_files = value
 
     @property
     def resource_id(self):
         return self._resource_id
 
-    @collection.setter
+    @resource_id.setter
     def resource_id(self, value):
         self._resource_id = value
 
@@ -200,7 +200,9 @@ class Config(object):
             self.work_file = self._lookup(config, 'todo_file_name', 'todo.txt')
             self.netrc_file = \
                 self._lookup(config, 'netrc_filename', 'test_netrc')
-            self.use_local_file = bool(
+            self.resource_id = self._lookup(
+                config, 'resource_id', 'ivo://cadc.nrc.ca/sc2repo')
+            self.use_local_files = bool(
                 self._lookup(config, 'use_local_files', False))
             self.logging_level = self._lookup(config, 'logging_level', 'DEBUG')
             logging.error(self)

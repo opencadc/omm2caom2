@@ -1,6 +1,9 @@
-working_directory: /usr/src/app/
+working_directory: /usr/src/app/test_pipelines/omm/test_data
 netrc_filename: test_netrc
+# operational value is ivo://cadc.nrc.ca/caom2repo
 resource_id: ivo://cadc.nrc.ca/sc2repo
 todo_file_name: todo.txt
-use_local_files: False
-logging_level: DEBUG
+# values True False
+use_local_files: True
+# values DEBUG INFO WARN ERROR
+logging_level: INFO

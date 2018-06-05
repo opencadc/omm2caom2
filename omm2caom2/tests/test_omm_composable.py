@@ -77,21 +77,16 @@ from omm2caom2 import omm_composable, omm_footprint_augmentation
 from omm2caom2 import omm_preview_augmentation, manage_composable
 from caom2utils import fits2caom2
 from caom2 import obs_reader_writer, SimpleObservation, Algorithm
-from omm2caom2 import CadcException
+from omm2caom2 import CadcException, OmmName
 
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 TESTDATA_DIR = os.path.join(THIS_DIR, 'data')
 
 
-# TODO make this work with the delete/create behaviour that seems to make
-# the web service behaviour more reproducible
-#
 def test_meta_execute():
     test_obs_id = 'test_obs_id'
     test_dir = os.path.join(THIS_DIR, test_obs_id)
-    test_output_fname = os.path.join(test_dir,
-                                     '{}.fits.xml'.format(test_obs_id))
 
     # clean up from previous tests
     if os.path.exists(test_dir):
@@ -127,13 +122,55 @@ def test_meta_execute():
     assert fits2caom2._get_cadc_meta.called
 
 
+def test_meta_local_execute():
+    test_obs_id = 'test_obs_id'
+    test_output_fname = os.path.join(TESTDATA_DIR,
+                                     OmmName(test_obs_id).get_model_file_name())
+
+    # clean up from previous tests
+    if os.path.exists(test_output_fname):
+        os.remove(test_output_fname)
+    netrc = os.path.join(TESTDATA_DIR, 'test_netrc')
+    assert os.path.exists(netrc)
+
+    # mocks for this test
+    meta_orig = fits2caom2._get_file_meta
+    fits2caom2._get_file_meta = Mock(return_value={'size': 37,
+                                                   'md5sum': 'e330482de75d5c4c88ce6f6ef99035ea',
+                                                   'type': 'applicaton/octect-stream'})
+    headers_orig = fits2caom2._get_headers_from_fits
+    fits2caom2._get_headers_from_fits = Mock(side_effect=_get_headers)
+
+    test_config = manage_composable.Config()
+    test_config.working_directory = TESTDATA_DIR
+    test_config.collection = 'OMM'
+    test_config.netrc_file = 'test_netrc'
+    test_config.logging_level = 'INFO'
+
+    # run the test
+    with patch('subprocess.Popen') as subprocess_mock:
+        subprocess_mock.return_value.communicate.side_effect = _communicate
+        test_executor = omm_composable.Omm2Caom2LocalMeta(
+            test_config, test_obs_id)
+        try:
+            test_executor.execute(None)
+        except CadcException as e:
+            assert False, e
+
+    # check that things worked as expected
+    # assert fits2caom2._get_headers_from_fits.called
+    assert fits2caom2._get_cadc_meta.called
+    assert os.path.exists(test_output_fname)
+
+    fits2caom2._get_headers_from_fits = headers_orig
+    fits2caom2._get_file_meta = meta_orig
+
+
 def test_data_execute():
     test_obs_id = 'test_obs_id'
     test_dir = os.path.join(THIS_DIR, test_obs_id)
-    # test_model_fqn = os.path.join(test_dir,
-    #                               '{}.fits.xml'.format(test_obs_id))
     test_fits_fqn = os.path.join(test_dir,
-                                 '{}.fits'.format(test_obs_id))
+                                 OmmName(test_obs_id).get_file_name())
     os.mkdir(test_dir)
     precondition = open(test_fits_fqn, 'w')
     precondition.close()
@@ -159,6 +196,40 @@ def test_data_execute():
             assert False, e
 
     # check that things worked as expected - cleanup should have occurred
+    assert omm_footprint_augmentation.visit.called
+    assert omm_preview_augmentation.visit.called
+
+
+def test_data_local_execute():
+    test_obs_id = 'test_obs_id'
+    # test_fits_fqn = os.path.join(TESTDATA_DIR,
+    #                              OmmName(test_obs_id).get_file_name())
+    # os.mkdir(test_dir)
+    # precondition = open(test_fits_fqn, 'w')
+    # precondition.close()
+
+    omm_footprint_augmentation.visit = Mock()
+    omm_preview_augmentation.visit = Mock()
+    obs_reader_writer.ObservationReader.read = Mock(side_effect=_read_obs)
+
+    test_config = manage_composable.Config()
+    test_config.working_directory = THIS_DIR
+    test_config.collection = 'OMM'
+    test_config.netrc_file = 'test_netrc'
+    test_config.work_file = 'todo.txt'
+    test_config.logging_level = 'DEBUG'
+
+    # run the test
+    with patch('subprocess.Popen') as subprocess_mock:
+        subprocess_mock.return_value.communicate.side_effect = _communicate
+        test_executor = omm_composable.Omm2Caom2LocalData(test_config,
+                                                          test_obs_id)
+        try:
+            test_executor.execute(None)
+        except CadcException as e:
+            assert False, e
+
+    # check that things worked as expected - no cleanup
     assert omm_footprint_augmentation.visit.called
     assert omm_preview_augmentation.visit.called
 

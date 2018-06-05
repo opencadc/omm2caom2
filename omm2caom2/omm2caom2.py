@@ -75,12 +75,12 @@ import traceback
 from caom2 import TargetType, ObservationIntentType, CalibrationLevel
 from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
 from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
-from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
+from caom2utils import ObsBlueprint, get_gen_proc_arg_parser
 from caom2utils import augment
 from omm2caom2 import astro_composable, manage_composable
 
 
-__all__ = ['main_app', 'omm_augment', 'update']
+__all__ = ['main_app', 'omm_augment', 'update', 'OmmName']
 
 
 # map the fits file values to the DataProductType enums
@@ -91,6 +91,47 @@ DATATYPE_LOOKUP = {'CALIB': 'flat',
                    'TEST': 'test',
                    'REJECT': 'reject',
                    'CALRED': 'flat'}
+
+
+class OmmName(object):
+
+    def __init__(self, obs_id):
+        self.obs_id = obs_id
+
+    # TODO - MOVE THIS
+    def get_file_uri(self):
+        return 'ad:OMM/{}.gz'.format(self.get_file_name())
+
+    def get_file_name(self):
+        return '{}.fits'.format(self.obs_id)
+
+    def get_model_file_name(self):
+        return '{}.fits.xml'.format(self.obs_id)
+
+    def get_prev(self):
+        return '{}_prev.jpg'.format(self.obs_id)
+
+    def get_thumb(self):
+        return '{}_prev_256.jpg'.format(self.obs_id)
+
+    def get_prev_uri(self):
+        return self._get_uri(self.get_prev())
+
+    def get_thumb_uri(self):
+        return self._get_uri(self.get_thumb())
+
+    @staticmethod
+    def _get_uri(fname):
+        return 'ad:OMM/{}'.format(fname)
+
+
+class CaomName(object):
+
+    def __init__(self, uri):
+        self.uri = uri
+
+    def get_file_id(self):
+        return self.uri.split('/')[1].split('.')[0]
 
 
 def accumulate_obs(bp):
@@ -448,9 +489,20 @@ def omm_augment(**kwargs):
     dump_config = _lookup('dump_config', params)
     no_validate = _lookup('no_validate', params)
     collection = _lookup('collection', params)
-    verbose = _lookup('verbose', params)
-    debug = _lookup('debug', params)
-    quiet = _lookup('quiet', params)
+    if 'logging_level' in params:
+        debug = False
+        verbose = False
+        quiet = False
+        if params['logging_level'] == 10:
+            debug = True
+        elif params['logging_level'] == 20:
+            verbose = True
+        elif params['logging_level'] == 30:
+            quiet = True
+    else:
+        verbose = _lookup('verbose', params)
+        debug = _lookup('debug', params)
+        quiet = _lookup('quiet', params)
 
     ignore_partial_wcs = True
     if 'ignore_partial_wcs' in params:
@@ -468,6 +520,8 @@ def omm_augment(**kwargs):
     fname = None
     if 'fname' in params:
         fname = params['fname']
+    if 'local' in params:
+        fname = params['local'][0]
 
     if 'observation' in params:
         observation = params['observation']
@@ -485,6 +539,8 @@ def omm_augment(**kwargs):
     # and won't be re-used anywhere else that I can currently think of ;)
     # that means defining observations, product ids and uris is all
     # done here
+
+    logging.error(kwargs)
 
     augment(blueprints=blueprints, no_validate=no_validate,
             dump_config=dump_config, ignore_partial_wcs=ignore_partial_wcs,
@@ -547,7 +603,7 @@ def main_app():
     try:
         _omm_augment_mapped(args)
     except Exception as e:
-        logging.error('Failed caom2gen execution.')
+        logging.error('Failed caom2gen execution for {}.'.format(args))
         logging.error(e)
         tb = traceback.format_exc()
         logging.error(tb)
