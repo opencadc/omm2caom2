@@ -261,6 +261,7 @@ class Config(object):
             self.logging_level = self._lookup(config, 'logging_level', 'DEBUG')
             self.stream = self._lookup(config, 'stream', 'raw')
             self.task_types = self._set_task_types(config, [TaskType.SCRAPE])
+            self.collection = self._lookup(config, 'collection', 'TEST')
         except KeyError as e:
             raise CadcException(
                 'Error in config file {}'.format(e))
