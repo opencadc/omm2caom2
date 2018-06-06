@@ -1,4 +1,4 @@
-working_directory: /usr/src/app/test_pipelines/omm/test_data
+working_directory: /usr/src/app
 netrc_filename: test_netrc
 # operational value is ivo://cadc.nrc.ca/caom2repo
 resource_id: ivo://cadc.nrc.ca/sc2repo
