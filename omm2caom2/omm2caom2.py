@@ -123,6 +123,9 @@ class OmmName(object):
     def get_obs_id(self):
         return self.obs_id
 
+    def get_log_file(self):
+        return '{}.log'.format(self.obs_id)
+
     @staticmethod
     def _get_uri(fname):
         return 'ad:OMM/{}'.format(fname)

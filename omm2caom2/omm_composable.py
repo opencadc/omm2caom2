@@ -585,15 +585,33 @@ class OrganizeExecutes(object):
         return execution
 
 
+def _set_up_file_logging(config, obs_id):
+    log_h = None
+    if config.log_to_file:
+        log_fqn = os.path.join(config.working_directory,
+                               OmmName(obs_id).get_log_file())
+        log_h = logging.FileHandler(log_fqn)
+        log_h.setLevel(config.logging_level)
+        logging.getLogger().addHandler(log_h)
+    return log_h
+
+
+def _unset_file_logging(config, log_h):
+    if config.log_to_file:
+        logging.getLogger().removeHandler(log_h)
+
+
 def _run_todo_file(config, organizer):
     with open(config.work_fqn) as f:
         for line in f:
             obs_id = line.strip()
+            log_h = _set_up_file_logging(config, obs_id)
             logging.info('Process {}'.format(obs_id))
             executors = organizer.choose(obs_id)
             for executor in executors:
                 logging.info('Step {} for {}'.format(executor, obs_id))
                 executor.execute(context=None)
+            _unset_file_logging(config, log_h)
 
 
 def _run_local_files(config, organizer):
@@ -602,10 +620,12 @@ def _run_local_files(config, organizer):
         if do_file.endswith('.fits') or do_file.endswith('.fits.gz'):
             logging.info('Process {}'.format(do_file))
             obs_id = do_file.split('.')[0]
+            log_h = _set_up_file_logging(config, obs_id)
             executors = organizer.choose(obs_id)
             for executor in executors:
                 logging.info('Step {} for {}'.format(executor, obs_id))
                 executor.execute(context=None)
+            _unset_file_logging(config, log_h)
 
 
 def run_by_file():

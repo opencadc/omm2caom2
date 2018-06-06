@@ -118,6 +118,9 @@ class Config(object):
         # the logging level - enforced throughout the pipeline
         self.logging_level = None
 
+        # write the log to a file?
+        self.log_to_file = False
+
         # the ad 'stream' that goes with the collection - use when storing
         # files
         self.stream = None
@@ -181,6 +184,14 @@ class Config(object):
         self._resource_id = value
 
     @property
+    def log_to_file(self):
+        return self._log_to_file
+
+    @log_to_file.setter
+    def log_to_file(self, value):
+        self._log_to_file = value
+
+    @property
     def logging_level(self):
         return self._logging_level
 
@@ -230,9 +241,16 @@ class Config(object):
                'work_fqn:: \'{}\' ' \
                'netrc_file:: \'{}\' ' \
                'collection:: \'{}\' ' \
+               'task_types:: \'{}\' ' \
+               'stream:: \'{}\' ' \
+               'resource_id:: \'{}\' ' \
+               'use_local_files:: \'{}\' ' \
+               'log_to_file:: \'{}\' ' \
                'logging_level:: \'{}\''.format(
                 self.working_directory, self.work_fqn, self.netrc_file,
-                self.collection, self.logging_level)
+                self.collection, self.task_types, self.stream,
+                self.resource_id, self.use_local_files, self.log_to_file,
+                self.logging_level)
 
     @staticmethod
     def _set_task_types(config, default=None):
@@ -259,6 +277,7 @@ class Config(object):
             self.use_local_files = bool(
                 self._lookup(config, 'use_local_files', False))
             self.logging_level = self._lookup(config, 'logging_level', 'DEBUG')
+            self.log_to_file = self._lookup(config, 'log_to_file', False)
             self.stream = self._lookup(config, 'stream', 'raw')
             self.task_types = self._set_task_types(config, [TaskType.SCRAPE])
             self.collection = self._lookup(config, 'collection', 'TEST')

@@ -6,7 +6,9 @@ todo_file_name: todo.txt
 # values True False
 use_local_files: True
 # values DEBUG INFO WARN ERROR
-logging_level: INFO
+logging_level: DEBUG
+# values True False
+log_to_file: True
 # ad stream value - sorry
 stream: raw
 # how to control the work that gets done
@@ -26,5 +28,5 @@ stream: raw
 # ingest, enhance => with use_local_files set to False
 #
 task_types: 
-  - scrape
+  - ingest
   - enhance
