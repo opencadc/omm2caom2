@@ -590,7 +590,7 @@ class OrganizeExecutes(object):
 def _run_todo_file(config, organizer):
     with open(config.work_fqn) as f:
         for line in f:
-            obs_id = line.strip()
+            obs_id = line.strip().upper()
             logging.info('Process {}'.format(obs_id))
             executors = organizer.choose(obs_id)
             for executor in executors:
