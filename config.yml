@@ -1,4 +1,4 @@
-working_directory: /usr/src/app/test_pipelines/omm/test_data
+working_directory: /usr/src/app
 netrc_filename: test_netrc
 # operational value is ivo://cadc.nrc.ca/caom2repo
 resource_id: ivo://cadc.nrc.ca/sc2repo
@@ -18,12 +18,13 @@ stream: raw
 #
 # these combinations have been tested:
 # scrape => with use_local_files set to True
+# scrape, enhance => with use_local_files set to True, will not write to service
 #
 # store, ingest, enhance => with use_local_files set to True
+# ingest, enhance => with use_local_files set to True
 #
 # ingest, enhance => with use_local_files set to False
 #
 task_types: 
-  - store
-  - ingest
+  - scrape
   - enhance

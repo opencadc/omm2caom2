@@ -492,6 +492,59 @@ class Omm2Caom2Scrape(CaomExecute):
         self.logger.debug('End execute for {}'.format(__name__))
 
 
+class Omm2Caom2DataScrape(CaomExecute):
+    """Defines the pipeline step for OMM generation and ingestion of footprints
+    and previews with no update to the service at the end. These are all the
+    operations that require access to the file on disk. This class assumes
+    it has access to the files on disk. The organization of this class
+    assumes the 'Scrape' task has been done previously, so the model
+    instance exists on disk."""
+
+    def __init__(self, config, obs_id):
+        super(Omm2Caom2DataScrape, self).__init__(config, obs_id)
+        # when files are on disk don't worry about a separate directory
+        # per observation
+        self.working_dir = self.root_dir
+        self.model_fqn = os.path.join(self.working_dir,
+                                      OmmName(obs_id).get_model_file_name())
+
+    def execute(self, context):
+        self.logger.debug('Begin execute for {} Data'.format(__name__))
+
+        self.logger.debug('get observation for the existing model from disk')
+        observation = self._read_model()
+
+        self.logger.debug('generate the previews')
+        self._generate_previews(observation)
+
+        self.logger.debug('generate the footprint')
+        self._generate_footprint(observation)
+
+        self.logger.debug('output the updated xml')
+        self._write_model(observation)
+
+        self.logger.debug('End execute for {}'.format(__name__))
+
+    def _generate_previews(self, observation):
+        kwargs = {'working_directory': self.working_dir,
+                  'netrc_fqn': self.netrc_fqn}
+        omm_preview_augmentation.visit(observation, **kwargs)
+
+    def _generate_footprint(self, observation):
+        kwargs = {'working_directory': self.working_dir,
+                  'science_file': self.fname}
+        omm_footprint_augmentation.visit(observation, **kwargs)
+
+    def _read_model(self):
+        reader = obs_reader_writer.ObservationReader(False)
+        observation = reader.read(self.model_fqn)
+        return observation
+
+    def _write_model(self, observation):
+        writer = obs_reader_writer.ObservationWriter()
+        writer.write(observation, self.model_fqn)
+
+
 class OrganizeExecutes(object):
     """How to turn on/off various steps in the OMM pipeline."""
 
@@ -520,7 +573,12 @@ class OrganizeExecutes(object):
                     execution.append(Omm2Caom2Meta(self.config, obs_id))
             elif task_type == manage_composable.TaskType.ENHANCE:
                 if self.config.use_local_files:
-                    execution.append(Omm2Caom2LocalData(self.config, obs_id))
+                    if isinstance(execution[0], Omm2Caom2Scrape):
+                        execution.append(
+                            Omm2Caom2DataScrape(self.config, obs_id))
+                    else:
+                        execution.append(
+                            Omm2Caom2LocalData(self.config, obs_id))
                 else:
                     execution.append(Omm2Caom2Data(self.config, obs_id))
             else:

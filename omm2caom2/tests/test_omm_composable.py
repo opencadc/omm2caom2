@@ -288,6 +288,35 @@ def test_scrape():
     fits2caom2._get_headers_from_fits = headers_orig
 
 
+def test_data_scrape_execute():
+    test_obs_id = 'test_obs_id'
+
+    omm_footprint_augmentation.visit = Mock()
+    omm_preview_augmentation.visit = Mock()
+    obs_reader_writer.ObservationReader.read = Mock(side_effect=_read_obs)
+
+    test_config = manage_composable.Config()
+    test_config.working_directory = THIS_DIR
+    test_config.collection = 'OMM'
+    test_config.netrc_file = 'test_netrc'
+    test_config.work_file = 'todo.txt'
+    test_config.logging_level = 'DEBUG'
+
+    # run the test
+    with patch('subprocess.Popen') as subprocess_mock:
+        subprocess_mock.return_value.communicate.side_effect = _communicate
+        test_executor = omm_composable.Omm2Caom2DataScrape(test_config,
+                                                          test_obs_id)
+        try:
+            test_executor.execute(None)
+        except CadcException as e:
+            assert False, e
+
+    # check that things worked as expected - no cleanup
+    assert omm_footprint_augmentation.visit.called
+    assert omm_preview_augmentation.visit.called
+
+
 def test_organize_executes():
     test_obs_id = 'test_obs_id'
     test_config = manage_composable.Config()
@@ -325,6 +354,16 @@ def test_organize_executes():
     assert len(executors) == 2
     assert isinstance(executors[0], omm_composable.Omm2Caom2Meta)
     assert isinstance(executors[1], omm_composable.Omm2Caom2Data)
+
+    test_config.task_types = [manage_composable.TaskType.SCRAPE,
+                              manage_composable.TaskType.ENHANCE]
+    test_config.use_local_files = True
+    test_oe = omm_composable.OrganizeExecutes(test_config)
+    executors = test_oe.choose(test_obs_id)
+    assert executors is not None
+    assert len(executors) == 2
+    assert isinstance(executors[0], omm_composable.Omm2Caom2Scrape)
+    assert isinstance(executors[1], omm_composable.Omm2Caom2DataScrape)
 
 
 def _communicate():
