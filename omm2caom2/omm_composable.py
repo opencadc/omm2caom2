@@ -606,12 +606,14 @@ def _run_todo_file(config, organizer):
         for line in f:
             obs_id = line.strip()
             log_h = _set_up_file_logging(config, obs_id)
-            logging.info('Process {}'.format(obs_id))
-            executors = organizer.choose(obs_id)
-            for executor in executors:
-                logging.info('Step {} for {}'.format(executor, obs_id))
-                executor.execute(context=None)
-            _unset_file_logging(config, log_h)
+            try:
+                logging.info('Process {}'.format(obs_id))
+                executors = organizer.choose(obs_id)
+                for executor in executors:
+                    logging.info('Step {} for {}'.format(executor, obs_id))
+                    executor.execute(context=None)
+            finally:
+                _unset_file_logging(config, log_h)
 
 
 def _run_local_files(config, organizer):
@@ -621,11 +623,13 @@ def _run_local_files(config, organizer):
             logging.info('Process {}'.format(do_file))
             obs_id = do_file.split('.')[0]
             log_h = _set_up_file_logging(config, obs_id)
-            executors = organizer.choose(obs_id)
-            for executor in executors:
-                logging.info('Step {} for {}'.format(executor, obs_id))
-                executor.execute(context=None)
-            _unset_file_logging(config, log_h)
+            try:
+                executors = organizer.choose(obs_id)
+                for executor in executors:
+                    logging.info('Step {} for {}'.format(executor, obs_id))
+                    executor.execute(context=None)
+            finally:
+                _unset_file_logging(config, log_h)
 
 
 def run_by_file():
