@@ -167,7 +167,7 @@ def test_meta_local_execute():
 
 
 def test_data_execute():
-    test_obs_id = 'test_obs_id'
+    test_obs_id = 'TEST_OBS_ID'
     test_dir = os.path.join(THIS_DIR, test_obs_id)
     test_fits_fqn = os.path.join(test_dir,
                                  OmmName(test_obs_id).get_file_name())

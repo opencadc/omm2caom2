@@ -475,8 +475,6 @@ class Omm2Caom2Scrape(CaomExecute):
     def execute(self, context):
         self.logger.debug('Begin execute for {} Meta'.format(__name__))
         self.logger.debug('the steps:')
-        self.logger.debug('make sure named credentials exist')
-        self._check_credentials_exist()
 
         self.logger.debug('generate the xml from the file on disk')
         fqn = os.path.join(self.working_dir, self.fname)
