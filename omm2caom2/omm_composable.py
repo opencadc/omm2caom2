@@ -79,7 +79,8 @@ from caom2 import obs_reader_writer
 
 
 __all__ = ['Omm2Caom2Meta', 'Omm2Caom2Data', 'run_by_file',
-           'Omm2Caom2LocalMeta', 'Omm2Caom2LocalData']
+           'Omm2Caom2LocalMeta', 'Omm2Caom2LocalData', 'Omm2Caom2Store',
+           'Omm2Caom2Scrape']
 
 
 class CaomExecute(object):
@@ -240,6 +241,8 @@ class Omm2Caom2LocalMeta(CaomExecute):
 
     def __init__(self, config, obs_id):
         super(Omm2Caom2LocalMeta, self).__init__(config, obs_id)
+        # when files are on disk don't worry about a separate directory
+        # per observation
         self.working_dir = self.root_dir
         self.model_fqn = os.path.join(self.working_dir,
                                       OmmName(obs_id).get_model_file_name())
@@ -255,8 +258,7 @@ class Omm2Caom2LocalMeta(CaomExecute):
                           'for updates than for creates.')
         self._repo_cmd_delete()
 
-        self.logger.debug('generate the xml, as the main_app will retrieve '
-                          'the headers')
+        self.logger.debug('generate the xml from the file on disk')
         fqn = os.path.join(self.working_dir, self.fname)
         kwargs = {'params': {
             'local': [fqn],
@@ -366,6 +368,8 @@ class Omm2Caom2LocalData(CaomExecute):
 
     def __init__(self, config, obs_id):
         super(Omm2Caom2LocalData, self).__init__(config, obs_id)
+        # when files are on disk don't worry about a separate directory
+        # per observation
         self.working_dir = self.root_dir
         self.model_fqn = os.path.join(self.working_dir,
                                       OmmName(obs_id).get_model_file_name())
@@ -413,6 +417,91 @@ class Omm2Caom2LocalData(CaomExecute):
         writer.write(observation, self.model_fqn)
 
 
+class Omm2Caom2Store(CaomExecute):
+    """Defines the pipeline step for OMM storage of a file. This requires
+    access to the file on disk. It will gzip compress the file."""
+
+    def __init__(self, config, obs_id):
+        super(Omm2Caom2Store, self).__init__(config, obs_id)
+        # when files are on disk don't worry about a separate directory
+        # per observation
+        self.working_dir = self.root_dir
+        self.storage_host = config.storage_host
+        self.stream = config.stream
+
+    def execute(self, context):
+        self.logger.debug('Begin execute for {} Data'.format(__name__))
+        self.logger.debug('make sure named credentials exist')
+        self._check_credentials_exist()
+
+        self.logger.debug('store the input file to ad')
+        self._cadc_data_put()
+
+        self.logger.debug('End execute for {}'.format(__name__))
+
+    def _cadc_data_put(self):
+        """Store a collection file."""
+        fqn = os.path.join(self.working_dir, self.fname)
+        data_cmd = 'cadc-data put -c --netrc {} ' \
+                   '{} {} {}'.format(self.netrc_fqn,
+                                     self.collection, self.stream,
+                                     fqn).split()
+        try:
+            output, outerr = subprocess.Popen(
+                data_cmd, stdout=subprocess.PIPE).communicate()
+            self.logger.debug(
+                'Command {} had output {}'.format(data_cmd, output))
+            self.logger.debug(
+                'Command {} had outerr {}'.format(data_cmd, outerr))
+        except Exception as e:
+            self.logger.debug('Error writing file {}:: {}'.format(fqn, e))
+            raise manage_composable.CadcException(
+                'Could not store the file {}'.format(fqn))
+
+
+class Omm2Caom2Scrape(CaomExecute):
+    """Defines the pipeline step for OMM creation of a CAOM2 model
+    observation. The file containing the metadata is located on disk.
+    No record is written to a web service."""
+
+    def __init__(self, config, obs_id):
+        super(Omm2Caom2Scrape, self).__init__(config, obs_id)
+        # when files are on disk don't worry about a separate directory
+        # per observation
+        self.working_dir = self.root_dir
+        self.model_fqn = os.path.join(self.working_dir,
+                                      OmmName(obs_id).get_model_file_name())
+
+    def execute(self, context):
+        self.logger.debug('Begin execute for {} Meta'.format(__name__))
+        self.logger.debug('the steps:')
+        self.logger.debug('make sure named credentials exist')
+        self._check_credentials_exist()
+
+        self.logger.debug('generate the xml from the file on disk')
+        fqn = os.path.join(self.working_dir, self.fname)
+        kwargs = {'params': {
+            'local': [fqn],
+            'observation': self.fname.split('.')[0],
+            'out_obs_xml': self.model_fqn,
+            'collection': self.collection,
+            'netrc': self.netrc_fqn,
+            'logging_level': self.logger.getEffectiveLevel()}}
+        omm_augment(**kwargs)
+
+        self.logger.debug('End execute for {}'.format(__name__))
+
+
+# class OrganizeExecutes(object):
+#     """How to turn on/off various steps in the OMM pipeline."""
+#
+#     def __init__(self, config):
+#         pass
+#
+#     def choose(self, option):
+#         pass
+#
+
 def _run_todo_file(config):
     with open(config.work_fqn) as f:
         for line in f:
@@ -435,6 +524,8 @@ def _run_local_files(config):
                 meta.execute(context=None)
                 data = Omm2Caom2LocalData(config, obs_id)
                 data.execute(context=None)
+                store = Omm2Caom2Store(config, obs_id)
+                store.execute(context=None)
             except Exception as e:
                 logging.error('Failed for {}'.format(do_file))
                 raise e

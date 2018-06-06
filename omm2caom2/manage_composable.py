@@ -109,6 +109,14 @@ class Config(object):
         # the logging level - enforced throughout the pipeline
         self.logging_level = None
 
+        # the ad 'stream' that goes with the collection - use when storing
+        # files
+        self.stream = None
+
+        # the ad 'host' to store files to - used for testing cadc-data put
+        # commands only, should usually be None
+        self.storage_host = None
+
     @property
     def working_directory(self):
         return self._working_directory
@@ -172,6 +180,22 @@ class Config(object):
                   'ERROR': logging.ERROR}
         if value in lookup:
             self._logging_level = lookup[value]
+
+    @property
+    def stream(self):
+        return self._stream
+
+    @stream.setter
+    def stream(self, value):
+        self._stream = value
+
+    @property
+    def storage_host(self):
+        return self._storage_host
+
+    @storage_host.setter
+    def storage_host(self, value):
+        self._storage_host = value
 
     @staticmethod
     def _lookup(config, lookup, default):

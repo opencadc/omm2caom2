@@ -7,3 +7,5 @@ todo_file_name: todo.txt
 use_local_files: True
 # values DEBUG INFO WARN ERROR
 logging_level: INFO
+# ad stream value - sorry
+stream: raw
