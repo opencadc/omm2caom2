@@ -71,13 +71,22 @@ import logging
 import os
 import yaml
 
+from aenum import Enum
 from datetime import datetime
 
-__all__ = ['CadcException', 'Config', 'get_datetime', 'to_float']
+__all__ = ['CadcException', 'Config', 'get_datetime', 'to_float', 'TaskType']
 
 
 class CadcException(Exception):
     pass
+
+
+class TaskType(Enum):
+    """The possible steps in the OMM pipeline."""
+    STORE = 'store'
+    SCRAPE = 'scrape'
+    INGEST = 'ingest'
+    ENHANCE = 'enhance'
 
 
 class Config(object):
@@ -116,6 +125,9 @@ class Config(object):
         # the ad 'host' to store files to - used for testing cadc-data put
         # commands only, should usually be None
         self.storage_host = None
+
+        # the way to control which steps get executed
+        self.task_types = None
 
     @property
     def working_directory(self):
@@ -197,6 +209,14 @@ class Config(object):
     def storage_host(self, value):
         self._storage_host = value
 
+    @property
+    def task_type(self):
+        return self._task_type
+
+    @task_type.setter
+    def task_type(self, value):
+        self._task_type = value
+
     @staticmethod
     def _lookup(config, lookup, default):
         if lookup in config:
@@ -214,6 +234,16 @@ class Config(object):
                 self.working_directory, self.work_fqn, self.netrc_file,
                 self.collection, self.logging_level)
 
+    @staticmethod
+    def _set_task_types(config, default=None):
+        task_types = []
+        if 'task_types' in config:
+            for ii in config['task_types']:
+                task_types.append(TaskType(ii))
+            return task_types
+        else:
+            return default
+
     def get_executors(self):
         """Look up the configuration values in the data structure extracted
         from the configuration file."""
@@ -229,7 +259,8 @@ class Config(object):
             self.use_local_files = bool(
                 self._lookup(config, 'use_local_files', False))
             self.logging_level = self._lookup(config, 'logging_level', 'DEBUG')
-            logging.error(self)
+            self.stream = self._lookup(config, 'stream', 'raw')
+            self.task_types = self._set_task_types(config, [TaskType.SCRAPE])
         except KeyError as e:
             raise CadcException(
                 'Error in config file {}'.format(e))

@@ -288,6 +288,44 @@ def test_scrape():
     fits2caom2._get_headers_from_fits = headers_orig
 
 
+def test_organize_executes():
+    test_obs_id = 'test_obs_id'
+    test_config = manage_composable.Config()
+    test_config.working_directory = THIS_DIR
+    test_config.collection = 'OMM'
+    test_config.netrc_file = 'test_netrc'
+    test_config.work_file = 'todo.txt'
+    test_config.logging_level = 'DEBUG'
+    test_config.use_local_files = True
+
+    test_config.task_types = [manage_composable.TaskType.SCRAPE]
+    test_oe = omm_composable.OrganizeExecutes(test_config)
+    executors = test_oe.choose(test_obs_id)
+    assert executors is not None
+    assert len(executors) == 1
+    assert isinstance(executors[0], omm_composable.Omm2Caom2Scrape)
+
+    test_config.task_types = [manage_composable.TaskType.STORE,
+                              manage_composable.TaskType.INGEST,
+                              manage_composable.TaskType.ENHANCE]
+    test_oe = omm_composable.OrganizeExecutes(test_config)
+    executors = test_oe.choose(test_obs_id)
+    assert executors is not None
+    assert len(executors) == 3
+    assert isinstance(executors[0], omm_composable.Omm2Caom2Store)
+    assert isinstance(executors[1], omm_composable.Omm2Caom2LocalMeta)
+    assert isinstance(executors[2], omm_composable.Omm2Caom2LocalData)
+
+    test_config.use_local_files = False
+    test_config.task_types = [manage_composable.TaskType.INGEST,
+                              manage_composable.TaskType.ENHANCE]
+    test_oe = omm_composable.OrganizeExecutes(test_config)
+    executors = test_oe.choose(test_obs_id)
+    assert executors is not None
+    assert len(executors) == 2
+    assert isinstance(executors[0], omm_composable.Omm2Caom2Meta)
+    assert isinstance(executors[1], omm_composable.Omm2Caom2Data)
+
 
 def _communicate():
     return ['return status', None]

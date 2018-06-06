@@ -80,7 +80,7 @@ from caom2 import obs_reader_writer
 
 __all__ = ['Omm2Caom2Meta', 'Omm2Caom2Data', 'run_by_file',
            'Omm2Caom2LocalMeta', 'Omm2Caom2LocalData', 'Omm2Caom2Store',
-           'Omm2Caom2Scrape']
+           'Omm2Caom2Scrape', 'OrganizeExecutes']
 
 
 class CaomExecute(object):
@@ -492,43 +492,64 @@ class Omm2Caom2Scrape(CaomExecute):
         self.logger.debug('End execute for {}'.format(__name__))
 
 
-# class OrganizeExecutes(object):
-#     """How to turn on/off various steps in the OMM pipeline."""
-#
-#     def __init__(self, config):
-#         pass
-#
-#     def choose(self, option):
-#         pass
-#
+class OrganizeExecutes(object):
+    """How to turn on/off various steps in the OMM pipeline."""
 
-def _run_todo_file(config):
+    def __init__(self, config):
+        self.config = config
+        self.task_types = config.task_types
+        self.logger = logging.getLogger()
+        self.logger.setLevel(config.logging_level)
+
+    def choose(self, obs_id):
+        execution = []
+        for task_type in self.task_types:
+            self.logger.error(task_type)
+            if task_type == manage_composable.TaskType.SCRAPE:
+                execution.append(Omm2Caom2Scrape(self.config, obs_id))
+            elif task_type == manage_composable.TaskType.STORE:
+                if self.config.use_local_files:
+                    execution.append(Omm2Caom2Store(self.config, obs_id))
+                else:
+                    raise manage_composable.CadcException(
+                        'use_local_files must be True with Task Type "STORE"')
+            elif task_type == manage_composable.TaskType.INGEST:
+                if self.config.use_local_files:
+                    execution.append(Omm2Caom2LocalMeta(self.config, obs_id))
+                else:
+                    execution.append(Omm2Caom2Meta(self.config, obs_id))
+            elif task_type == manage_composable.TaskType.ENHANCE:
+                if self.config.use_local_files:
+                    execution.append(Omm2Caom2LocalData(self.config, obs_id))
+                else:
+                    execution.append(Omm2Caom2Data(self.config, obs_id))
+            else:
+                raise manage_composable.CadcException(
+                    'Do not understand task type {}'.format(task_type))
+        return execution
+
+
+def _run_todo_file(config, organizer):
     with open(config.work_fqn) as f:
         for line in f:
             obs_id = line.strip()
             logging.info('Process {}'.format(obs_id))
-            meta = Omm2Caom2Meta(config, obs_id)
-            meta.execute(context=None)
-            data = Omm2Caom2Data(config, obs_id)
-            data.execute(context=None)
+            executors = organizer.choose(obs_id)
+            for executor in executors:
+                logging.info('Step {} for {}'.format(executor, obs_id))
+                executor.execute(context=None)
 
 
-def _run_local_files(config):
+def _run_local_files(config, organizer):
     todo_list = os.listdir(config.working_directory)
     for do_file in todo_list:
         if do_file.endswith('.fits') or do_file.endswith('.fits.gz'):
             logging.info('Process {}'.format(do_file))
             obs_id = do_file.split('.')[0]
-            try:
-                meta = Omm2Caom2LocalMeta(config, obs_id)
-                meta.execute(context=None)
-                data = Omm2Caom2LocalData(config, obs_id)
-                data.execute(context=None)
-                store = Omm2Caom2Store(config, obs_id)
-                store.execute(context=None)
-            except Exception as e:
-                logging.error('Failed for {}'.format(do_file))
-                raise e
+            executors = organizer.choose(obs_id)
+            for executor in executors:
+                logging.info('Step {} for {}'.format(executor, obs_id))
+                executor.execute(context=None)
 
 
 def run_by_file():
@@ -539,10 +560,11 @@ def run_by_file():
         logging.error(config)
         logger = logging.getLogger()
         logger.setLevel(config.logging_level)
+        organize = OrganizeExecutes(config)
         if config.use_local_files:
-            _run_local_files(config)
+            _run_local_files(config, organize)
         else:
-            _run_todo_file(config)
+            _run_todo_file(config, organize)
     except Exception as e:
         logging.error(e)
         tb = traceback.format_exc()
