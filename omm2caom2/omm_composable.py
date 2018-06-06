@@ -91,7 +91,7 @@ class CaomExecute(object):
     # library
 
     def __init__(self, config, obs_id):
-        self.obs_id = obs_id
+        self.obs_id = OmmName(obs_id).get_obs_id()
         self.root_dir = config.working_directory
         self.collection = config.collection
         self.working_dir = os.path.join(self.root_dir, self.obs_id)
@@ -590,7 +590,7 @@ class OrganizeExecutes(object):
 def _run_todo_file(config, organizer):
     with open(config.work_fqn) as f:
         for line in f:
-            obs_id = line.strip().upper()
+            obs_id = line.strip()
             logging.info('Process {}'.format(obs_id))
             executors = organizer.choose(obs_id)
             for executor in executors:

@@ -96,7 +96,7 @@ DATATYPE_LOOKUP = {'CALIB': 'flat',
 class OmmName(object):
 
     def __init__(self, obs_id):
-        self.obs_id = obs_id
+        self.obs_id = obs_id.upper()
 
     # TODO - MOVE THIS
     def get_file_uri(self):
@@ -119,6 +119,9 @@ class OmmName(object):
 
     def get_thumb_uri(self):
         return self._get_uri(self.get_thumb())
+
+    def get_obs_id(self):
+        return self.obs_id
 
     @staticmethod
     def _get_uri(fname):
