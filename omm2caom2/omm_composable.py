@@ -443,9 +443,9 @@ class Omm2Caom2Store(CaomExecute):
         """Store a collection file."""
         fqn = os.path.join(self.working_dir, self.fname)
         data_cmd = 'cadc-data put -c --netrc {} ' \
-                   '{} {} {}'.format(self.netrc_fqn,
-                                     self.collection, self.stream,
-                                     fqn).split()
+                   '{} -s {} {}'.format(self.netrc_fqn,
+                                        self.collection, self.stream,
+                                        self.fname).split()
         try:
             output, outerr = subprocess.Popen(
                 data_cmd, stdout=subprocess.PIPE).communicate()
