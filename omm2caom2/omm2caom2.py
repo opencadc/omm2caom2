@@ -548,7 +548,7 @@ def omm_augment(**kwargs):
 
     logging.error(kwargs)
 
-    augment(blueprints=blueprints, no_validate=no_validate,
+    augment(blueprints=blueprints, no_validate=True,
             dump_config=dump_config, ignore_partial_wcs=ignore_partial_wcs,
             plugin=plugin, out_obs_xml=out_obs_xml, in_obs_xml=in_obs_xml,
             collection=collection, observation=observation,
