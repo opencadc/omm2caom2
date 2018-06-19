@@ -95,16 +95,13 @@ class CaomExecute(object):
         self.root_dir = config.working_directory
         self.collection = config.collection
         self.working_dir = os.path.join(self.root_dir, self.obs_id)
-        # self.fname = '{}.fits'.format(obs_id)
         self.fname = OmmName(obs_id).get_file_name()
         self.model_fqn = os.path.join(self.working_dir,
                                       OmmName(obs_id).get_model_file_name())
-        # '{}.xml'.format(self.fname))
         self.netrc_fqn = os.path.join(self.root_dir, config.netrc_file)
         self.resource_id = config.resource_id
         self.logger = logging.getLogger()
         self.logger.setLevel(config.logging_level)
-        # logging.error('working dir is {}'.format(self.working_dir))
 
     def _create_dir(self):
         """Create the working area if it does not already exist."""
@@ -194,6 +191,13 @@ class CaomExecute(object):
                 'Could not store the observation in {}'.format(
                 self.model_fqn))
 
+    def _define_local_dirs(self):
+        """when files are on disk don't worry about a separate directory
+        per observation"""
+        self.working_dir = self.root_dir
+        self.model_fqn = os.path.join(
+            self.working_dir, OmmName(self.obs_id).get_model_file_name())
+
 
 class Omm2Caom2Meta(CaomExecute):
     """Defines the pipeline step for OMM ingestion of metadata into CAOM2.
@@ -241,11 +245,7 @@ class Omm2Caom2LocalMeta(CaomExecute):
 
     def __init__(self, config, obs_id):
         super(Omm2Caom2LocalMeta, self).__init__(config, obs_id)
-        # when files are on disk don't worry about a separate directory
-        # per observation
-        self.working_dir = self.root_dir
-        self.model_fqn = os.path.join(self.working_dir,
-                                      OmmName(obs_id).get_model_file_name())
+        self._define_local_dirs()
 
     def execute(self, context):
         self.logger.debug('Begin execute for {} Meta'.format(__name__))
@@ -370,11 +370,7 @@ class Omm2Caom2LocalData(Omm2Caom2Data):
 
     def __init__(self, config, obs_id):
         super(Omm2Caom2LocalData, self).__init__(config, obs_id)
-        # when files are on disk don't worry about a separate directory
-        # per observation
-        self.working_dir = self.root_dir
-        self.model_fqn = os.path.join(self.working_dir,
-                                      OmmName(obs_id).get_model_file_name())
+        self._define_local_dirs()
 
     def execute(self, context):
         self.logger.debug('Begin execute for {} Data'.format(__name__))
@@ -436,11 +432,7 @@ class Omm2Caom2Scrape(CaomExecute):
 
     def __init__(self, config, obs_id):
         super(Omm2Caom2Scrape, self).__init__(config, obs_id)
-        # when files are on disk don't worry about a separate directory
-        # per observation
-        self.working_dir = self.root_dir
-        self.model_fqn = os.path.join(self.working_dir,
-                                      OmmName(obs_id).get_model_file_name())
+        self._define_local_dirs()
 
     def execute(self, context):
         self.logger.debug('Begin execute for {} Meta'.format(__name__))
@@ -499,36 +491,36 @@ class OrganizeExecutes(object):
         self.logger.setLevel(config.logging_level)
 
     def choose(self, obs_id):
-        execution = []
+        executors = []
         for task_type in self.task_types:
             self.logger.error(task_type)
             if task_type == manage_composable.TaskType.SCRAPE:
-                execution.append(Omm2Caom2Scrape(self.config, obs_id))
+                executors.append(Omm2Caom2Scrape(self.config, obs_id))
             elif task_type == manage_composable.TaskType.STORE:
                 if self.config.use_local_files:
-                    execution.append(Omm2Caom2Store(self.config, obs_id))
+                    executors.append(Omm2Caom2Store(self.config, obs_id))
                 else:
                     raise manage_composable.CadcException(
                         'use_local_files must be True with Task Type "STORE"')
             elif task_type == manage_composable.TaskType.INGEST:
                 if self.config.use_local_files:
-                    execution.append(Omm2Caom2LocalMeta(self.config, obs_id))
+                    executors.append(Omm2Caom2LocalMeta(self.config, obs_id))
                 else:
-                    execution.append(Omm2Caom2Meta(self.config, obs_id))
+                    executors.append(Omm2Caom2Meta(self.config, obs_id))
             elif task_type == manage_composable.TaskType.MODIFY:
                 if self.config.use_local_files:
-                    if isinstance(execution[0], Omm2Caom2Scrape):
-                        execution.append(
+                    if isinstance(executors[0], Omm2Caom2Scrape):
+                        executors.append(
                             Omm2Caom2DataScrape(self.config, obs_id))
                     else:
-                        execution.append(
+                        executors.append(
                             Omm2Caom2LocalData(self.config, obs_id))
                 else:
-                    execution.append(Omm2Caom2Data(self.config, obs_id))
+                    executors.append(Omm2Caom2Data(self.config, obs_id))
             else:
                 raise manage_composable.CadcException(
                     'Do not understand task type {}'.format(task_type))
-        return execution
+        return executors
 
 
 def _set_up_file_logging(config, obs_id):
