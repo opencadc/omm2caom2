@@ -282,6 +282,7 @@ class Omm2Caom2Data(CaomExecute):
 
     def __init__(self, config, obs_id):
         super(Omm2Caom2Data, self).__init__(config, obs_id)
+        self.log_file_directory = config.log_file_directory
 
     def execute(self, context):
         self.logger.debug('Begin execute for {} Data'.format(__name__))
@@ -322,7 +323,8 @@ class Omm2Caom2Data(CaomExecute):
 
     def _generate_footprint(self, observation):
         kwargs = {'working_directory': self.working_dir,
-                  'science_file': self.fname}
+                  'science_file': self.fname,
+                  'log_file_directory': self.log_file_directory}
         omm_footprint_augmentation.visit(observation, **kwargs)
 
     def _read_model(self):
@@ -360,7 +362,7 @@ class Omm2Caom2Data(CaomExecute):
                     self.model_fqn))
 
 
-class Omm2Caom2LocalData(CaomExecute):
+class Omm2Caom2LocalData(Omm2Caom2Data):
     """Defines the pipeline step for OMM generation and ingestion of footprints
     and previews into CAOM2. These are all the operations that require
     access to the file on disk. This class assumes it has access to the
@@ -396,25 +398,6 @@ class Omm2Caom2LocalData(CaomExecute):
         self._repo_cmd('update')
 
         self.logger.debug('End execute for {}'.format(__name__))
-
-    def _generate_previews(self, observation):
-        kwargs = {'working_directory': self.working_dir,
-                  'netrc_fqn': self.netrc_fqn}
-        omm_preview_augmentation.visit(observation, **kwargs)
-
-    def _generate_footprint(self, observation):
-        kwargs = {'working_directory': self.working_dir,
-                  'science_file': self.fname}
-        omm_footprint_augmentation.visit(observation, **kwargs)
-
-    def _read_model(self):
-        reader = obs_reader_writer.ObservationReader(False)
-        observation = reader.read(self.model_fqn)
-        return observation
-
-    def _write_model(self, observation):
-        writer = obs_reader_writer.ObservationWriter()
-        writer.write(observation, self.model_fqn)
 
 
 class Omm2Caom2Store(CaomExecute):
@@ -490,7 +473,7 @@ class Omm2Caom2Scrape(CaomExecute):
         self.logger.debug('End execute for {}'.format(__name__))
 
 
-class Omm2Caom2DataScrape(CaomExecute):
+class Omm2Caom2DataScrape(Omm2Caom2LocalData):
     """Defines the pipeline step for OMM generation and ingestion of footprints
     and previews with no update to the service at the end. These are all the
     operations that require access to the file on disk. This class assumes
@@ -500,11 +483,6 @@ class Omm2Caom2DataScrape(CaomExecute):
 
     def __init__(self, config, obs_id):
         super(Omm2Caom2DataScrape, self).__init__(config, obs_id)
-        # when files are on disk don't worry about a separate directory
-        # per observation
-        self.working_dir = self.root_dir
-        self.model_fqn = os.path.join(self.working_dir,
-                                      OmmName(obs_id).get_model_file_name())
 
     def execute(self, context):
         self.logger.debug('Begin execute for {} Data'.format(__name__))
@@ -522,25 +500,6 @@ class Omm2Caom2DataScrape(CaomExecute):
         self._write_model(observation)
 
         self.logger.debug('End execute for {}'.format(__name__))
-
-    def _generate_previews(self, observation):
-        kwargs = {'working_directory': self.working_dir,
-                  'netrc_fqn': self.netrc_fqn}
-        omm_preview_augmentation.visit(observation, **kwargs)
-
-    def _generate_footprint(self, observation):
-        kwargs = {'working_directory': self.working_dir,
-                  'science_file': self.fname}
-        omm_footprint_augmentation.visit(observation, **kwargs)
-
-    def _read_model(self):
-        reader = obs_reader_writer.ObservationReader(False)
-        observation = reader.read(self.model_fqn)
-        return observation
-
-    def _write_model(self, observation):
-        writer = obs_reader_writer.ObservationWriter()
-        writer.write(observation, self.model_fqn)
 
 
 class OrganizeExecutes(object):
@@ -569,7 +528,7 @@ class OrganizeExecutes(object):
                     execution.append(Omm2Caom2LocalMeta(self.config, obs_id))
                 else:
                     execution.append(Omm2Caom2Meta(self.config, obs_id))
-            elif task_type == manage_composable.TaskType.ENHANCE:
+            elif task_type == manage_composable.TaskType.MODIFY:
                 if self.config.use_local_files:
                     if isinstance(execution[0], Omm2Caom2Scrape):
                         execution.append(
@@ -588,8 +547,11 @@ class OrganizeExecutes(object):
 def _set_up_file_logging(config, obs_id):
     log_h = None
     if config.log_to_file:
-        log_fqn = os.path.join(config.working_directory,
-                               OmmName(obs_id).get_log_file())
+        if config.log_file_directory is not None:
+            if not os.path.exists(config.log_file_directory):
+                os.mkdir(config.log_file_directory)
+            log_fqn = os.path.join(config.log_file_directory,
+                                   OmmName(obs_id).get_log_file())
         log_h = logging.FileHandler(log_fqn)
         log_h.setLevel(config.logging_level)
         logging.getLogger().addHandler(log_h)

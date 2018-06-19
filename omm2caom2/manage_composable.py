@@ -86,7 +86,7 @@ class TaskType(Enum):
     STORE = 'store'
     SCRAPE = 'scrape'
     INGEST = 'ingest'
-    ENHANCE = 'enhance'
+    MODIFY = 'modify'
 
 
 class Config(object):
@@ -120,6 +120,9 @@ class Config(object):
 
         # write the log to a file?
         self.log_to_file = False
+
+        # where log files are written to - defaults to working_directory
+        self.log_file_directory = None
 
         # the ad 'stream' that goes with the collection - use when storing
         # files
@@ -192,6 +195,14 @@ class Config(object):
         self._log_to_file = value
 
     @property
+    def log_file_directory(self):
+        return self._log_file_directory
+
+    @log_file_directory.setter
+    def log_file_directory(self, value):
+        self._log_file_directory = value
+
+    @property
     def logging_level(self):
         return self._logging_level
 
@@ -246,11 +257,12 @@ class Config(object):
                'resource_id:: \'{}\' ' \
                'use_local_files:: \'{}\' ' \
                'log_to_file:: \'{}\' ' \
+               'log_file_directory:: \'{}\' ' \
                'logging_level:: \'{}\''.format(
                 self.working_directory, self.work_fqn, self.netrc_file,
                 self.collection, self.task_types, self.stream,
                 self.resource_id, self.use_local_files, self.log_to_file,
-                self.logging_level)
+                self.log_file_directory, self.logging_level)
 
     @staticmethod
     def _set_task_types(config, default=None):
@@ -278,6 +290,8 @@ class Config(object):
                 self._lookup(config, 'use_local_files', False))
             self.logging_level = self._lookup(config, 'logging_level', 'DEBUG')
             self.log_to_file = self._lookup(config, 'log_to_file', False)
+            self.log_file_directory = self._lookup(config, 'log_file_directory',
+                                                   self.working_directory)
             self.stream = self._lookup(config, 'stream', 'raw')
             self.task_types = self._set_task_types(config, [TaskType.SCRAPE])
             self.collection = self._lookup(config, 'collection', 'TEST')

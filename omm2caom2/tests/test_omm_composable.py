@@ -336,7 +336,7 @@ def test_organize_executes():
 
     test_config.task_types = [manage_composable.TaskType.STORE,
                               manage_composable.TaskType.INGEST,
-                              manage_composable.TaskType.ENHANCE]
+                              manage_composable.TaskType.MODIFY]
     test_oe = omm_composable.OrganizeExecutes(test_config)
     executors = test_oe.choose(test_obs_id)
     assert executors is not None
@@ -347,7 +347,7 @@ def test_organize_executes():
 
     test_config.use_local_files = False
     test_config.task_types = [manage_composable.TaskType.INGEST,
-                              manage_composable.TaskType.ENHANCE]
+                              manage_composable.TaskType.MODIFY]
     test_oe = omm_composable.OrganizeExecutes(test_config)
     executors = test_oe.choose(test_obs_id)
     assert executors is not None
@@ -356,7 +356,7 @@ def test_organize_executes():
     assert isinstance(executors[1], omm_composable.Omm2Caom2Data)
 
     test_config.task_types = [manage_composable.TaskType.SCRAPE,
-                              manage_composable.TaskType.ENHANCE]
+                              manage_composable.TaskType.MODIFY]
     test_config.use_local_files = True
     test_oe = omm_composable.OrganizeExecutes(test_config)
     executors = test_oe.choose(test_obs_id)

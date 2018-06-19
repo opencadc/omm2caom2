@@ -20,6 +20,12 @@ def visit(observation, **kwargs):
     if 'science_file' in kwargs:
         science_file = kwargs['science_file']
     science_fqn = os.path.join(working_dir, science_file)
+    # TODO - this moves location handling structures to other than the
+    # main composable code - this could be MUCH better handled, just not
+    # sure how right now
+    log_file_directory = None
+    if 'log_file_directory' in kwargs:
+        log_file_directory = kwargs['log_file_directory']
 
     count = 0
     for i in observation.planes:
@@ -32,6 +38,11 @@ def visit(observation, **kwargs):
                     _update_position(chunk, science_fqn)
                     count += 1
 
+    return_file = '{}_footprint.txt'.format(observation.observation_id)
+    return_string_file = '{}_footprint_returnstring.txt'.format(
+        observation.observation_id)
+    _handle_footprint_logs(log_file_directory, return_file)
+    _handle_footprint_logs(log_file_directory, return_string_file)
     return {'chunks': count}
 
 
@@ -82,3 +93,12 @@ def _update_position(chunk, science_fqn):
 def _to_float(value):
     return float(value) if value is not None else None
 
+
+def _handle_footprint_logs(log_file_directory, log_file):
+    if log_file_directory is not None:
+        orig_log_fqn = os.path.join(os.getcwd(), log_file)
+        if os.path.exists(orig_log_fqn):
+            log_fqn = os.path.join(log_file_directory, log_file)
+            os.rename(orig_log_fqn, log_fqn)
+            logging.debug('Moving footprint files from {} to {}'.format(
+                orig_log_fqn, log_fqn))
