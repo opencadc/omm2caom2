@@ -98,7 +98,7 @@ class CaomExecute(object):
         self.fname = OmmName(obs_id).get_file_name()
         self.model_fqn = os.path.join(self.working_dir,
                                       OmmName(obs_id).get_model_file_name())
-        self.netrc_fqn = os.path.join(self.root_dir, config.netrc_file)
+        self.netrc_fqn = config.netrc_file
         self.resource_id = config.resource_id
         self.logger = logging.getLogger()
         self.logger.setLevel(config.logging_level)

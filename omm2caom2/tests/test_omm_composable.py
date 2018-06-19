@@ -84,6 +84,16 @@ THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 TESTDATA_DIR = os.path.join(THIS_DIR, 'data')
 
 
+def _init_config():
+    test_config = manage_composable.Config()
+    test_config.working_directory = THIS_DIR
+    test_config.collection = 'OMM'
+    test_config.netrc_file = os.path.join(TESTDATA_DIR, 'test_netrc')
+    test_config.work_file = 'todo.txt'
+    test_config.logging_level = 'DEBUG'
+    return test_config
+
+
 def test_meta_execute():
     test_obs_id = 'test_obs_id'
     test_dir = os.path.join(THIS_DIR, test_obs_id)
@@ -102,12 +112,7 @@ def test_meta_execute():
             'type': 'applicaton/octect-stream'})
     fits2caom2.get_cadc_headers = Mock(side_effect=_get_headers)
 
-    test_config = manage_composable.Config()
-    test_config.working_directory = THIS_DIR
-    test_config.collection = 'OMM'
-    test_config.netrc_file = 'test_netrc'
-    test_config.work_file = 'todo.txt'
-    test_config.logging_level = 'DEBUG'
+    test_config = _init_config()
 
     # run the test
     with patch('subprocess.Popen') as subprocess_mock:
@@ -141,10 +146,8 @@ def test_meta_local_execute():
     headers_orig = fits2caom2._get_headers_from_fits
     fits2caom2._get_headers_from_fits = Mock(side_effect=_get_file_headers)
 
-    test_config = manage_composable.Config()
+    test_config = _init_config()
     test_config.working_directory = TESTDATA_DIR
-    test_config.collection = 'OMM'
-    test_config.netrc_file = 'test_netrc'
     test_config.logging_level = 'INFO'
 
     # run the test
@@ -179,12 +182,7 @@ def test_data_execute():
     omm_preview_augmentation.visit = Mock()
     obs_reader_writer.ObservationReader.read = Mock(side_effect=_read_obs)
 
-    test_config = manage_composable.Config()
-    test_config.working_directory = THIS_DIR
-    test_config.collection = 'OMM'
-    test_config.netrc_file = 'test_netrc'
-    test_config.work_file = 'todo.txt'
-    test_config.logging_level = 'DEBUG'
+    test_config = _init_config()
 
     # run the test
     with patch('subprocess.Popen') as subprocess_mock:
@@ -207,13 +205,7 @@ def test_data_local_execute():
     omm_preview_augmentation.visit = Mock()
     obs_reader_writer.ObservationReader.read = Mock(side_effect=_read_obs)
 
-    test_config = manage_composable.Config()
-    test_config.working_directory = THIS_DIR
-    test_config.collection = 'OMM'
-    test_config.netrc_file = 'test_netrc'
-    test_config.work_file = 'todo.txt'
-    test_config.logging_level = 'DEBUG'
-
+    test_config = _init_config()
     # run the test
     with patch('subprocess.Popen') as subprocess_mock:
         subprocess_mock.return_value.communicate.side_effect = _communicate
@@ -231,13 +223,7 @@ def test_data_local_execute():
 
 def test_data_store():
     test_obs_id = 'test_obs_id'
-
-    test_config = manage_composable.Config()
-    test_config.working_directory = THIS_DIR
-    test_config.collection = 'OMM'
-    test_config.netrc_file = 'test_netrc'
-    test_config.work_file = 'todo.txt'
-    test_config.logging_level = 'DEBUG'
+    test_config = _init_config()
 
     # run the test
     with patch('subprocess.Popen') as subprocess_mock:
@@ -265,10 +251,8 @@ def test_scrape():
     headers_orig = fits2caom2._get_headers_from_fits
     fits2caom2._get_headers_from_fits = Mock(side_effect=_get_file_headers)
 
-    test_config = manage_composable.Config()
+    test_config = _init_config()
     test_config.working_directory = TESTDATA_DIR
-    test_config.collection = 'OMM'
-    test_config.netrc_file = 'test_netrc'
     test_config.logging_level = 'INFO'
 
     # run the test
@@ -295,12 +279,7 @@ def test_data_scrape_execute():
     omm_preview_augmentation.visit = Mock()
     obs_reader_writer.ObservationReader.read = Mock(side_effect=_read_obs)
 
-    test_config = manage_composable.Config()
-    test_config.working_directory = THIS_DIR
-    test_config.collection = 'OMM'
-    test_config.netrc_file = 'test_netrc'
-    test_config.work_file = 'todo.txt'
-    test_config.logging_level = 'DEBUG'
+    test_config = _init_config()
 
     # run the test
     with patch('subprocess.Popen') as subprocess_mock:
@@ -319,12 +298,7 @@ def test_data_scrape_execute():
 
 def test_organize_executes():
     test_obs_id = 'test_obs_id'
-    test_config = manage_composable.Config()
-    test_config.working_directory = THIS_DIR
-    test_config.collection = 'OMM'
-    test_config.netrc_file = 'test_netrc'
-    test_config.work_file = 'todo.txt'
-    test_config.logging_level = 'DEBUG'
+    test_config = _init_config()
     test_config.use_local_files = True
 
     test_config.task_types = [manage_composable.TaskType.SCRAPE]
