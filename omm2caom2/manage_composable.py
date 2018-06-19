@@ -69,12 +69,14 @@
 
 import logging
 import os
+import subprocess
 import yaml
 
 from aenum import Enum
 from datetime import datetime
 
-__all__ = ['CadcException', 'Config', 'get_datetime', 'to_float', 'TaskType']
+__all__ = ['CadcException', 'Config', 'get_datetime', 'to_float', 'TaskType',
+           'exec_cmd']
 
 
 class CadcException(Exception):
@@ -351,3 +353,24 @@ def get_datetime(from_value):
 def to_float(value):
     """Cast to float, without throwing an exception."""
     return float(value) if value is not None else None
+
+
+def exec_cmd(cmd):
+    """
+    This does command execution as a subprocess call.
+
+    :param cmd the text version of the command being executed
+    :return None
+    """
+    logging.debug(cmd)
+    cmd_array = cmd.split()
+    try:
+        output, outerr = subprocess.Popen(cmd_array, stdout=subprocess.PIPE,
+                                          stderr=subprocess.PIPE).communicate()
+        if output is not None and len(output) > 0:
+            logging.debug('Command {} had output {}'.format(cmd, output))
+        if outerr is not None and len(outerr) > 0:
+            raise CadcException('Command {} had outerr {}'.format(cmd, outerr))
+    except Exception as e:
+        logging.debug('Error with command {}:: {}'.format(cmd, e))
+        raise CadcException('Could not execute cmd {}'.format(cmd))

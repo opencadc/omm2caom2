@@ -424,22 +424,9 @@ class Omm2Caom2Store(CaomExecute):
 
     def _cadc_data_put(self):
         """Store a collection file."""
-        fqn = os.path.join(self.working_dir, self.fname)
-        data_cmd = 'cadc-data put -c --netrc {} ' \
-                   '{} -s {} {}'.format(self.netrc_fqn,
-                                        self.collection, self.stream,
-                                        self.fname).split()
-        try:
-            output, outerr = subprocess.Popen(
-                data_cmd, stdout=subprocess.PIPE).communicate()
-            self.logger.debug(
-                'Command {} had output {}'.format(data_cmd, output))
-            self.logger.debug(
-                'Command {} had outerr {}'.format(data_cmd, outerr))
-        except Exception as e:
-            self.logger.debug('Error writing file {}:: {}'.format(fqn, e))
-            raise manage_composable.CadcException(
-                'Could not store the file {}'.format(fqn))
+        data_cmd = 'cadc-data put -c --netrc {} {} -s {} {}'.format(
+            self.netrc_fqn, self.collection, self.stream, self.fname)
+        manage_composable.exec_cmd(data_cmd)
 
 
 class Omm2Caom2Scrape(CaomExecute):
