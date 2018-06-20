@@ -1,4 +1,4 @@
-working_directory: /usr/src/app/test_data
+working_directory: /usr/src/app
 # the netrc_filename value must be a fully-qualified name
 netrc_filename: /usr/src/app/test_netrc
 # operational value is ivo://cadc.nrc.ca/caom2repo
