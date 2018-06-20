@@ -35,7 +35,7 @@ def visit(observation, **kwargs):
                 fn = artifact.uri.split('/')[1]
                 file_name = fn.split('.gz')[0]
                 file_id = file_name.split('.fits')[0]
-                logging.error(
+                logging.debug(
                     'working on file id {} in working directory {} {}'.format(
                         file_id, working_dir, file_name))
                 # all the code is written to append .fits right now ....

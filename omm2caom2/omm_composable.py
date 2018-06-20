@@ -102,6 +102,10 @@ class CaomExecute(object):
         self.resource_id = config.resource_id
         self.logger = logging.getLogger()
         self.logger.setLevel(config.logging_level)
+        for handler in self.logger.handlers:
+            handler.setLevel(config.logging_level)
+        self.logging_level_param = self._set_logging_level_param(
+            config.logging_level)
 
     def _create_dir(self):
         """Create the working area if it does not already exist."""
@@ -129,10 +133,11 @@ class CaomExecute(object):
 
     def _repo_cmd_read(self):
         """Retrieve the existing observaton model metadata."""
-        repo_cmd = 'caom2-repo read --resource-id {} --netrc {} ' \
-                   '{} {} -o {}'.format(
-                       self.resource_id, self.netrc_fqn, self.collection,
-                       self.obs_id, self.model_fqn).split()
+        repo_cmd = 'caom2-repo read {} --resource-id {} --netrc {} ' \
+                   '{} {} -o {}'.format(self.logging_level_param,
+                                        self.resource_id, self.netrc_fqn,
+                                        self.collection,
+                                        self.obs_id, self.model_fqn).split()
         try:
             output, outerr = subprocess.Popen(
                 repo_cmd, stdout=subprocess.PIPE,
@@ -148,10 +153,11 @@ class CaomExecute(object):
 
     def _repo_cmd_delete(self):
         """Retrieve the existing observaton model metadata."""
-        repo_cmd = 'caom2-repo delete --resource-id {} --netrc {} ' \
-                   '{} {}'.format(
-                    self.resource_id, self.netrc_fqn, self.collection,
-                    self.obs_id).split()
+        repo_cmd = 'caom2-repo delete {} --resource-id {} --netrc {} ' \
+                   '{} {}'.format(self.logging_level_param,
+                                  self.resource_id, self.netrc_fqn,
+                                  self.collection,
+                                  self.obs_id).split()
         try:
             output, outerr = subprocess.Popen(
                 repo_cmd, stdout=subprocess.PIPE,
@@ -172,9 +178,10 @@ class CaomExecute(object):
 
     def _repo_cmd(self, operation):
         """This repo operation will work for either create or update."""
-        repo_cmd = 'caom2-repo {} --resource-id {} --netrc ' \
-                   '{} {}'.format(operation, self.resource_id,
-                                  self.netrc_fqn, self.model_fqn).split()
+        repo_cmd = 'caom2-repo {} {} --resource-id {} --netrc ' \
+                   '{} {}'.format(operation, self.logging_level_param,
+                                  self.resource_id, self.netrc_fqn,
+                                  self.model_fqn).split()
         try:
             output, outerr = subprocess.Popen(
                 repo_cmd, stdout=subprocess.PIPE,
@@ -197,6 +204,18 @@ class CaomExecute(object):
         self.working_dir = self.root_dir
         self.model_fqn = os.path.join(
             self.working_dir, OmmName(self.obs_id).get_model_file_name())
+
+    @staticmethod
+    def _set_logging_level_param(logging_level):
+        lookup = {logging.DEBUG: '--debug',
+                  logging.INFO: '--verbose',
+                  logging.WARNING: '',
+                  logging.ERROR: '--quiet'}
+        if logging_level in lookup:
+            result = lookup[logging_level]
+        else:
+            result = ''
+        return result
 
 
 class Omm2Caom2Meta(CaomExecute):
@@ -227,7 +246,7 @@ class Omm2Caom2Meta(CaomExecute):
             'out_obs_xml': self.model_fqn,
             'collection': self.collection,
             'netrc': self.netrc_fqn,
-            'debug': True}}
+            'logging_level': self.logger.getEffectiveLevel()}}
         omm_augment(**kwargs)
 
         self.logger.debug('store the xml')
@@ -341,8 +360,9 @@ class Omm2Caom2Data(CaomExecute):
         ensure that the latest version of the file is retrieved from
         storage."""
         fqn = os.path.join(self.working_dir, self.fname)
-        data_cmd = 'cadc-data get -z --netrc ' \
-                   '{} {} {} -o {}'.format(self.netrc_fqn, self.collection,
+        data_cmd = 'cadc-data get {} -z --netrc ' \
+                   '{} {} {} -o {}'.format(self.logging_level_param,
+                                           self.netrc_fqn, self.collection,
                                            self.obs_id, fqn).split()
         try:
             output, outerr = subprocess.Popen(
@@ -420,8 +440,9 @@ class Omm2Caom2Store(CaomExecute):
 
     def _cadc_data_put(self):
         """Store a collection file."""
-        data_cmd = 'cadc-data put -c --netrc {} {} -s {} {}'.format(
-            self.netrc_fqn, self.collection, self.stream, self.fname)
+        data_cmd = 'cadc-data put {} -c --netrc {} {} -s {} {}'.format(
+            self.logging_level_param, self.netrc_fqn, self.collection,
+            self.stream, self.fname)
         manage_composable.exec_cmd(data_cmd)
 
 
@@ -493,7 +514,7 @@ class OrganizeExecutes(object):
     def choose(self, obs_id):
         executors = []
         for task_type in self.task_types:
-            self.logger.error(task_type)
+            self.logger.debug(task_type)
             if task_type == manage_composable.TaskType.SCRAPE:
                 executors.append(Omm2Caom2Scrape(self.config, obs_id))
             elif task_type == manage_composable.TaskType.STORE:
@@ -578,7 +599,7 @@ def run_by_file():
         config = manage_composable.Config()
         config.get_executors()
         config.collection = 'OMM'
-        logging.error(config)
+        logging.debug(config)
         logger = logging.getLogger()
         logger.setLevel(config.logging_level)
         organize = OrganizeExecutes(config)

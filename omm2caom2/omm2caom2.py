@@ -546,7 +546,7 @@ def omm_augment(**kwargs):
     # that means defining observations, product ids and uris is all
     # done here
 
-    logging.error(kwargs)
+    logging.debug(kwargs)
 
     augment(blueprints=blueprints, no_validate=True,
             dump_config=dump_config, ignore_partial_wcs=ignore_partial_wcs,

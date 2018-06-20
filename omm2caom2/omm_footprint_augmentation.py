@@ -100,5 +100,5 @@ def _handle_footprint_logs(log_file_directory, log_file):
         if os.path.exists(orig_log_fqn):
             log_fqn = os.path.join(log_file_directory, log_file)
             os.rename(orig_log_fqn, log_fqn)
-            logging.debug('Moving footprint files from {} to {}'.format(
+            logging.debug('Moving footprint log files from {} to {}'.format(
                 orig_log_fqn, log_fqn))
