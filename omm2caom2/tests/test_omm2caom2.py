@@ -1,19 +1,15 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from astropy.io import fits
-
 from omm2caom2 import main_app
 from caom2 import ObservationReader
 from caom2.diff import get_differences
 
-import logging
 from hashlib import md5
 import os
-import pytest
 import sys
 
-from mock import patch, Mock
+from mock import patch
 
 TEST_URI = 'ad:OMM/imm_file.fits'
 
@@ -50,7 +46,7 @@ def test_main_app(test_name):
             get_file_info
 
         sys.argv = \
-            ('omm2caom2 --no_validate --ignorePartialWCS --local {} '
+            ('omm2caom2 --no_validate --local {} '
              '--plugin {} --observation OMM {} -o {} --lineage {}'.
             format(local, plugin, product_id, output_file,
                    lineage)).split()

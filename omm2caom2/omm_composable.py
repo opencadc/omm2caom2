@@ -73,8 +73,7 @@ import subprocess
 import traceback
 
 from omm2caom2 import omm_preview_augmentation, omm_footprint_augmentation
-from omm2caom2 import manage_composable
-from omm2caom2 import omm_augment, OmmName
+from omm2caom2 import manage_composable, omm_augment, OmmName
 from caom2 import obs_reader_writer
 
 
@@ -141,19 +140,8 @@ class CaomExecute(object):
                    '{} {} -o {}'.format(self.logging_level_param,
                                         self.resource_id, self.netrc_fqn,
                                         self.collection,
-                                        self.obs_id, self.model_fqn).split()
-        try:
-            output, outerr = subprocess.Popen(
-                repo_cmd, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE).communicate()
-            self.logger.debug(
-                'Command {} had output {}'.format(repo_cmd, output))
-        except Exception as e:
-            self.logger.debug(
-                'Error with command {}:: {}'.format(repo_cmd, e))
-            raise manage_composable.CadcException(
-                'Could not read observation in {}'.format(
-                    self.model_fqn))
+                                        self.obs_id, self.model_fqn)
+        manage_composable.exec_cmd(repo_cmd)
 
     def _repo_cmd_delete(self):
         """Retrieve the existing observaton model metadata."""
@@ -161,46 +149,22 @@ class CaomExecute(object):
                    '{} {}'.format(self.logging_level_param,
                                   self.resource_id, self.netrc_fqn,
                                   self.collection,
-                                  self.obs_id).split()
-        try:
-            output, outerr = subprocess.Popen(
-                repo_cmd, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE).communicate()
-            self.logger.debug(
-                'Command {} had output {}'.format(repo_cmd, output))
-            if outerr is not None and len(outerr) > 0:
-                raise manage_composable.CadcException(
-                    '{} failed with {}'.format(repo_cmd, outerr))
+                                  self.obs_id)
+        manage_composable.exec_cmd(repo_cmd)
+        if os.path.exists(self.model_fqn):
             os.remove(self.model_fqn)
-        except Exception as e:
-            self.logger.debug(
-                'Error with command {}:: {}'.format(repo_cmd, e))
-            # TODO - how to tell the difference between 'it doesn't exist', and
-            # there's a real failure to pay attention to?
-            # raise CadcException('Could not delete the observation in {}'.format(
-            #     self.model_fqn))
+        # TODO - how to tell the difference between 'it doesn't exist', and
+        # there's a real failure to pay attention to?
+        # raise CadcException('Could not delete the observation in {}'.format(
+        #     self.model_fqn))
 
     def _repo_cmd(self, operation):
         """This repo operation will work for either create or update."""
         repo_cmd = 'caom2-repo {} {} --resource-id {} --netrc ' \
                    '{} {}'.format(operation, self.logging_level_param,
                                   self.resource_id, self.netrc_fqn,
-                                  self.model_fqn).split()
-        try:
-            output, outerr = subprocess.Popen(
-                repo_cmd, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE).communicate()
-            self.logger.debug(
-                'Command {} had output {}'.format(repo_cmd, output))
-            if outerr is not None and len(outerr) > 0:
-                raise manage_composable.CadcException(
-                    '{} failed with {}'.format(repo_cmd, outerr))
-        except Exception as e:
-            self.logger.debug(
-                'Error with command {}:: {}'.format(repo_cmd, e))
-            raise manage_composable.CadcException(
-                'Could not store the observation in {}'.format(
-                    self.model_fqn))
+                                  self.model_fqn)
+        manage_composable.exec_cmd(repo_cmd)
 
     def _define_local_dirs(self):
         """when files are on disk don't worry about a separate directory
@@ -367,26 +331,13 @@ class Omm2Caom2Data(CaomExecute):
         ensure that the latest version of the file is retrieved from
         storage."""
         fqn = os.path.join(self.working_dir, self.fname)
-        data_cmd = 'cadc-data get {} -z --netrc ' \
-                   '{} {} {} -o {}'.format(self.logging_level_param,
-                                           self.netrc_fqn, self.collection,
-                                           self.obs_id, fqn).split()
-        try:
-            output, outerr = subprocess.Popen(
-                data_cmd, stdout=subprocess.PIPE).communicate()
-            self.logger.debug(
-                'Command {} had output {}'.format(data_cmd, output))
-            self.logger.debug(
-                'Command {} had outerr {}'.format(data_cmd, outerr))
-            if not os.path.exists(fqn):
-                raise manage_composable.CadcException(
-                    'Did not retrieve {}'.format(fqn))
-        except Exception as e:
-            self.logger.debug(
-                'Error writing files {}:: {}'.format(self.model_fqn, e))
+        data_cmd = 'cadc-data get {} -z --netrc {} {} {} -o {}'.format(
+            self.logging_level_param, self.netrc_fqn, self.collection,
+            self.obs_id, fqn)
+        manage_composable.exec_cmd(data_cmd)
+        if not os.path.exists(fqn):
             raise manage_composable.CadcException(
-                'Could not store the observation in {}'.format(
-                    self.model_fqn))
+                'Did not retrieve {}'.format(fqn))
 
 
 class Omm2Caom2LocalData(Omm2Caom2Data):
@@ -556,6 +507,8 @@ class OrganizeExecutes(object):
 def _set_up_file_logging(config, obs_id):
     log_h = None
     if config.log_to_file:
+        log_fqn = os.path.join(config.working_directory,
+                               OmmName(obs_id).get_log_file())
         if config.log_file_directory is not None:
             if not os.path.exists(config.log_file_directory):
                 os.mkdir(config.log_file_directory)
