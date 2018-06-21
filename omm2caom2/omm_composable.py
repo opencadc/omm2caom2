@@ -73,8 +73,7 @@ import subprocess
 import traceback
 
 from omm2caom2 import omm_preview_augmentation, omm_footprint_augmentation
-from omm2caom2 import manage_composable
-from omm2caom2 import omm_augment, OmmName
+from omm2caom2 import manage_composable, omm_augment, OmmName
 from caom2 import obs_reader_writer
 
 
@@ -90,7 +89,7 @@ class CaomExecute(object):
     # TODO - a lot of this content should reside in the composable
     # library
 
-    def __init__(self, config, obs_id):
+    def __init__(self, config, task_type, obs_id):
         self.obs_id = OmmName(obs_id).get_obs_id()
         self.root_dir = config.working_directory
         self.collection = config.collection
@@ -102,6 +101,14 @@ class CaomExecute(object):
         self.resource_id = config.resource_id
         self.logger = logging.getLogger()
         self.logger.setLevel(config.logging_level)
+        formatter = logging.Formatter(
+            '%(asctime)s:%(levelname)s:%(name)-12s:%(lineno)d:%(message)s')
+        for handler in self.logger.handlers:
+            handler.setLevel(config.logging_level)
+            handler.setFormatter(formatter)
+        self.logging_level_param = self._set_logging_level_param(
+            config.logging_level)
+        self.task_type = task_type
 
     def _create_dir(self):
         """Create the working area if it does not already exist."""
@@ -129,67 +136,35 @@ class CaomExecute(object):
 
     def _repo_cmd_read(self):
         """Retrieve the existing observaton model metadata."""
-        repo_cmd = 'caom2-repo read --resource-id {} --netrc {} ' \
-                   '{} {} -o {}'.format(
-                       self.resource_id, self.netrc_fqn, self.collection,
-                       self.obs_id, self.model_fqn).split()
-        try:
-            output, outerr = subprocess.Popen(
-                repo_cmd, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE).communicate()
-            self.logger.debug(
-                'Command {} had output {}'.format(repo_cmd, output))
-        except Exception as e:
-            self.logger.debug(
-                'Error with command {}:: {}'.format(repo_cmd, e))
-            raise manage_composable.CadcException(
-                'Could not read observation in {}'.format(
-                self.model_fqn))
+        repo_cmd = 'caom2-repo read {} --resource-id {} --netrc {} ' \
+                   '{} {} -o {}'.format(self.logging_level_param,
+                                        self.resource_id, self.netrc_fqn,
+                                        self.collection,
+                                        self.obs_id, self.model_fqn)
+        manage_composable.exec_cmd(repo_cmd)
 
     def _repo_cmd_delete(self):
         """Retrieve the existing observaton model metadata."""
-        repo_cmd = 'caom2-repo delete --resource-id {} --netrc {} ' \
-                   '{} {}'.format(
-                    self.resource_id, self.netrc_fqn, self.collection,
-                    self.obs_id).split()
-        try:
-            output, outerr = subprocess.Popen(
-                repo_cmd, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE).communicate()
-            self.logger.debug(
-                'Command {} had output {}'.format(repo_cmd, output))
-            if outerr is not None and len(outerr) > 0:
-                raise manage_composable.CadcException(
-                    '{} failed with {}'.format(repo_cmd, outerr))
+        repo_cmd = 'caom2-repo delete {} --resource-id {} --netrc {} ' \
+                   '{} {}'.format(self.logging_level_param,
+                                  self.resource_id, self.netrc_fqn,
+                                  self.collection,
+                                  self.obs_id)
+        manage_composable.exec_cmd(repo_cmd)
+        if os.path.exists(self.model_fqn):
             os.remove(self.model_fqn)
-        except Exception as e:
-            self.logger.debug(
-                'Error with command {}:: {}'.format(repo_cmd, e))
-            # TODO - how to tell the difference between 'it doesn't exist', and
-            # there's a real failure to pay attention to?
-            # raise CadcException('Could not delete the observation in {}'.format(
-            #     self.model_fqn))
+        # TODO - how to tell the difference between 'it doesn't exist', and
+        # there's a real failure to pay attention to?
+        # raise CadcException('Could not delete the observation in {}'.format(
+        #     self.model_fqn))
 
     def _repo_cmd(self, operation):
         """This repo operation will work for either create or update."""
-        repo_cmd = 'caom2-repo {} --resource-id {} --netrc ' \
-                   '{} {}'.format(operation, self.resource_id,
-                                  self.netrc_fqn, self.model_fqn).split()
-        try:
-            output, outerr = subprocess.Popen(
-                repo_cmd, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE).communicate()
-            self.logger.debug(
-                'Command {} had output {}'.format(repo_cmd, output))
-            if outerr is not None and len(outerr) > 0:
-                raise manage_composable.CadcException(
-                    '{} failed with {}'.format(repo_cmd, outerr))
-        except Exception as e:
-            self.logger.debug(
-                'Error with command {}:: {}'.format(repo_cmd, e))
-            raise manage_composable.CadcException(
-                'Could not store the observation in {}'.format(
-                self.model_fqn))
+        repo_cmd = 'caom2-repo {} {} --resource-id {} --netrc ' \
+                   '{} {}'.format(operation, self.logging_level_param,
+                                  self.resource_id, self.netrc_fqn,
+                                  self.model_fqn)
+        manage_composable.exec_cmd(repo_cmd)
 
     def _define_local_dirs(self):
         """when files are on disk don't worry about a separate directory
@@ -198,13 +173,26 @@ class CaomExecute(object):
         self.model_fqn = os.path.join(
             self.working_dir, OmmName(self.obs_id).get_model_file_name())
 
+    @staticmethod
+    def _set_logging_level_param(logging_level):
+        lookup = {logging.DEBUG: '--debug',
+                  logging.INFO: '--verbose',
+                  logging.WARNING: '',
+                  logging.ERROR: '--quiet'}
+        if logging_level in lookup:
+            result = lookup[logging_level]
+        else:
+            result = ''
+        return result
+
 
 class Omm2Caom2Meta(CaomExecute):
     """Defines the pipeline step for OMM ingestion of metadata into CAOM2.
     This requires access to only header information."""
 
     def __init__(self, config, obs_id):
-        super(Omm2Caom2Meta, self).__init__(config, obs_id)
+        super(Omm2Caom2Meta, self).__init__(
+            config, manage_composable.TaskType.INGEST, obs_id)
 
     def execute(self, context):
         self.logger.debug('Begin execute for {} Meta'.format(__name__))
@@ -227,7 +215,7 @@ class Omm2Caom2Meta(CaomExecute):
             'out_obs_xml': self.model_fqn,
             'collection': self.collection,
             'netrc': self.netrc_fqn,
-            'debug': True}}
+            'logging_level': self.logger.getEffectiveLevel()}}
         omm_augment(**kwargs)
 
         self.logger.debug('store the xml')
@@ -244,7 +232,8 @@ class Omm2Caom2LocalMeta(CaomExecute):
     The file containing the metadata is located on disk."""
 
     def __init__(self, config, obs_id):
-        super(Omm2Caom2LocalMeta, self).__init__(config, obs_id)
+        super(Omm2Caom2LocalMeta, self).__init__(
+            config, manage_composable.TaskType.INGEST, obs_id)
         self._define_local_dirs()
 
     def execute(self, context):
@@ -281,7 +270,8 @@ class Omm2Caom2Data(CaomExecute):
     access to the file on disk, not just the header data. """
 
     def __init__(self, config, obs_id):
-        super(Omm2Caom2Data, self).__init__(config, obs_id)
+        super(Omm2Caom2Data, self).__init__(
+            config, manage_composable.TaskType.MODIFY, obs_id)
         self.log_file_directory = config.log_file_directory
 
     def execute(self, context):
@@ -341,25 +331,13 @@ class Omm2Caom2Data(CaomExecute):
         ensure that the latest version of the file is retrieved from
         storage."""
         fqn = os.path.join(self.working_dir, self.fname)
-        data_cmd = 'cadc-data get -z --netrc ' \
-                   '{} {} {} -o {}'.format(self.netrc_fqn, self.collection,
-                                           self.obs_id, fqn).split()
-        try:
-            output, outerr = subprocess.Popen(
-                data_cmd, stdout=subprocess.PIPE).communicate()
-            self.logger.debug(
-                'Command {} had output {}'.format(data_cmd, output))
-            self.logger.debug(
-                'Command {} had outerr {}'.format(data_cmd, outerr))
-            if not os.path.exists(fqn):
-                raise manage_composable.CadcException(
-                    'Did not retrieve {}'.format(fqn))
-        except Exception as e:
-            self.logger.debug(
-                'Error writing files {}:: {}'.format(self.model_fqn, e))
+        data_cmd = 'cadc-data get {} -z --netrc {} {} {} -o {}'.format(
+            self.logging_level_param, self.netrc_fqn, self.collection,
+            self.obs_id, fqn)
+        manage_composable.exec_cmd(data_cmd)
+        if not os.path.exists(fqn):
             raise manage_composable.CadcException(
-                'Could not store the observation in {}'.format(
-                    self.model_fqn))
+                'Did not retrieve {}'.format(fqn))
 
 
 class Omm2Caom2LocalData(Omm2Caom2Data):
@@ -401,7 +379,8 @@ class Omm2Caom2Store(CaomExecute):
     access to the file on disk. It will gzip compress the file."""
 
     def __init__(self, config, obs_id):
-        super(Omm2Caom2Store, self).__init__(config, obs_id)
+        super(Omm2Caom2Store, self).__init__(
+            config, manage_composable.TaskType.STORE, obs_id)
         # when files are on disk don't worry about a separate directory
         # per observation
         self.working_dir = self.root_dir
@@ -420,8 +399,9 @@ class Omm2Caom2Store(CaomExecute):
 
     def _cadc_data_put(self):
         """Store a collection file."""
-        data_cmd = 'cadc-data put -c --netrc {} {} -s {} {}'.format(
-            self.netrc_fqn, self.collection, self.stream, self.fname)
+        data_cmd = 'cadc-data put {} -c --netrc {} {} -s {} {}'.format(
+            self.logging_level_param, self.netrc_fqn, self.collection,
+            self.stream, self.fname)
         manage_composable.exec_cmd(data_cmd)
 
 
@@ -431,7 +411,8 @@ class Omm2Caom2Scrape(CaomExecute):
     No record is written to a web service."""
 
     def __init__(self, config, obs_id):
-        super(Omm2Caom2Scrape, self).__init__(config, obs_id)
+        super(Omm2Caom2Scrape, self).__init__(
+            config, manage_composable.TaskType.SCRAPE, obs_id)
         self._define_local_dirs()
 
     def execute(self, context):
@@ -493,7 +474,7 @@ class OrganizeExecutes(object):
     def choose(self, obs_id):
         executors = []
         for task_type in self.task_types:
-            self.logger.error(task_type)
+            self.logger.debug(task_type)
             if task_type == manage_composable.TaskType.SCRAPE:
                 executors.append(Omm2Caom2Scrape(self.config, obs_id))
             elif task_type == manage_composable.TaskType.STORE:
@@ -526,13 +507,18 @@ class OrganizeExecutes(object):
 def _set_up_file_logging(config, obs_id):
     log_h = None
     if config.log_to_file:
+        log_fqn = os.path.join(config.working_directory,
+                               OmmName(obs_id).get_log_file())
         if config.log_file_directory is not None:
             if not os.path.exists(config.log_file_directory):
                 os.mkdir(config.log_file_directory)
             log_fqn = os.path.join(config.log_file_directory,
                                    OmmName(obs_id).get_log_file())
         log_h = logging.FileHandler(log_fqn)
+        formatter = logging.Formatter(
+            '%(asctime)s:%(levelname)s:%(name)-12s:%(lineno)d:%(message)s')
         log_h.setLevel(config.logging_level)
+        log_h.setFormatter(formatter)
         logging.getLogger().addHandler(log_h)
     return log_h
 
@@ -567,7 +553,8 @@ def _run_local_files(config, organizer):
             try:
                 executors = organizer.choose(obs_id)
                 for executor in executors:
-                    logging.info('Step {} for {}'.format(executor, obs_id))
+                    logging.info(
+                        'Step {} for {}'.format(executor.task_type, obs_id))
                     executor.execute(context=None)
             finally:
                 _unset_file_logging(config, log_h)
@@ -578,7 +565,7 @@ def run_by_file():
         config = manage_composable.Config()
         config.get_executors()
         config.collection = 'OMM'
-        logging.error(config)
+        logging.debug(config)
         logger = logging.getLogger()
         logger.setLevel(config.logging_level)
         organize = OrganizeExecutes(config)

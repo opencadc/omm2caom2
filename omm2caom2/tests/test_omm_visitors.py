@@ -66,53 +66,94 @@
 #
 # ***********************************************************************
 #
-
-import logging
 import os
+import pytest
 
-from mock import Mock, patch
+from mock import Mock
 
-from omm2caom2 import manage_composable, omm_composable
+from omm2caom2 import omm_footprint_augmentation, omm_preview_augmentation
+from omm2caom2 import manage_composable, OmmName
+from caom2 import ObservationReader
 
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 TESTDATA_DIR = os.path.join(THIS_DIR, 'data')
+TEST_OBS = 'C170324_0054_SCI'
 
 
-def test_config_class():
-    os.getcwd = Mock(return_value=TESTDATA_DIR)
-    test_config = manage_composable.Config()
-    test_config.get_executors()
-    assert test_config is not None
-    assert test_config.work_file == 'todo.txt'
-
-
-def test_run_by_file():
+def test_footprint_aug_visit():
     try:
-        os.getcwd = Mock(return_value=TESTDATA_DIR)
-        todo_file = os.path.join(os.getcwd(), 'todo.txt')
-        logging.error(todo_file)
-        f = open(todo_file, 'w')
-        f.write('')
-        f.close()
-        omm_composable.run_by_file()
-    except manage_composable.CadcException as e:
-        assert False, 'but the work list is empty'
+        omm_footprint_augmentation.visit(None)
+    except AssertionError as e:
+        return  # expected
 
 
-@patch('omm2caom2.manage_composable.logging')
-def test_exec_cmd(mock_logging):
-    test_cmd = 'ls'
-    manage_composable.exec_cmd(test_cmd)
-    assert mock_logging.debug.called
+def test_footprint_update_position():
+    test_kwargs = {'science_file': OmmName(TEST_OBS).get_file_name()}
+    test_obs = _read_obs_from_file()
+    test_chunk = test_obs.planes[TEST_OBS].artifacts[
+        OmmName(TEST_OBS).get_file_uri()].parts['0'].chunks[0]
+    assert test_chunk.position.axis.bounds is None
+
+    # expected failure due to required kwargs parameter
+    with pytest.raises(manage_composable.CadcException):
+        test_result = omm_footprint_augmentation.visit(test_obs)
+
+    # expected failure due to non-existent file
+    with pytest.raises(manage_composable.CadcException):
+        test_result = omm_footprint_augmentation.visit(test_obs, **test_kwargs)
+
+    test_kwargs['working_directory'] = TESTDATA_DIR
+    test_result = omm_footprint_augmentation.visit(test_obs, **test_kwargs)
+    assert test_result is not None, 'expected a visit return value'
+    assert test_result['chunks'] == 1
+    assert test_chunk.position.axis.bounds is not None, \
+        'bound calculation failed'
 
 
-def test_exec_cmd_redirect():
-    fqn = os.path.join(TESTDATA_DIR, 'exec_cmd_redirect.txt')
-    if os.path.exists(fqn):
-        os.remove(fqn)
+def test_preview_aug_visit():
+    try:
+        omm_preview_augmentation.visit(None)
+    except AssertionError as e:
+        return  # expected
 
-    test_cmd = 'ls'
-    manage_composable.exec_cmd_redirect(test_cmd, fqn)
-    assert os.path.exists(fqn)
-    assert os.stat(fqn).st_size > 0
+
+def test_preview_augment_plane():
+    put_omm_orig = omm_preview_augmentation._put_omm
+    omm_preview_augmentation._put_omm = Mock()
+    preview = os.path.join(TESTDATA_DIR, OmmName(TEST_OBS).get_prev())
+    thumb = os.path.join(TESTDATA_DIR, OmmName(TEST_OBS).get_thumb())
+    if os.path.exists(preview):
+        os.remove(preview)
+    if os.path.exists(thumb):
+        os.remove(thumb)
+    test_obs = _read_obs_from_file()
+    assert len(test_obs.planes[TEST_OBS].artifacts) == 1
+
+    # expected failure due to unspecified kwargs value for test_netrc
+    with pytest.raises(manage_composable.CadcException):
+        test_result = omm_preview_augmentation.visit(test_obs)
+
+    test_kwargs = {'netrc_fqn': os.path.join(TESTDATA_DIR, 'test_netrc')}
+    # expected failure due to non-existent file
+    with pytest.raises(manage_composable.CadcException):
+        test_result = omm_preview_augmentation.visit(test_obs, **test_kwargs)
+
+    test_kwargs['working_directory'] = TESTDATA_DIR
+    test_result = omm_preview_augmentation.visit(test_obs, **test_kwargs)
+    assert test_result is not None, 'expected a visit return value'
+    assert test_result['artifacts'] == 2
+    assert len(test_obs.planes[TEST_OBS].artifacts) == 3
+    assert os.path.exists(preview)
+    assert os.path.exists(thumb)
+    assert omm_preview_augmentation._put_omm.called
+    omm_preview_augmentation._put_omm = put_omm_orig
+
+
+def _read_obs_from_file():
+    test_fqn = os.path.join(TESTDATA_DIR,
+                            OmmName(TEST_OBS).get_model_file_name())
+    assert os.path.exists(test_fqn), test_fqn
+    reader = ObservationReader(False)
+    test_obs = reader.read(test_fqn)
+    return test_obs

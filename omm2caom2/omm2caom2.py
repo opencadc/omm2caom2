@@ -80,7 +80,7 @@ from caom2utils import augment
 from omm2caom2 import astro_composable, manage_composable
 
 
-__all__ = ['main_app', 'omm_augment', 'update', 'OmmName']
+__all__ = ['main_app', 'omm_augment', 'update', 'OmmName', 'CaomName']
 
 
 # map the fits file values to the DataProductType enums
@@ -97,13 +97,14 @@ class OmmName(object):
 
     def __init__(self, obs_id):
         self.obs_id = obs_id.upper()
+        self.orig_obs_id = obs_id
 
     # TODO - MOVE THIS
     def get_file_uri(self):
         return 'ad:OMM/{}.gz'.format(self.get_file_name())
 
     def get_file_name(self):
-        return '{}.fits'.format(self.obs_id)
+        return '{}.fits'.format(self.orig_obs_id)
 
     def get_model_file_name(self):
         return '{}.fits.xml'.format(self.obs_id)
@@ -146,23 +147,23 @@ def accumulate_obs(bp, uri):
     logging.debug('Begin accumulate_obs.')
     bp.set('Observation.type', 'get_obs_type(header)')
     bp.set('Observation.intent', 'get_obs_intent(header)')
-    bp.set_fits_attribute('Observation.instrument.name', ['INSTRUME'])
-    bp.set_fits_attribute('Observation.instrument.keywords', ['DETECTOR'])
+    bp.add_fits_attribute('Observation.instrument.name', 'INSTRUME')
+    bp.add_fits_attribute('Observation.instrument.keywords', 'DETECTOR')
     bp.set('Observation.instrument.keywords', 'DETECTOR=CPAPIR-HAWAII-2')
-    bp.set_fits_attribute('Observation.target.name', ['OBJECT'])
+    bp.add_fits_attribute('Observation.target.name', 'OBJECT')
     bp.set('Observation.target.type', TargetType.OBJECT)
     bp.set('Observation.target.standard', False)
     bp.set('Observation.target.moving', False)
-    bp.set_fits_attribute('Observation.target_position.point.cval1', ['RA'])
-    bp.set_fits_attribute('Observation.target_position.point.cval2', ['DEC'])
+    bp.add_fits_attribute('Observation.target_position.point.cval1', 'RA')
+    bp.add_fits_attribute('Observation.target_position.point.cval2', 'DEC')
     bp.set('Observation.target_position.coordsys', 'ICRS')
-    bp.set_fits_attribute('Observation.target_position.equinox', ['EQUINOX'])
+    bp.add_fits_attribute('Observation.target_position.equinox', 'EQUINOX')
     bp.set_default('Observation.target_position.equinox', '2000.0')
-    bp.set_fits_attribute('Observation.telescope.name', ['TELESCOP'])
-    bp.set_fits_attribute('Observation.telescope.geoLocationX', ['OBS_LAT'])
-    bp.set_fits_attribute('Observation.telescope.geoLocationY', ['OBS_LON'])
+    bp.add_fits_attribute('Observation.telescope.name', 'TELESCOP')
+    bp.add_fits_attribute('Observation.telescope.geoLocationX', 'OBS_LAT')
+    bp.add_fits_attribute('Observation.telescope.geoLocationY', 'OBS_LON')
     bp.set('Observation.telescope.geoLocationZ', 'get_telescope_z(header)')
-    bp.set_fits_attribute('Observation.telescope.keywords', ['OBSERVER'])
+    bp.add_fits_attribute('Observation.telescope.keywords', 'OBSERVER')
     bp.set('Observation.environment.ambientTemp',
            'get_obs_env_ambient_temp(header)')
     if '_SCIRED' in uri:
@@ -175,9 +176,9 @@ def accumulate_plane(bp):
     logging.debug('Begin accumulate_plane.')
     bp.set('Plane.dataProductType', 'image')
     bp.set('Plane.calibrationLevel', 'get_plane_cal_level(header)')
-    bp.set_fits_attribute('Plane.provenance.name', ['INSTRUME'])
-    bp.set_fits_attribute('Plane.provenance.runID', ['NIGHTID'])
-    bp.set_fits_attribute('Plane.metaRelease', ['DATE-OBS'])
+    bp.add_fits_attribute('Plane.provenance.name', 'INSTRUME')
+    bp.add_fits_attribute('Plane.provenance.runID', 'NIGHTID')
+    bp.add_fits_attribute('Plane.metaRelease', 'DATE-OBS')
     bp.set('Plane.provenance.version', '1.0')
     bp.set('Plane.provenance.reference', 'http://genesis.astro.umontreal.ca')
     bp.set('Plane.provenance.project', 'Standard Pipeline')
@@ -210,6 +211,7 @@ def accumulate_position(bp):
            'get_position_resolution(header)')
     bp.set('Chunk.position.axis.error2.syser', 0.0)
     bp.set('Chunk.position.axis.axis1.ctype', 'RA---TAN')
+    bp.set('Chunk.position.axis.axis2.ctype', 'DEC--TAN')
     bp.set('Chunk.position.axis.axis1.cunit', 'deg')
     bp.set('Chunk.position.axis.axis2.cunit', 'deg')
 
@@ -387,7 +389,7 @@ def update(observation, **kwargs):
                         chunk.product_type = get_product_type(headers)
                         _update_energy(chunk, headers)
                         _update_time(chunk, headers)
-
+                        _update_position(chunk)
     logging.debug('Done update.')
     return True
 
@@ -451,6 +453,20 @@ def _update_time(chunk, headers):
     logging.debug('Done _update_time.')
 
 
+def _update_position(chunk):
+    """Check that position information has been set appropriately.
+    Reset to null if there's bad input data."""
+    logging.debug('Begin _update_position')
+    assert isinstance(chunk, Chunk), 'Expecting type Chunk'
+    if (chunk.position is not None and chunk.position.axis is not None and
+            chunk.position.axis.function is None):
+        chunk.position = None
+        chunk.position_axis_1 = None
+        chunk.position_axis_2 = None
+        logging.debug('Removing the partial position record from the chunk.')
+    logging.debug('End _update_position')
+
+
 def _build_blueprints(uri):
     """This application relies on the caom2utils fits2caom2 ObsBlueprint
     definition for mapping FITS file values to CAOM model element
@@ -470,11 +486,6 @@ def _build_blueprints(uri):
     accumulate_part(blueprint)
     blueprints = {uri: blueprint}
     return blueprints
-
-
-# TODO - MOVE THIS
-def _build_uri(fname):
-    return 'ad:OMM/{}.fits.gz'.format(fname)
 
 
 def _decompose_lineage(lineage):
@@ -518,10 +529,6 @@ def omm_augment(**kwargs):
         debug = _lookup('debug', params)
         quiet = _lookup('quiet', params)
 
-    ignore_partial_wcs = True
-    if 'ignore_partial_wcs' in params:
-        ignore_partial_wcs = params['ignore_partial_wcs']
-
     netrc = False
     if 'netrc' in params:
         netrc = params['netrc']
@@ -542,7 +549,7 @@ def omm_augment(**kwargs):
     else:
         observation = params['fname'].replace('.fits', '')
     product_id = observation
-    artifact_uri = _build_uri(observation)
+    artifact_uri = OmmName(observation).get_file_uri()
 
     blueprints = _build_blueprints(artifact_uri)
 
@@ -554,16 +561,16 @@ def omm_augment(**kwargs):
     # that means defining observations, product ids and uris is all
     # done here
 
-    logging.error(kwargs)
+    logging.debug(kwargs)
 
-    augment(blueprints=blueprints, no_validate=True,
-            dump_config=dump_config, ignore_partial_wcs=ignore_partial_wcs,
-            plugin=plugin, out_obs_xml=out_obs_xml, in_obs_xml=in_obs_xml,
-            collection=collection, observation=observation,
-            product_id=product_id, uri=artifact_uri, file_name=fname,
-            netrc=netrc, verbose=verbose, debug=debug, quiet=quiet, **kwargs)
+    augment(blueprints=blueprints, no_validate=no_validate,
+            dump_config=dump_config, plugin=plugin, out_obs_xml=out_obs_xml,
+            in_obs_xml=in_obs_xml, collection=collection,
+            observation=observation, product_id=product_id, uri=artifact_uri,
+            file_name=fname, netrc=netrc, verbose=verbose, debug=debug,
+            quiet=quiet, **kwargs)
 
-    logging.debug('modified Done omm2caom2 processing.')
+    logging.debug('Done omm_augment.')
 
 
 def _omm_augment_mapped(args):
@@ -598,8 +605,6 @@ def _omm_augment_mapped(args):
         kwargs['params']['in_obs_xml'] = args.in_obs_xml
     if args.out_obs_xml:
         kwargs['params']['out_obs_xml'] = args.out_obs_xml
-    if args.ignorePartialWCS:
-        kwargs['params']['ignore_partial_wcs'] = args.ignorePartialWCS
     if args.lineage:
         kwargs['params']['lineage'] = args.lineage
     if args.debug:

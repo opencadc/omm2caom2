@@ -178,31 +178,44 @@ def test_data_execute():
     precondition = open(test_fits_fqn, 'w')
     precondition.close()
 
+    footprint_orig = omm_footprint_augmentation.visit
     omm_footprint_augmentation.visit = Mock()
+    preview_orig = omm_preview_augmentation.visit
     omm_preview_augmentation.visit = Mock()
+    read_orig = obs_reader_writer.ObservationReader.read
     obs_reader_writer.ObservationReader.read = Mock(side_effect=_read_obs)
 
     test_config = _init_config()
 
-    # run the test
-    with patch('subprocess.Popen') as subprocess_mock:
-        subprocess_mock.return_value.communicate.side_effect = _communicate
-        test_executor = omm_composable.Omm2Caom2Data(test_config, test_obs_id)
-        try:
-            test_executor.execute(None)
-        except CadcException as e:
-            assert False, e
+    try:
+        # run the test
+        with patch('subprocess.Popen') as subprocess_mock:
+            subprocess_mock.return_value.communicate.side_effect = _communicate
+            test_executor = omm_composable.Omm2Caom2Data(test_config,
+                                                         test_obs_id)
+            try:
+                test_executor.execute(None)
+            except CadcException as e:
+                assert False, e
 
-    # check that things worked as expected - cleanup should have occurred
-    assert omm_footprint_augmentation.visit.called
-    assert omm_preview_augmentation.visit.called
+        # check that things worked as expected
+        assert omm_footprint_augmentation.visit.called
+        assert omm_preview_augmentation.visit.called
+    finally:
+        obs_reader_writer.ObservationReader.read = read_orig
+        omm_footprint_augmentation.visit = footprint_orig
+        omm_preview_augmentation.visit = preview_orig
 
 
 def test_data_local_execute():
     test_obs_id = 'test_obs_id'
 
+    fp_visit_orig = omm_footprint_augmentation.visit
+    prev_visit_orig = omm_preview_augmentation.visit
+
     omm_footprint_augmentation.visit = Mock()
     omm_preview_augmentation.visit = Mock()
+    read_orig = obs_reader_writer.ObservationReader.read
     obs_reader_writer.ObservationReader.read = Mock(side_effect=_read_obs)
 
     test_config = _init_config()
@@ -219,6 +232,9 @@ def test_data_local_execute():
     # check that things worked as expected - no cleanup
     assert omm_footprint_augmentation.visit.called
     assert omm_preview_augmentation.visit.called
+    obs_reader_writer.ObservationReader.read = read_orig
+    omm_footprint_augmentation.visit = fp_visit_orig
+    omm_preview_augmentation.visit = prev_visit_orig
 
 
 def test_data_store():
@@ -248,7 +264,9 @@ def test_scrape():
     assert os.path.exists(netrc)
 
     # mocks for this test
-    headers_orig = fits2caom2._get_headers_from_fits
+    meta_orig = fits2caom2._get_file_meta
+    header_orig = fits2caom2._get_headers_from_fits
+    fits2caom2._get_file_meta = Mock(side_effect=_get_test_file_meta)
     fits2caom2._get_headers_from_fits = Mock(side_effect=_get_file_headers)
 
     test_config = _init_config()
@@ -269,14 +287,19 @@ def test_scrape():
     assert fits2caom2._get_headers_from_fits.called
     assert os.path.exists(test_output_fname)
 
-    fits2caom2._get_headers_from_fits = headers_orig
+    fits2caom2._get_file_meta = meta_orig
+    fits2caom2._get_headers_from_fits = header_orig
 
 
 def test_data_scrape_execute():
     test_obs_id = 'test_obs_id'
 
+    fp_visit_orig = omm_footprint_augmentation.visit
+    prev_visit_orig = omm_preview_augmentation.visit
+
     omm_footprint_augmentation.visit = Mock()
     omm_preview_augmentation.visit = Mock()
+    read_orig = obs_reader_writer.ObservationReader.read
     obs_reader_writer.ObservationReader.read = Mock(side_effect=_read_obs)
 
     test_config = _init_config()
@@ -294,6 +317,9 @@ def test_data_scrape_execute():
     # check that things worked as expected - no cleanup
     assert omm_footprint_augmentation.visit.called
     assert omm_preview_augmentation.visit.called
+    obs_reader_writer.ObservationReader.read = read_orig
+    omm_footprint_augmentation.visit = fp_visit_orig
+    omm_preview_augmentation.visit = prev_visit_orig
 
 
 def test_organize_executes():
@@ -364,6 +390,10 @@ def _get_test_metadata(subject, path):
     return {'size': 37,
             'md5sum': 'e330482de75d5c4c88ce6f6ef99035ea',
             'type': 'applicaton/octect-stream'}
+
+
+def _get_test_file_meta(path):
+    return _get_test_metadata(None, None)
 
 
 def _read_obs(arg1):

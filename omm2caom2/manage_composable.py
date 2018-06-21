@@ -368,9 +368,34 @@ def exec_cmd(cmd):
         output, outerr = subprocess.Popen(cmd_array, stdout=subprocess.PIPE,
                                           stderr=subprocess.PIPE).communicate()
         if output is not None and len(output) > 0:
-            logging.debug('Command {} had output {}'.format(cmd, output))
-        if outerr is not None and len(outerr) > 0:
-            raise CadcException('Command {} had outerr {}'.format(cmd, outerr))
+            logging.debug('Command {} had stdout {}'.format(cmd, output))
+        if outerr is not None and len(outerr) > 0 and outerr[0] is not None:
+            raise CadcException('Command {} had stderr {}'.format(cmd, outerr))
+    except Exception as e:
+        logging.debug('Error with command {}:: {}'.format(cmd, e))
+        raise CadcException('Could not execute cmd {}'.format(cmd))
+
+
+def exec_cmd_redirect(cmd, fqn):
+    """
+    This does command execution as a subprocess call. It redirects stdout
+    to fqn, and assumes binary output for the re-direct.
+
+    :param cmd the text version of the command being executed
+    :param fqn the fully-qualified name of the file to which stdout is
+        re-directed
+    :return None
+    """
+    logging.debug(cmd)
+    cmd_array = cmd.split()
+    try:
+        with open(fqn, 'wb') as outfile:
+            outerr = subprocess.Popen(
+                cmd_array, stdout=outfile, stderr=subprocess.PIPE).communicate()
+            if outerr is not None and len(outerr) > 0 and outerr[0] is not None:
+                logging.debug('Command {} had stderr {}'.format(cmd, outerr))
+                raise CadcException(
+                    'Command {} had outerr {}'.format(cmd, outerr))
     except Exception as e:
         logging.debug('Error with command {}:: {}'.format(cmd, e))
         raise CadcException('Could not execute cmd {}'.format(cmd))
