@@ -1,3 +1,0 @@
-Integration tests for caom2repo
-
-To run: python tests/test-integration.py
