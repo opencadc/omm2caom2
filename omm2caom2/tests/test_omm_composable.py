@@ -248,7 +248,9 @@ def test_scrape():
     assert os.path.exists(netrc)
 
     # mocks for this test
-    headers_orig = fits2caom2._get_headers_from_fits
+    meta_orig = fits2caom2._get_file_meta
+    header_orig = fits2caom2._get_headers_from_fits
+    fits2caom2._get_file_meta = Mock(side_effect=_get_test_file_meta)
     fits2caom2._get_headers_from_fits = Mock(side_effect=_get_file_headers)
 
     test_config = _init_config()
@@ -269,7 +271,8 @@ def test_scrape():
     assert fits2caom2._get_headers_from_fits.called
     assert os.path.exists(test_output_fname)
 
-    fits2caom2._get_headers_from_fits = headers_orig
+    fits2caom2._get_file_meta = meta_orig
+    fits2caom2._get_headers_from_fits = header_orig
 
 
 def test_data_scrape_execute():
@@ -364,6 +367,10 @@ def _get_test_metadata(subject, path):
     return {'size': 37,
             'md5sum': 'e330482de75d5c4c88ce6f6ef99035ea',
             'type': 'applicaton/octect-stream'}
+
+
+def _get_test_file_meta(path):
+    return _get_test_metadata(None, None)
 
 
 def _read_obs(arg1):

@@ -90,7 +90,7 @@ class CaomExecute(object):
     # TODO - a lot of this content should reside in the composable
     # library
 
-    def __init__(self, config, obs_id):
+    def __init__(self, config, task_type, obs_id):
         self.obs_id = OmmName(obs_id).get_obs_id()
         self.root_dir = config.working_directory
         self.collection = config.collection
@@ -102,10 +102,14 @@ class CaomExecute(object):
         self.resource_id = config.resource_id
         self.logger = logging.getLogger()
         self.logger.setLevel(config.logging_level)
+        formatter = logging.Formatter(
+            '%(asctime)s:%(levelname)s:%(name)-12s:%(lineno)d:%(message)s')
         for handler in self.logger.handlers:
             handler.setLevel(config.logging_level)
+            handler.setFormatter(formatter)
         self.logging_level_param = self._set_logging_level_param(
             config.logging_level)
+        self.task_type = task_type
 
     def _create_dir(self):
         """Create the working area if it does not already exist."""
@@ -149,7 +153,7 @@ class CaomExecute(object):
                 'Error with command {}:: {}'.format(repo_cmd, e))
             raise manage_composable.CadcException(
                 'Could not read observation in {}'.format(
-                self.model_fqn))
+                    self.model_fqn))
 
     def _repo_cmd_delete(self):
         """Retrieve the existing observaton model metadata."""
@@ -196,7 +200,7 @@ class CaomExecute(object):
                 'Error with command {}:: {}'.format(repo_cmd, e))
             raise manage_composable.CadcException(
                 'Could not store the observation in {}'.format(
-                self.model_fqn))
+                    self.model_fqn))
 
     def _define_local_dirs(self):
         """when files are on disk don't worry about a separate directory
@@ -223,7 +227,8 @@ class Omm2Caom2Meta(CaomExecute):
     This requires access to only header information."""
 
     def __init__(self, config, obs_id):
-        super(Omm2Caom2Meta, self).__init__(config, obs_id)
+        super(Omm2Caom2Meta, self).__init__(
+            config, manage_composable.TaskType.INGEST, obs_id)
 
     def execute(self, context):
         self.logger.debug('Begin execute for {} Meta'.format(__name__))
@@ -263,7 +268,8 @@ class Omm2Caom2LocalMeta(CaomExecute):
     The file containing the metadata is located on disk."""
 
     def __init__(self, config, obs_id):
-        super(Omm2Caom2LocalMeta, self).__init__(config, obs_id)
+        super(Omm2Caom2LocalMeta, self).__init__(
+            config, manage_composable.TaskType.INGEST, obs_id)
         self._define_local_dirs()
 
     def execute(self, context):
@@ -300,7 +306,8 @@ class Omm2Caom2Data(CaomExecute):
     access to the file on disk, not just the header data. """
 
     def __init__(self, config, obs_id):
-        super(Omm2Caom2Data, self).__init__(config, obs_id)
+        super(Omm2Caom2Data, self).__init__(
+            config, manage_composable.TaskType.MODIFY, obs_id)
         self.log_file_directory = config.log_file_directory
 
     def execute(self, context):
@@ -421,7 +428,8 @@ class Omm2Caom2Store(CaomExecute):
     access to the file on disk. It will gzip compress the file."""
 
     def __init__(self, config, obs_id):
-        super(Omm2Caom2Store, self).__init__(config, obs_id)
+        super(Omm2Caom2Store, self).__init__(
+            config, manage_composable.TaskType.STORE, obs_id)
         # when files are on disk don't worry about a separate directory
         # per observation
         self.working_dir = self.root_dir
@@ -452,7 +460,8 @@ class Omm2Caom2Scrape(CaomExecute):
     No record is written to a web service."""
 
     def __init__(self, config, obs_id):
-        super(Omm2Caom2Scrape, self).__init__(config, obs_id)
+        super(Omm2Caom2Scrape, self).__init__(
+            config, manage_composable.TaskType.SCRAPE, obs_id)
         self._define_local_dirs()
 
     def execute(self, context):
@@ -553,7 +562,10 @@ def _set_up_file_logging(config, obs_id):
             log_fqn = os.path.join(config.log_file_directory,
                                    OmmName(obs_id).get_log_file())
         log_h = logging.FileHandler(log_fqn)
+        formatter = logging.Formatter(
+            '%(asctime)s:%(levelname)s:%(name)-12s:%(lineno)d:%(message)s')
         log_h.setLevel(config.logging_level)
+        log_h.setFormatter(formatter)
         logging.getLogger().addHandler(log_h)
     return log_h
 
@@ -588,7 +600,8 @@ def _run_local_files(config, organizer):
             try:
                 executors = organizer.choose(obs_id)
                 for executor in executors:
-                    logging.info('Step {} for {}'.format(executor, obs_id))
+                    logging.info(
+                        'Step {} for {}'.format(executor.task_type, obs_id))
                     executor.execute(context=None)
             finally:
                 _unset_file_logging(config, log_h)

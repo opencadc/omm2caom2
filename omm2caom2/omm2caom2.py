@@ -97,13 +97,14 @@ class OmmName(object):
 
     def __init__(self, obs_id):
         self.obs_id = obs_id.upper()
+        self.orig_obs_id = obs_id
 
     # TODO - MOVE THIS
     def get_file_uri(self):
         return 'ad:OMM/{}.gz'.format(self.get_file_name())
 
     def get_file_name(self):
-        return '{}.fits'.format(self.obs_id)
+        return '{}.fits'.format(self.orig_obs_id)
 
     def get_model_file_name(self):
         return '{}.fits.xml'.format(self.obs_id)
@@ -379,7 +380,6 @@ def update(observation, **kwargs):
                         chunk.product_type = get_product_type(headers)
                         _update_energy(chunk, headers)
                         _update_time(chunk, headers)
-
     logging.debug('Done update.')
     return True
 
