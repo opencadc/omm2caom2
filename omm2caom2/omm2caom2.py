@@ -166,8 +166,9 @@ def accumulate_obs(bp, uri):
     bp.add_fits_attribute('Observation.telescope.keywords', 'OBSERVER')
     bp.set('Observation.environment.ambientTemp',
            'get_obs_env_ambient_temp(header)')
-    if '_SCIRED' in uri:
-        bp.set('CompositeObservation.members', 'get_members(header)')
+    # if '_SCIRED' in uri:
+    bp.add_table_attribute('CompositeObservation.members', 'FICS', extension=1,
+                           index=None)
 
 
 def accumulate_plane(bp):

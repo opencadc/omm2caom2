@@ -150,9 +150,12 @@ class CaomExecute(object):
                                   self.resource_id, self.netrc_fqn,
                                   self.collection,
                                   self.obs_id)
-        manage_composable.exec_cmd(repo_cmd)
-        if os.path.exists(self.model_fqn):
-            os.remove(self.model_fqn)
+        try:
+            manage_composable.exec_cmd(repo_cmd)
+            if os.path.exists(self.model_fqn):
+                os.remove(self.model_fqn)
+        except manage_composable.CadcException as e:
+            pass
         # TODO - how to tell the difference between 'it doesn't exist', and
         # there's a real failure to pay attention to?
         # raise CadcException('Could not delete the observation in {}'.format(
