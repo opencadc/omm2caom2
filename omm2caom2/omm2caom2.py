@@ -70,6 +70,7 @@
 import importlib
 import logging
 import os
+import re
 import sys
 import traceback
 
@@ -100,15 +101,17 @@ class OmmName(object):
     - support gzipped and not zipped file names"""
 
     def __init__(self, obs_id):
-        self.obs_id = obs_id.upper()
-        self.orig_obs_id = obs_id
+        self.obs_id = obs_id
 
     # TODO - MOVE THIS
     def get_file_uri(self):
         return 'ad:OMM/{}.gz'.format(self.get_file_name())
 
     def get_file_name(self):
-        return '{}.fits'.format(self.orig_obs_id)
+        return '{}.fits'.format(self.obs_id)
+
+    def get_compressed_file_name(self):
+        return '{}.fits.gz'.format(self.obs_id)
 
     def get_model_file_name(self):
         return '{}.fits.xml'.format(self.obs_id)
@@ -155,6 +158,11 @@ class OmmName(object):
     def remove_extensions(name):
         return name.replace('.fits', '').replace('.gz', '').replace('.header',
                                                                     '')
+
+    @staticmethod
+    def is_valid(name):
+        pattern = re.compile('C[\w\+\-]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]')
+        return pattern.match(name)
 
 
 class CaomName(object):

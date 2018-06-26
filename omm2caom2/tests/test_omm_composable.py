@@ -111,10 +111,13 @@ def test_meta_execute():
     fits2caom2.get_cadc_headers = Mock(side_effect=_get_headers)
     artifact_meta_orig = fits2caom2._update_artifact_meta
     fits2caom2._update_artifact_meta = Mock()
+    data_cmd_orig = omm_composable.CaomExecute._data_cmd_info
+    omm_composable.CaomExecute._data_cmd_info = Mock(side_effect=_get_fname)
 
     test_config = _init_config()
 
     try:
+
         # run the test
         with patch('subprocess.Popen') as subprocess_mock:
             subprocess_mock.return_value.communicate.side_effect = _communicate
@@ -131,6 +134,7 @@ def test_meta_execute():
     finally:
         fits2caom2.get_cadc_headers = header_orig
         fits2caom2._update_artifact_meta = artifact_meta_orig
+        omm_composable.CaomExecute._data_cmd_info = data_cmd_orig
 
 
 def test_meta_local_execute():
@@ -162,7 +166,7 @@ def test_meta_local_execute():
         with patch('subprocess.Popen') as subprocess_mock:
             subprocess_mock.return_value.communicate.side_effect = _communicate
             test_executor = omm_composable.Omm2Caom2LocalMeta(
-                test_config, test_obs_id)
+                test_config, test_obs_id, OmmName(test_obs_id).get_file_name())
             try:
                 test_executor.execute(None)
             except CadcException as e:
@@ -193,10 +197,14 @@ def test_data_execute():
     omm_preview_augmentation.visit = Mock()
     read_orig = obs_reader_writer.ObservationReader.read
     obs_reader_writer.ObservationReader.read = Mock(side_effect=_read_obs)
-
+    data_cmd_orig = omm_composable.CaomExecute._data_cmd_info
+    os_path_exists_orig = os.path.exists
+    os.path.exists = Mock(return_value=True)
     test_config = _init_config()
 
     try:
+        omm_composable.CaomExecute._data_cmd_info = Mock(side_effect=_get_fname)
+
         # run the test
         with patch('subprocess.Popen') as subprocess_mock:
             subprocess_mock.return_value.communicate.side_effect = _communicate
@@ -214,6 +222,8 @@ def test_data_execute():
         obs_reader_writer.ObservationReader.read = read_orig
         omm_footprint_augmentation.visit = footprint_orig
         omm_preview_augmentation.visit = preview_orig
+        omm_composable.CaomExecute._data_cmd_info = data_cmd_orig
+        os.path.exists = os_path_exists_orig
 
 
 def test_data_local_execute():
@@ -232,8 +242,9 @@ def test_data_local_execute():
         # run the test
         with patch('subprocess.Popen') as subprocess_mock:
             subprocess_mock.return_value.communicate.side_effect = _communicate
-            test_executor = omm_composable.Omm2Caom2LocalData(test_config,
-                                                              test_obs_id)
+            test_executor = omm_composable.Omm2Caom2LocalData(
+                test_config, test_obs_id,
+                OmmName(test_obs_id).get_compressed_file_name())
             try:
                 test_executor.execute(None)
             except CadcException as e:
@@ -255,8 +266,9 @@ def test_data_store():
     # run the test
     with patch('subprocess.Popen') as subprocess_mock:
         subprocess_mock.return_value.communicate.side_effect = _communicate
-        test_executor = omm_composable.Omm2Caom2Store(test_config,
-                                                      test_obs_id)
+        test_executor = omm_composable.Omm2Caom2Store(
+            test_config, test_obs_id,
+            OmmName(test_obs_id).get_compressed_file_name())
         try:
             test_executor.execute(None)
         except CadcException as e:
@@ -290,7 +302,8 @@ def test_scrape():
         with patch('subprocess.Popen') as subprocess_mock:
             subprocess_mock.return_value.communicate.side_effect = _communicate
             test_executor = omm_composable.Omm2Caom2Scrape(
-                test_config, test_obs_id)
+                test_config, test_obs_id,
+                OmmName(test_obs_id).get_compressed_file_name())
             try:
                 test_executor.execute(None)
             except CadcException as e:
@@ -320,8 +333,9 @@ def test_data_scrape_execute():
         # run the test
         with patch('subprocess.Popen') as subprocess_mock:
             subprocess_mock.return_value.communicate.side_effect = _communicate
-            test_executor = omm_composable.Omm2Caom2DataScrape(test_config,
-                                                              test_obs_id)
+            test_executor = omm_composable.Omm2Caom2DataScrape(
+                test_config, test_obs_id,
+                OmmName(test_obs_id).get_compressed_file_name())
             try:
                 test_executor.execute(None)
             except CadcException as e:
@@ -340,44 +354,88 @@ def test_organize_executes():
     test_obs_id = 'test_obs_id'
     test_config = _init_config()
     test_config.use_local_files = True
+    exec_cmd_orig = manage_composable.exec_cmd_info
 
-    test_config.task_types = [manage_composable.TaskType.SCRAPE]
-    test_oe = omm_composable.OrganizeExecutes(test_config)
-    executors = test_oe.choose(test_obs_id)
-    assert executors is not None
-    assert len(executors) == 1
-    assert isinstance(executors[0], omm_composable.Omm2Caom2Scrape)
+    try:
+        manage_composable.exec_cmd_info = \
+            Mock(return_value='INFO:cadc-data:info\n'
+                              'File C170324_0054_SCI_prev.jpg:\n'
+                              '    archive: OMM\n'
+                              '   encoding: None\n'
+                              '    lastmod: Mon, 25 Jun 2018 16:52:07 GMT\n'
+                              '     md5sum: f37d21c53055498d1b5cb7753e1c6d6f\n'
+                              '       name: C120902_sh2-132_J_old_SCIRED.fits.gz\n'
+                              '       size: 754408\n'
+                              '       type: image/jpeg\n'
+                              '    umd5sum: 704b494a972eed30b18b817e243ced7d\n'
+                              '      usize: 754408\n'.encode('utf-8'))
 
-    test_config.task_types = [manage_composable.TaskType.STORE,
-                              manage_composable.TaskType.INGEST,
-                              manage_composable.TaskType.MODIFY]
-    test_oe = omm_composable.OrganizeExecutes(test_config)
-    executors = test_oe.choose(test_obs_id)
-    assert executors is not None
-    assert len(executors) == 3
-    assert isinstance(executors[0], omm_composable.Omm2Caom2Store)
-    assert isinstance(executors[1], omm_composable.Omm2Caom2LocalMeta)
-    assert isinstance(executors[2], omm_composable.Omm2Caom2LocalData)
+        test_config.task_types = [manage_composable.TaskType.SCRAPE]
+        test_oe = omm_composable.OrganizeExecutes(test_config)
+        executors = test_oe.choose(test_obs_id)
+        assert executors is not None
+        assert len(executors) == 1
+        assert isinstance(executors[0], omm_composable.Omm2Caom2Scrape)
 
-    test_config.use_local_files = False
-    test_config.task_types = [manage_composable.TaskType.INGEST,
-                              manage_composable.TaskType.MODIFY]
-    test_oe = omm_composable.OrganizeExecutes(test_config)
-    executors = test_oe.choose(test_obs_id)
-    assert executors is not None
-    assert len(executors) == 2
-    assert isinstance(executors[0], omm_composable.Omm2Caom2Meta)
-    assert isinstance(executors[1], omm_composable.Omm2Caom2Data)
+        test_config.task_types = [manage_composable.TaskType.STORE,
+                                  manage_composable.TaskType.INGEST,
+                                  manage_composable.TaskType.MODIFY]
+        test_oe = omm_composable.OrganizeExecutes(test_config)
+        executors = test_oe.choose(test_obs_id)
+        assert executors is not None
+        assert len(executors) == 3
+        assert isinstance(executors[0], omm_composable.Omm2Caom2Store)
+        assert isinstance(executors[1], omm_composable.Omm2Caom2LocalMeta)
+        assert isinstance(executors[2], omm_composable.Omm2Caom2LocalData)
 
-    test_config.task_types = [manage_composable.TaskType.SCRAPE,
-                              manage_composable.TaskType.MODIFY]
-    test_config.use_local_files = True
-    test_oe = omm_composable.OrganizeExecutes(test_config)
-    executors = test_oe.choose(test_obs_id)
-    assert executors is not None
-    assert len(executors) == 2
-    assert isinstance(executors[0], omm_composable.Omm2Caom2Scrape)
-    assert isinstance(executors[1], omm_composable.Omm2Caom2DataScrape)
+        test_config.use_local_files = False
+        test_config.task_types = [manage_composable.TaskType.INGEST,
+                                  manage_composable.TaskType.MODIFY]
+        test_oe = omm_composable.OrganizeExecutes(test_config)
+        executors = test_oe.choose(test_obs_id)
+        assert executors is not None
+        assert len(executors) == 2
+        assert isinstance(executors[0], omm_composable.Omm2Caom2Meta)
+        assert isinstance(executors[1], omm_composable.Omm2Caom2Data)
+
+        test_config.task_types = [manage_composable.TaskType.SCRAPE,
+                                  manage_composable.TaskType.MODIFY]
+        test_config.use_local_files = True
+        test_oe = omm_composable.OrganizeExecutes(test_config)
+        executors = test_oe.choose(test_obs_id)
+        assert executors is not None
+        assert len(executors) == 2
+        assert isinstance(executors[0], omm_composable.Omm2Caom2Scrape)
+        assert isinstance(executors[1], omm_composable.Omm2Caom2DataScrape)
+    finally:
+        manage_composable.exec_cmd_orig = exec_cmd_orig
+
+
+def test_data_cmd_info():
+    exec_cmd_orig = manage_composable.exec_cmd_info
+    try:
+        manage_composable.exec_cmd_info = \
+            Mock(return_value='INFO:cadc-data:info\n'
+                              'File C170324_0054_SCI_prev.jpg:\n'
+                              '    archive: OMM\n'
+                              '   encoding: None\n'
+                              '    lastmod: Mon, 25 Jun 2018 16:52:07 GMT\n'
+                              '     md5sum: f37d21c53055498d1b5cb7753e1c6d6f\n'
+                              '       name: C120902_sh2-132_J_old_SCIRED.fits.gz\n'
+                              '       size: 754408\n'
+                              '       type: image/jpeg\n'
+                              '    umd5sum: 704b494a972eed30b18b817e243ced7d\n'
+                              '      usize: 754408\n')
+        test_config = _init_config()
+        test_obs_id = 'TEST_OBS_ID'
+        test_executor = omm_composable.Omm2Caom2Meta(test_config, test_obs_id)
+        test_executor._find_file_name_storage()
+        assert test_executor.fname is not None, test_executor.fname
+        assert test_executor.fname == 'C120902_sh2-132_J_old_SCIRED.fits.gz', \
+            test_executor.fname
+        assert manage_composable.exec_cmd_info.called
+    finally:
+        manage_composable.exec_cmd_orig = exec_cmd_orig
 
 
 def _communicate():
@@ -418,3 +476,7 @@ def _read_obs(arg1):
 
 def _get_file_headers(fname):
     return _get_headers(None, None)
+
+
+def _get_fname():
+    return 'TBD'

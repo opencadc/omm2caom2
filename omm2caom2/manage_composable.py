@@ -391,7 +391,7 @@ def exec_cmd_info(cmd):
         if outerr is not None and len(outerr) > 0 and outerr[0] is not None:
             raise CadcException('Command {} had stderr {}'.format(cmd, outerr))
         if output is not None and len(output) > 0:
-            return output
+            return output.decode('utf-8')
     except Exception as e:
         logging.debug('Error with command {}:: {}'.format(cmd, e))
         raise CadcException('Could not execute cmd {}'.format(cmd))

@@ -179,7 +179,7 @@ def _put_omm(working_dir, jpg_name, netrc_fqn, logging_level_param):
 def _check_omm(artifact, logging_level_param, netrc_fqn, fname):
     check_cmd = 'cadc-data info {} --netrc-file {} OMM {}'.format(
         logging_level_param, netrc_fqn, fname)
-    output = manage_composable.exec_cmd_info(check_cmd).decode('utf-8')
+    output = manage_composable.exec_cmd_info(check_cmd)
     ad_md5sum = ChecksumURI(output.split('umd5sum: ')[1].split()[0])
     if artifact.content_checksum != ad_md5sum:
         raise manage_composable.CadcException(

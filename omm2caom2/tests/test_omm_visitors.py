@@ -169,7 +169,7 @@ def test_check_omm():
                               '       size: 754408\n'
                               '       type: image/jpeg\n'
                               '    umd5sum: 704b494a972eed30b18b817e243ced7d\n'
-                              '      usize: 754408\n'.encode('utf-8'))
+                              '      usize: 754408\n')
         test_uri = 'ad:OMM/C170324_0054_SCI_prev.jpg'
         test_product_type = ProductType.THUMBNAIL
         test_release_type = ReleaseType.DATA
