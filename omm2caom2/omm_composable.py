@@ -214,7 +214,8 @@ class Omm2Caom2Meta(CaomExecute):
         self.logger.debug('generate the xml, as the main_app will retrieve '
                           'the headers')
         kwargs = {'params': {
-            'observation': self.fname.split('.')[0],
+            'observation': self.obs_id,
+            'fname': self.fname,
             'out_obs_xml': self.model_fqn,
             'collection': self.collection,
             'netrc': self.netrc_fqn,
@@ -254,7 +255,8 @@ class Omm2Caom2LocalMeta(CaomExecute):
         fqn = os.path.join(self.working_dir, self.fname)
         kwargs = {'params': {
             'local': [fqn],
-            'observation': self.fname.split('.')[0],
+            'observation': self.obs_id,
+            'fqn': os.path.join(self.working_dir, self.fname),
             'out_obs_xml': self.model_fqn,
             'collection': self.collection,
             'netrc': self.netrc_fqn,
@@ -311,7 +313,8 @@ class Omm2Caom2Data(CaomExecute):
 
     def _generate_previews(self, observation):
         kwargs = {'working_directory': self.working_dir,
-                  'netrc_fqn': self.netrc_fqn}
+                  'netrc_fqn': self.netrc_fqn,
+                  'logging_level_param': self.logging_level_param}
         omm_preview_augmentation.visit(observation, **kwargs)
 
     def _generate_footprint(self, observation):
@@ -479,7 +482,11 @@ class OrganizeExecutes(object):
         for task_type in self.task_types:
             self.logger.debug(task_type)
             if task_type == manage_composable.TaskType.SCRAPE:
-                executors.append(Omm2Caom2Scrape(self.config, obs_id))
+                if self.config.use_local_files:
+                    executors.append(Omm2Caom2Scrape(self.config, obs_id))
+                else:
+                    raise manage_composable.CadcException(
+                        'use_local_files must be True with Task Type "SCRAPE"')
             elif task_type == manage_composable.TaskType.STORE:
                 if self.config.use_local_files:
                     executors.append(Omm2Caom2Store(self.config, obs_id))

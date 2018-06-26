@@ -76,7 +76,7 @@ from aenum import Enum
 from datetime import datetime
 
 __all__ = ['CadcException', 'Config', 'get_datetime', 'to_float', 'TaskType',
-           'exec_cmd']
+           'exec_cmd', 'exec_cmd_redirect', 'exec_cmd_info']
 
 
 class CadcException(Exception):
@@ -371,6 +371,27 @@ def exec_cmd(cmd):
             logging.debug('Command {} had stdout {}'.format(cmd, output))
         if outerr is not None and len(outerr) > 0 and outerr[0] is not None:
             raise CadcException('Command {} had stderr {}'.format(cmd, outerr))
+    except Exception as e:
+        logging.debug('Error with command {}:: {}'.format(cmd, e))
+        raise CadcException('Could not execute cmd {}'.format(cmd))
+
+
+def exec_cmd_info(cmd):
+    """
+    This does command execution as a subprocess call.
+
+    :param cmd the text version of the command being executed
+    :return The text from stdout.
+    """
+    logging.debug(cmd)
+    cmd_array = cmd.split()
+    try:
+        output, outerr = subprocess.Popen(cmd_array, stdout=subprocess.PIPE,
+                                          stderr=subprocess.PIPE).communicate()
+        if outerr is not None and len(outerr) > 0 and outerr[0] is not None:
+            raise CadcException('Command {} had stderr {}'.format(cmd, outerr))
+        if output is not None and len(output) > 0:
+            return output
     except Exception as e:
         logging.debug('Error with command {}:: {}'.format(cmd, e))
         raise CadcException('Could not execute cmd {}'.format(cmd))

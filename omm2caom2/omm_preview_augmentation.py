@@ -71,6 +71,7 @@ import logging
 import os
 
 from hashlib import md5
+from six.moves.urllib.parse import urlsplit
 
 from caom2 import Artifact, ProductType, ReleaseType, ChecksumURI
 from caom2 import Observation
@@ -92,6 +93,9 @@ def visit(observation, **kwargs):
     else:
         raise manage_composable.CadcException(
             '\'netrc_fqn\' missing from kwargs.'.format())
+    logging_level_param = ''
+    if 'logging_level_param' in kwargs:
+        logging_level_param = kwargs['logging_level_param']
 
     count = 0
     for i in observation.planes:
@@ -105,9 +109,10 @@ def visit(observation, **kwargs):
                 science_fqn = os.path.join(working_dir, file_name)
                 if not os.path.exists(science_fqn):
                     raise manage_composable.CadcException(
-                        '{} visit file not found'.format(science_fqn))
+                        '{} preview visit file not found'.format(science_fqn))
                 logging.debug('working on file {}'.format(science_fqn))
-                _do_prev(file_id, science_fqn, working_dir, netrc_fqn, plane)
+                _do_prev(file_id, science_fqn, working_dir, netrc_fqn, plane,
+                         logging_level_param)
                 logging.debug(
                     'Completed preview generation for {}.'.format(file_id))
             count += 2
@@ -126,9 +131,12 @@ def _artifact_metadata(uri, fqn, product_type):
                     content_checksum=md5uri)
 
 
-def _do_prev(file_id, science_fqn, working_dir, netrc_fqn, plane):
-    preview_fqn = os.path.join(working_dir, OmmName(file_id).get_prev())
-    thumb_fqn = os.path.join(working_dir, OmmName(file_id).get_thumb())
+def _do_prev(file_id, science_fqn, working_dir, netrc_fqn, plane,
+             logging_level_param):
+    preview = OmmName(file_id).get_prev()
+    preview_fqn = os.path.join(working_dir, preview)
+    thumb = OmmName(file_id).get_thumb()
+    thumb_fqn = os.path.join(working_dir, thumb)
 
     if os.access(preview_fqn, 0):
         os.remove(preview_fqn)
@@ -142,17 +150,38 @@ def _do_prev(file_id, science_fqn, working_dir, netrc_fqn, plane):
                '--asinh-scale --jpg --invert --compass {}'.format(science_fqn)
     manage_composable.exec_cmd_redirect(prev_cmd, thumb_fqn)
 
-    _put_omm(preview_fqn, netrc_fqn)
-    _put_omm(thumb_fqn, netrc_fqn)
+    _put_omm(working_dir, preview, netrc_fqn, logging_level_param)
+    _put_omm(working_dir, thumb, netrc_fqn, logging_level_param)
 
-    _augment(plane, OmmName(file_id).get_prev_uri(), preview_fqn,
-             ProductType.PREVIEW)
-    _augment(plane, OmmName(file_id).get_thumb_uri(), thumb_fqn,
-             ProductType.THUMBNAIL)
+    prev_uri = OmmName(file_id).get_prev_uri()
+    thumb_uri = OmmName(file_id).get_thumb_uri()
+    _augment(plane, prev_uri, preview_fqn, ProductType.PREVIEW)
+    _augment(plane, thumb_uri, thumb_fqn, ProductType.THUMBNAIL)
+
+    _check_omm(plane.artifacts[prev_uri], logging_level_param, netrc_fqn,
+               preview)
+    _check_omm(plane.artifacts[thumb_uri], logging_level_param, netrc_fqn,
+               thumb)
 
 
-def _put_omm(jpg_name, netrc_fqn):
-    # cmd = ['cadc-data', 'put', '--cert', _MYCERT, 'OMM', preview_jpg256, '--archive-stream', 'raw']
-    cmd = 'cadc-data put --netrc-file {} OMM {} --archive-stream raw'.format(
-        netrc_fqn, jpg_name)
-    manage_composable.exec_cmd(cmd)
+def _put_omm(working_dir, jpg_name, netrc_fqn, logging_level_param):
+    cwd = os.getcwd()
+    try:
+        os.chdir(working_dir)
+        cmd = 'cadc-data put {} --netrc-file {} OMM {} ' \
+              '--archive-stream raw'.format(logging_level_param, netrc_fqn,
+                                            jpg_name)
+        manage_composable.exec_cmd(cmd)
+    finally:
+        os.chdir(cwd)
+
+
+def _check_omm(artifact, logging_level_param, netrc_fqn, fname):
+    check_cmd = 'cadc-data info {} --netrc-file {} OMM {}'.format(
+        logging_level_param, netrc_fqn, fname)
+    output = manage_composable.exec_cmd_info(check_cmd).decode('utf-8')
+    ad_md5sum = ChecksumURI(output.split('umd5sum: ')[1].split()[0])
+    if artifact.content_checksum != ad_md5sum:
+        raise manage_composable.CadcException(
+            '{} checksum failure with ad, expected {}, '
+            'got {}'.format(fname, artifact.content_checksum, ad_md5sum))

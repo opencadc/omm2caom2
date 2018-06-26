@@ -69,6 +69,7 @@
 
 import importlib
 import logging
+import os
 import sys
 import traceback
 
@@ -94,6 +95,9 @@ DATATYPE_LOOKUP = {'CALIB': 'flat',
 
 
 class OmmName(object):
+    """OMM naming rules:
+    - support mixed-case file name storage
+    - support gzipped and not zipped file names"""
 
     def __init__(self, obs_id):
         self.obs_id = obs_id.upper()
@@ -130,6 +134,27 @@ class OmmName(object):
     @staticmethod
     def _get_uri(fname):
         return 'ad:OMM/{}'.format(fname)
+
+    @staticmethod
+    def build_obs_id(fname):
+        return OmmName.remove_extensions(fname).upper()
+
+    @staticmethod
+    def build_obs_id_from_fqn(fqn):
+        return OmmName.remove_extensions(os.path.basename(fqn)).upper()
+
+    @staticmethod
+    def extract_fname_from_fqn(fqn):
+        return os.path.basename(fqn)
+
+    @staticmethod
+    def extract_orig_obs_id_from_fqn(fqn):
+        return OmmName.remove_extensions(os.path.basename(fqn))
+
+    @staticmethod
+    def remove_extensions(name):
+        return name.replace('.fits', '').replace('.gz', '').replace('.header',
+                                                                    '')
 
 
 class CaomName(object):
@@ -530,18 +555,26 @@ def omm_augment(**kwargs):
     else:
         plugin = __name__
 
+    local_fname = None
     fname = None
+    if 'fqn' in params:
+        local_fname = params['fqn']
+    if 'local' in params:
+        local_fname = params['local'][0]
     if 'fname' in params:
         fname = params['fname']
-    if 'local' in params:
-        fname = params['local'][0]
 
     if 'observation' in params:
         observation = params['observation']
     else:
-        observation = params['fname'].replace('.fits', '')
+        observation = OmmName.build_obs_id_from_fqn(params['fqn'])
     product_id = observation
-    artifact_uri = OmmName(observation).get_file_uri()
+    if local_fname is not None:
+        orig_obs_id = OmmName.extract_orig_obs_id_from_fqn(local_fname)
+    elif fname is not None:
+        orig_obs_id = OmmName.remove_extensions(fname)
+
+    artifact_uri = OmmName(orig_obs_id).get_file_uri()
 
     blueprints = _build_blueprints(artifact_uri)
 
@@ -553,13 +586,13 @@ def omm_augment(**kwargs):
     # that means defining observations, product ids and uris is all
     # done here
 
-    logging.debug(kwargs)
+    logging.error(kwargs)
 
     augment(blueprints=blueprints, no_validate=no_validate,
             dump_config=dump_config, plugin=plugin, out_obs_xml=out_obs_xml,
             in_obs_xml=in_obs_xml, collection=collection,
             observation=observation, product_id=product_id, uri=artifact_uri,
-            file_name=fname, netrc=netrc, verbose=verbose, debug=debug,
+            file_name=local_fname, netrc=netrc, verbose=verbose, debug=debug,
             quiet=quiet, **kwargs)
 
     logging.debug('Done omm_augment.')
@@ -581,7 +614,7 @@ def _omm_augment_mapped(args):
         # a general solution
         fname = args.local[0]
 
-    kwargs = {'params': {'fname': fname,
+    kwargs = {'params': {'fqn': fname,
                          'collection': 'OMM',
                          'observation': observation}}
 
