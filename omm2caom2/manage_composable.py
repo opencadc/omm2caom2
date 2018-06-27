@@ -365,14 +365,18 @@ def exec_cmd(cmd):
     logging.debug(cmd)
     cmd_array = cmd.split()
     try:
-        output, outerr = subprocess.Popen(cmd_array, stdout=subprocess.PIPE,
-                                          stderr=subprocess.PIPE).communicate()
-        if output is not None and len(output) > 0:
-            logging.debug('Command {} had stdout {}'.format(cmd, output))
-        if outerr is not None and len(outerr) > 0 and outerr[0] is not None:
-            raise CadcException('Command {} had stderr {}'.format(cmd, outerr))
+        child = subprocess.Popen(cmd_array, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+        output, outerr = child.communicate()
+        logging.debug('stdout {}'.format(output))
+        logging.debug('stderr {}'.format(outerr))
+        if child.returncode != 0:
+            logging.debug('Command {} failed.'.format(cmd))
+            raise CadcException(
+                'Command {} had stdout{} stderr {}'.format(
+                    cmd, output, outerr))
     except Exception as e:
-        logging.debug('Error with command {}:: {}'.format(cmd, e))
+        logging.error('Error with command {}:: {}'.format(cmd, e))
         raise CadcException('Could not execute cmd {}'.format(cmd))
 
 

@@ -69,10 +69,11 @@
 
 import logging
 import os
+import site
 import traceback
 
 from omm2caom2 import omm_preview_augmentation, omm_footprint_augmentation
-from omm2caom2 import manage_composable, omm_augment, OmmName
+from omm2caom2 import manage_composable, OmmName
 from caom2 import obs_reader_writer
 
 
@@ -200,6 +201,21 @@ class CaomExecute(object):
             raise manage_composable.CadcException(
                 'Failed to execute {} with {}.'.format(cmd, e))
 
+    def _fits2caom2_cmd_local(self):
+        fqn = os.path.join(self.working_dir, self.fname)
+        uri = OmmName(self.obs_id).get_file_uri()
+        plugin = self._find_fits2caom2_plugin()
+        cmd = 'omm2caom2 {} --netrc {} --observation {} {} --out {} ' \
+              '--plugin {} --local {} --lineage {}/{}'.format(
+                self.logging_level_param, self.netrc_fqn, self.collection,
+                self.obs_id, self.model_fqn, plugin, fqn, self.obs_id, uri)
+        manage_composable.exec_cmd(cmd)
+
+    @staticmethod
+    def _find_fits2caom2_plugin():
+        packages = site.getsitepackages()
+        return os.path.join(packages[0], 'omm2caom2/omm2caom2.py')
+
     @staticmethod
     def _set_logging_level_param(logging_level):
         lookup = {logging.DEBUG: '--debug',
@@ -240,14 +256,7 @@ class Omm2Caom2Meta(CaomExecute):
 
         self.logger.debug('generate the xml, as the main_app will retrieve '
                           'the headers')
-        kwargs = {'params': {
-            'observation': self.obs_id,
-            'fname': self.fname,
-            'out_obs_xml': self.model_fqn,
-            'collection': self.collection,
-            'netrc': self.netrc_fqn,
-            'logging_level': self.logger.getEffectiveLevel()}}
-        omm_augment(**kwargs)
+        self._fits2caom2_cmd()
 
         self.logger.debug('store the xml')
         self._repo_cmd('create')
@@ -256,6 +265,15 @@ class Omm2Caom2Meta(CaomExecute):
         self._cleanup()
 
         self.logger.debug('End execute for {}'.format(__name__))
+
+    def _fits2caom2_cmd(self):
+        uri = OmmName(self.obs_id).get_file_uri()
+        plugin = self._find_fits2caom2_plugin()
+        cmd = 'omm2caom2 {} --netrc {} --observation {} {} --out {} ' \
+              '--plugin {} --lineage {}/{}'.format(
+                self.logging_level_param, self.netrc_fqn, self.collection,
+                self.obs_id, self.model_fqn, plugin, self.obs_id, uri)
+        manage_composable.exec_cmd(cmd)
 
 
 class Omm2Caom2LocalMeta(CaomExecute):
@@ -280,16 +298,7 @@ class Omm2Caom2LocalMeta(CaomExecute):
         self._repo_cmd_delete()
 
         self.logger.debug('generate the xml from the file on disk')
-        fqn = os.path.join(self.working_dir, self.fname)
-        kwargs = {'params': {
-            'local': [fqn],
-            'observation': self.obs_id,
-            'fqn': os.path.join(self.working_dir, self.fname),
-            'out_obs_xml': self.model_fqn,
-            'collection': self.collection,
-            'netrc': self.netrc_fqn,
-            'logging_level': self.logger.getEffectiveLevel()}}
-        omm_augment(**kwargs)
+        self._fits2caom2_cmd_local()
 
         self.logger.debug('store the xml')
         self._repo_cmd('create')
@@ -367,7 +376,16 @@ class Omm2Caom2Data(CaomExecute):
         """Retrieve a collection file, even if it already exists. This might
         ensure that the latest version of the file is retrieved from
         storage."""
-        fqn = os.path.join(self.working_dir, self.fname)
+
+        # all the gets are supposed to be unzipped, so that the
+        # footprintfinder is more efficient, so make sure the fully
+        # qualified output name isn't the gzip'd version
+
+        if self.fname.endswith('.gz'):
+            fqn = os.path.join(self.working_dir, self.fname.replace('.gz', ''))
+        else:
+            fqn = os.path.join(self.working_dir, self.fname)
+
         data_cmd = 'cadc-data get {} -z --netrc {} {} {} -o {}'.format(
             self.logging_level_param, self.netrc_fqn, self.collection,
             self.obs_id, fqn)
@@ -463,15 +481,7 @@ class Omm2Caom2Scrape(CaomExecute):
         self.logger.debug('the steps:')
 
         self.logger.debug('generate the xml from the file on disk')
-        fqn = os.path.join(self.working_dir, self.fname)
-        kwargs = {'params': {
-            'local': [fqn],
-            'observation': self.fname.split('.')[0],
-            'out_obs_xml': self.model_fqn,
-            'collection': self.collection,
-            'netrc': self.netrc_fqn,
-            'logging_level': self.logger.getEffectiveLevel()}}
-        omm_augment(**kwargs)
+        self._fits2caom2_cmd_local()
 
         self.logger.debug('End execute for {}'.format(__name__))
 
@@ -583,14 +593,21 @@ def _run_todo_file(config, organizer):
         for line in f:
             obs_id = line.strip()
             log_h = _set_up_file_logging(config, obs_id)
-            try:
-                logging.info('Process {}'.format(obs_id))
-                executors = organizer.choose(obs_id)
-                for executor in executors:
-                    logging.info('Step {} for {}'.format(executor, obs_id))
-                    executor.execute(context=None)
-            finally:
-                _unset_file_logging(config, log_h)
+            if OmmName.is_valid(obs_id):
+                try:
+                    logging.info('Process {}'.format(obs_id))
+                    executors = organizer.choose(obs_id)
+                    for executor in executors:
+                        logging.info(
+                            'Step {} for {}'.format(executor.task_type, obs_id))
+                        executor.execute(context=None)
+                finally:
+                    _unset_file_logging(config, log_h)
+            else:
+                logging.error(
+                    '{} failed naming validation check. Must match '
+                    'this regular expression {}.'.format(
+                        obs_id, OmmName.OMM_NAME_PATTERN))
 
 
 def _run_local_files(config, organizer):
@@ -599,15 +616,21 @@ def _run_local_files(config, organizer):
         if do_file.endswith('.fits') or do_file.endswith('.fits.gz'):
             logging.info('Process {}'.format(do_file))
             obs_id = OmmName.remove_extensions(do_file)
-            log_h = _set_up_file_logging(config, obs_id)
-            try:
-                executors = organizer.choose(obs_id, do_file)
-                for executor in executors:
-                    logging.info(
-                        'Step {} for {}'.format(executor.task_type, obs_id))
-                    executor.execute(context=None)
-            finally:
-                _unset_file_logging(config, log_h)
+            if OmmName.is_valid(obs_id):
+                log_h = _set_up_file_logging(config, obs_id)
+                try:
+                    executors = organizer.choose(obs_id, do_file)
+                    for executor in executors:
+                        logging.info(
+                            'Step {} for {}'.format(executor.task_type, obs_id))
+                        executor.execute(context=None)
+                finally:
+                    _unset_file_logging(config, log_h)
+            else:
+                logging.error(
+                    '{} failed naming validation check. Must match '
+                    'this regular expression {}.'.format(
+                        obs_id, OmmName.OMM_NAME_PATTERN))
 
 
 def run_by_file():

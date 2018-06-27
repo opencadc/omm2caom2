@@ -100,10 +100,6 @@ def test_footprint_update_position():
     with pytest.raises(manage_composable.CadcException):
         test_result = omm_footprint_augmentation.visit(test_obs)
 
-    # expected failure due to non-existent file
-    with pytest.raises(manage_composable.CadcException):
-        test_result = omm_footprint_augmentation.visit(test_obs, **test_kwargs)
-
     test_kwargs['working_directory'] = TESTDATA_DIR
     test_result = omm_footprint_augmentation.visit(test_obs, **test_kwargs)
     assert test_result is not None, 'expected a visit return value'

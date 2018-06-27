@@ -107,34 +107,26 @@ def test_meta_execute():
     assert os.path.exists(netrc)
 
     # mocks for this test
-    header_orig = fits2caom2.get_cadc_headers
-    fits2caom2.get_cadc_headers = Mock(side_effect=_get_headers)
-    artifact_meta_orig = fits2caom2._update_artifact_meta
-    fits2caom2._update_artifact_meta = Mock()
     data_cmd_orig = omm_composable.CaomExecute._data_cmd_info
     omm_composable.CaomExecute._data_cmd_info = Mock(side_effect=_get_fname)
+    exec_cmd_orig = manage_composable.exec_cmd
 
     test_config = _init_config()
-
     try:
-
         # run the test
-        with patch('subprocess.Popen') as subprocess_mock:
-            subprocess_mock.return_value.communicate.side_effect = _communicate
-            test_executor = omm_composable.Omm2Caom2Meta(test_config,
-                                                         test_obs_id)
-            try:
-                test_executor.execute(None)
-            except CadcException as e:
-                assert False, e
+        manage_composable.exec_cmd = Mock()
+        test_executor = omm_composable.Omm2Caom2Meta(test_config, test_obs_id)
+        try:
+            test_executor.execute(None)
+        except CadcException as e:
+            assert False, e
 
         # check that things worked as expected
-        assert fits2caom2.get_cadc_headers.called
-        assert fits2caom2._update_artifact_meta.called
+        assert manage_composable.exec_cmd.called
+        assert omm_composable.CaomExecute._data_cmd_info.called
     finally:
-        fits2caom2.get_cadc_headers = header_orig
-        fits2caom2._update_artifact_meta = artifact_meta_orig
         omm_composable.CaomExecute._data_cmd_info = data_cmd_orig
+        manage_composable.exec_cmd = exec_cmd_orig
 
 
 def test_meta_local_execute():
@@ -147,38 +139,24 @@ def test_meta_local_execute():
         os.remove(test_output_fname)
     netrc = os.path.join(TESTDATA_DIR, 'test_netrc')
     assert os.path.exists(netrc)
-
-    # mocks for this test
-    meta_orig = fits2caom2._get_file_meta
-    fits2caom2._get_file_meta = Mock(return_value={'size': 37,
-                                                   'md5sum': 'e330482de75d5c4c88ce6f6ef99035ea',
-                                                   'type': 'applicaton/octect-stream'})
-    headers_orig = fits2caom2._get_headers_from_fits
-    fits2caom2._get_headers_from_fits = Mock(side_effect=_get_file_headers)
+    exec_cmd_orig = manage_composable.exec_cmd
+    manage_composable.exec_cmd = Mock()
 
     test_config = _init_config()
     test_config.working_directory = TESTDATA_DIR
     test_config.logging_level = 'INFO'
 
+    # run the test
     try:
-
-        # run the test
-        with patch('subprocess.Popen') as subprocess_mock:
-            subprocess_mock.return_value.communicate.side_effect = _communicate
+        try:
             test_executor = omm_composable.Omm2Caom2LocalMeta(
                 test_config, test_obs_id, OmmName(test_obs_id).get_file_name())
-            try:
-                test_executor.execute(None)
-            except CadcException as e:
-                assert False, e
-
-        # check that things worked as expected
-        # assert fits2caom2._get_headers_from_fits.called
-        assert fits2caom2._get_file_meta.called
-        assert os.path.exists(test_output_fname)
+            test_executor.execute(None)
+        except CadcException as e:
+            assert False, e
+        assert manage_composable.exec_cmd.called
     finally:
-        fits2caom2._get_headers_from_fits = headers_orig
-        fits2caom2._get_file_meta = meta_orig
+        manage_composable.exec_cmd = exec_cmd_orig
 
 
 def test_data_execute():
@@ -200,22 +178,22 @@ def test_data_execute():
     data_cmd_orig = omm_composable.CaomExecute._data_cmd_info
     os_path_exists_orig = os.path.exists
     os.path.exists = Mock(return_value=True)
+    exec_cmd_orig = manage_composable.exec_cmd
+    manage_composable.exec_cmd = Mock()
     test_config = _init_config()
 
     try:
         omm_composable.CaomExecute._data_cmd_info = Mock(side_effect=_get_fname)
 
         # run the test
-        with patch('subprocess.Popen') as subprocess_mock:
-            subprocess_mock.return_value.communicate.side_effect = _communicate
-            test_executor = omm_composable.Omm2Caom2Data(test_config,
-                                                         test_obs_id)
-            try:
-                test_executor.execute(None)
-            except CadcException as e:
-                assert False, e
+        test_executor = omm_composable.Omm2Caom2Data(test_config, test_obs_id)
+        try:
+            test_executor.execute(None)
+        except CadcException as e:
+            assert False, e
 
         # check that things worked as expected
+        assert manage_composable.exec_cmd.called
         assert omm_footprint_augmentation.visit.called
         assert omm_preview_augmentation.visit.called
     finally:
@@ -224,6 +202,7 @@ def test_data_execute():
         omm_preview_augmentation.visit = preview_orig
         omm_composable.CaomExecute._data_cmd_info = data_cmd_orig
         os.path.exists = os_path_exists_orig
+        manage_composable.exec_cmd = exec_cmd_orig
 
 
 def test_data_local_execute():
@@ -232,6 +211,8 @@ def test_data_local_execute():
     fp_visit_orig = omm_footprint_augmentation.visit
     prev_visit_orig = omm_preview_augmentation.visit
     read_orig = obs_reader_writer.ObservationReader.read
+    exec_cmd_orig = manage_composable.exec_cmd
+    manage_composable.exec_cmd = Mock()
 
     try:
         omm_footprint_augmentation.visit = Mock()
@@ -240,32 +221,34 @@ def test_data_local_execute():
 
         test_config = _init_config()
         # run the test
-        with patch('subprocess.Popen') as subprocess_mock:
-            subprocess_mock.return_value.communicate.side_effect = _communicate
-            test_executor = omm_composable.Omm2Caom2LocalData(
-                test_config, test_obs_id,
-                OmmName(test_obs_id).get_compressed_file_name())
-            try:
-                test_executor.execute(None)
-            except CadcException as e:
-                assert False, e
+        test_executor = omm_composable.Omm2Caom2LocalData(
+            test_config, test_obs_id,
+            OmmName(test_obs_id).get_compressed_file_name())
+        try:
+            test_executor.execute(None)
+        except CadcException as e:
+            assert False, e
 
         # check that things worked as expected - no cleanup
+        assert manage_composable.exec_cmd.called
         assert omm_footprint_augmentation.visit.called
         assert omm_preview_augmentation.visit.called
     finally:
         obs_reader_writer.ObservationReader.read = read_orig
         omm_footprint_augmentation.visit = fp_visit_orig
         omm_preview_augmentation.visit = prev_visit_orig
+        manage_composable.exec_cmd = exec_cmd_orig
 
 
 def test_data_store():
     test_obs_id = 'test_obs_id'
     test_config = _init_config()
+    exec_cmd_orig = manage_composable.exec_cmd
+    manage_composable.exec_cmd = Mock()
 
-    # run the test
-    with patch('subprocess.Popen') as subprocess_mock:
-        subprocess_mock.return_value.communicate.side_effect = _communicate
+    try:
+
+        # run the test
         test_executor = omm_composable.Omm2Caom2Store(
             test_config, test_obs_id,
             OmmName(test_obs_id).get_compressed_file_name())
@@ -273,6 +256,10 @@ def test_data_store():
             test_executor.execute(None)
         except CadcException as e:
             assert False, e
+        assert manage_composable.exec_cmd.called
+
+    finally:
+        manage_composable.exec_cmd = exec_cmd_orig
 
 
 def test_scrape():
@@ -286,35 +273,24 @@ def test_scrape():
     netrc = os.path.join(TESTDATA_DIR, 'test_netrc')
     assert os.path.exists(netrc)
 
-    # mocks for this test
-    meta_orig = fits2caom2._get_file_meta
-    header_orig = fits2caom2._get_headers_from_fits
+    test_config = _init_config()
+    test_config.working_directory = TESTDATA_DIR
+    test_config.logging_level = 'INFO'
+    exec_cmd_orig = manage_composable.exec_cmd
+    manage_composable.exec_cmd = Mock()
 
     try:
-        fits2caom2._get_file_meta = Mock(side_effect=_get_test_file_meta)
-        fits2caom2._get_headers_from_fits = Mock(side_effect=_get_file_headers)
+        test_executor = omm_composable.Omm2Caom2Scrape(
+            test_config, test_obs_id,
+            OmmName(test_obs_id).get_compressed_file_name())
+        try:
+            test_executor.execute(None)
+        except CadcException as e:
+            assert False, e
+        assert manage_composable.exec_cmd.called
 
-        test_config = _init_config()
-        test_config.working_directory = TESTDATA_DIR
-        test_config.logging_level = 'INFO'
-
-        # run the test
-        with patch('subprocess.Popen') as subprocess_mock:
-            subprocess_mock.return_value.communicate.side_effect = _communicate
-            test_executor = omm_composable.Omm2Caom2Scrape(
-                test_config, test_obs_id,
-                OmmName(test_obs_id).get_compressed_file_name())
-            try:
-                test_executor.execute(None)
-            except CadcException as e:
-                assert False, e
-
-        # check that things worked as expected
-        assert fits2caom2._get_headers_from_fits.called
-        assert os.path.exists(test_output_fname)
     finally:
-        fits2caom2._get_file_meta = meta_orig
-        fits2caom2._get_headers_from_fits = header_orig
+        manage_composable.exec_cmd = exec_cmd_orig
 
 
 def test_data_scrape_execute():
@@ -331,17 +307,15 @@ def test_data_scrape_execute():
         test_config = _init_config()
 
         # run the test
-        with patch('subprocess.Popen') as subprocess_mock:
-            subprocess_mock.return_value.communicate.side_effect = _communicate
-            test_executor = omm_composable.Omm2Caom2DataScrape(
-                test_config, test_obs_id,
-                OmmName(test_obs_id).get_compressed_file_name())
-            try:
-                test_executor.execute(None)
-            except CadcException as e:
-                assert False, e
+        test_executor = omm_composable.Omm2Caom2DataScrape(
+            test_config, test_obs_id,
+            OmmName(test_obs_id).get_compressed_file_name())
+        try:
+            test_executor.execute(None)
+        except CadcException as e:
+            assert False, e
 
-        # check that things worked as expected - no cleanup
+        # check that things worked as expected
         assert omm_footprint_augmentation.visit.called
         assert omm_preview_augmentation.visit.called
     finally:
@@ -439,6 +413,7 @@ def test_data_cmd_info():
 
 
 def _communicate():
+    # return ['return status', None]
     return ['return status', None]
 
 

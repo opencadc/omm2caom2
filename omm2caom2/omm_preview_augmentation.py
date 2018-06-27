@@ -71,7 +71,6 @@ import logging
 import os
 
 from hashlib import md5
-from six.moves.urllib.parse import urlsplit
 
 from caom2 import Artifact, ProductType, ReleaseType, ChecksumURI
 from caom2 import Observation
@@ -105,11 +104,15 @@ def visit(observation, **kwargs):
             if (artifact.uri.endswith('.fits.gz') or
                     artifact.uri.endswith('.fits')):
                 file_id = CaomName(artifact.uri).get_file_id()
-                file_name = OmmName(file_id).get_file_name()
+                file_name = CaomName(artifact.uri).get_file_name()
                 science_fqn = os.path.join(working_dir, file_name)
                 if not os.path.exists(science_fqn):
-                    raise manage_composable.CadcException(
-                        '{} preview visit file not found'.format(science_fqn))
+                    file_name = CaomName(artifact.uri).get_uncomp_file_name()
+                    science_fqn = os.path.join(working_dir, file_name)
+                    if not os.path.exists(science_fqn):
+                        raise manage_composable.CadcException(
+                            '{} preview visit file not found'.format(
+                                science_fqn))
                 logging.debug('working on file {}'.format(science_fqn))
                 _do_prev(file_id, science_fqn, working_dir, netrc_fqn, plane,
                          logging_level_param)

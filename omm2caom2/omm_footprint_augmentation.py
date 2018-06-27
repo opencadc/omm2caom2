@@ -100,8 +100,11 @@ def visit(observation, **kwargs):
 
     science_fqn = os.path.join(working_dir, science_file)
     if not os.path.exists(science_fqn):
-        raise manage_composable.CadcException(
-            '{} visit file not found'.format(science_fqn))
+        if science_fqn.endswith('.gz'):
+            science_fqn = science_fqn.replace('.gz', '')
+            if not os.path.exists(science_fqn):
+                raise manage_composable.CadcException(
+                    '{} visit file not found'.format(science_fqn))
 
     count = 0
     for i in observation.planes:

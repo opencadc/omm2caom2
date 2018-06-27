@@ -48,8 +48,8 @@ def test_main_app(test_name):
         sys.argv = \
             ('omm2caom2 --no_validate --local {} '
              '--plugin {} --observation OMM {} -o {} --lineage {}'.
-            format(local, plugin, product_id, output_file,
-                   lineage)).split()
+             format(local, plugin, product_id, output_file,
+                    lineage)).split()
         print(sys.argv)
         main_app()
         obs_path = test_name.replace('header', 'xml')

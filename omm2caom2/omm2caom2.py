@@ -77,12 +77,12 @@ import traceback
 from caom2 import TargetType, ObservationIntentType, CalibrationLevel
 from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
 from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
-from caom2utils import ObsBlueprint, get_gen_proc_arg_parser
-from caom2utils import augment
+from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
+# from caom2utils import augment
 from omm2caom2 import astro_composable, manage_composable
 
 
-__all__ = ['main_app', 'omm_augment', 'update', 'OmmName', 'CaomName']
+__all__ = ['main_app', 'update', 'OmmName', 'CaomName']
 
 
 # map the fits file values to the DataProductType enums
@@ -102,6 +102,8 @@ class OmmName(object):
 
     def __init__(self, obs_id):
         self.obs_id = obs_id
+
+    OMM_NAME_PATTERN = 'C[\w\+\-]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
 
     # TODO - MOVE THIS
     def get_file_uri(self):
@@ -139,29 +141,13 @@ class OmmName(object):
         return 'ad:OMM/{}'.format(fname)
 
     @staticmethod
-    def build_obs_id(fname):
-        return OmmName.remove_extensions(fname).upper()
-
-    @staticmethod
-    def build_obs_id_from_fqn(fqn):
-        return OmmName.remove_extensions(os.path.basename(fqn)).upper()
-
-    @staticmethod
-    def extract_fname_from_fqn(fqn):
-        return os.path.basename(fqn)
-
-    @staticmethod
-    def extract_orig_obs_id_from_fqn(fqn):
-        return OmmName.remove_extensions(os.path.basename(fqn))
-
-    @staticmethod
     def remove_extensions(name):
         return name.replace('.fits', '').replace('.gz', '').replace('.header',
                                                                     '')
 
     @staticmethod
     def is_valid(name):
-        pattern = re.compile('C[\w\+\-]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]')
+        pattern = re.compile(OmmName.OMM_NAME_PATTERN)
         return pattern.match(name)
 
 
@@ -172,6 +158,12 @@ class CaomName(object):
 
     def get_file_id(self):
         return self.uri.split('/')[1].split('.')[0]
+
+    def get_file_name(self):
+        return self.uri.split('/')[1]
+
+    def get_uncomp_file_name(self):
+        return self.get_file_name().replace('.gz', '')
 
 
 def accumulate_obs(bp):
@@ -513,147 +505,23 @@ def _build_blueprints(uri):
     return blueprints
 
 
-def _decompose_lineage(lineage):
-    result = lineage.split('/')
-    return result[0], result[1]
-
-
-def _lookup(lookup, params):
-    result = None
-    if lookup in params:
-        result = params[lookup]
-    return result
-
-
-def omm_augment(**kwargs):
-    """ There needs to be one augment method that takes the **kwargs value.
-    This is accessed by the execute method of the composable Operator
-    class."""
-
-    logging.debug('Begin omm_augment.')
-
-    params = kwargs['params']
-
-    out_obs_xml = _lookup('out_obs_xml', params)
-    in_obs_xml = _lookup('in_obs_xml', params)
-    dump_config = _lookup('dump_config', params)
-    no_validate = _lookup('no_validate', params)
-    collection = _lookup('collection', params)
-    if 'logging_level' in params:
-        debug = False
-        verbose = False
-        quiet = False
-        if params['logging_level'] == 10:
-            debug = True
-        elif params['logging_level'] == 20:
-            verbose = True
-        elif params['logging_level'] == 30:
-            quiet = True
-    else:
-        verbose = _lookup('verbose', params)
-        debug = _lookup('debug', params)
-        quiet = _lookup('quiet', params)
-
-    netrc = False
-    if 'netrc' in params:
-        netrc = params['netrc']
-
-    if 'plugin' in params:
-        plugin = params['plugin']
-    else:
-        plugin = __name__
-
-    local_fname = None
-    fname = None
-    if 'fqn' in params:
-        local_fname = params['fqn']
-    if 'local' in params:
-        local_fname = params['local'][0]
-    if 'fname' in params:
-        fname = params['fname']
-
-    if 'observation' in params:
-        observation = params['observation']
-    else:
-        observation = OmmName.build_obs_id_from_fqn(params['fqn'])
-    product_id = observation
-    if local_fname is not None:
-        orig_obs_id = OmmName.extract_orig_obs_id_from_fqn(local_fname)
-    elif fname is not None:
-        orig_obs_id = OmmName.remove_extensions(fname)
-
-    artifact_uri = OmmName(orig_obs_id).get_file_uri()
-
-    blueprints = _build_blueprints(artifact_uri)
-
-    omm_science_file = artifact_uri
-    kwargs['params']['visit_args'] = {'omm_science_file': omm_science_file}
-
-    # the logic to identify cardinality is here - it's very specific to OMM,
-    # and won't be re-used anywhere else that I can currently think of ;)
-    # that means defining observations, product ids and uris is all
-    # done here
-
-    logging.error(kwargs)
-
-    augment(blueprints=blueprints, no_validate=no_validate,
-            dump_config=dump_config, plugin=plugin, out_obs_xml=out_obs_xml,
-            in_obs_xml=in_obs_xml, collection=collection,
-            observation=observation, product_id=product_id, uri=artifact_uri,
-            file_name=local_fname, netrc=netrc, verbose=verbose, debug=debug,
-            quiet=quiet, **kwargs)
-
-    logging.debug('Done omm_augment.')
-
-
-def _omm_augment_mapped(args):
-    """There needs to be one augment method that takes the args value,
-    returned by argsparser.parse_args(). This is used by the main
-    method for this module."""
-
+def _get_uri(args):
     if args.observation:
-        fname = args.observation[1]
-        observation = args.observation[1]
-    if args.lineage:
-        fname, uri = _decompose_lineage(args.lineage[0])
-        observation = fname
-    if args.local:
-        # TODO OMM doesn't support multi-file observations, but this isn't
-        # a general solution
-        fname = args.local[0]
-
-    kwargs = {'params': {'fqn': fname,
-                         'collection': 'OMM',
-                         'observation': observation}}
-
-    if args.plugin:
-        kwargs['params']['plugin'] = args.plugin
-    if args.netrc_file:
-        kwargs['params']['netrc'] = args.netrc_file
-    if args.no_validate:
-        kwargs['params']['no_validate'] = args.no_validate
-    if args.dumpconfig:
-        kwargs['params']['dump_config'] = args.dumpconfig
-    if args.in_obs_xml:
-        kwargs['params']['in_obs_xml'] = args.in_obs_xml
-    if args.out_obs_xml:
-        kwargs['params']['out_obs_xml'] = args.out_obs_xml
-    if args.lineage:
-        kwargs['params']['lineage'] = args.lineage
-    if args.debug:
-        kwargs['params']['debug'] = args.debug
-    if args.quiet:
-        kwargs['params']['quiet'] = args.quiet
-    if args.verbose:
-        kwargs['params']['verbose'] = args.verbose
-
-    omm_augment(**kwargs)
+        return OmmName(args.observation[0]).get_file_uri()
+    elif args.local:
+        obs_id = OmmName.remove_extensions(os.path.basename(args.local[0]))
+        return OmmName(obs_id).get_file_uri()
+    else:
+        raise manage_composable.CadcException(
+            'Could not define uri from these ares {}'.format(args))
 
 
 def main_app():
     args = get_gen_proc_arg_parser().parse_args()
     try:
-        _omm_augment_mapped(args)
+        uri = _get_uri(args)
+        blueprints = _build_blueprints(uri)
+        gen_proc(args, blueprints)
     except Exception as e:
         logging.error('Failed caom2gen execution for {}.'.format(args))
         logging.error(e)
