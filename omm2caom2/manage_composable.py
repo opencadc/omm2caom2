@@ -137,6 +137,12 @@ class Config(object):
         # the way to control which steps get executed
         self.task_types = None
 
+        # the filename where success logs are written
+        # this will be created in log_file_directory
+        self.success_log_file_name = None
+        # the fully qualified name for the file
+        self.success_fqn = None
+
         # the filename where failure logs are written
         # this will be created in log_file_directory
         self.failure_log_file_name = None
@@ -148,10 +154,6 @@ class Config(object):
         self.retry_file_name = None
         # the fully qualified name for the file
         self.retry_fqn = None
-
-        # how many times to automatically retry the entries listed in
-        # the retry_file_name
-        self.retry_count = 0
 
     @property
     def working_directory(self):
@@ -258,6 +260,17 @@ class Config(object):
         self._task_type = value
 
     @property
+    def success_log_file_name(self):
+        return self._success_log_file_name
+
+    @success_log_file_name.setter
+    def success_log_file_name(self, value):
+        self._success_log_file_name = value
+        if self.log_file_directory is not None:
+            self.success_fqn = os.path.join(
+                self.log_file_directory, self.success_log_file_name)
+
+    @property
     def failure_log_file_name(self):
         return self._failure_log_file_name
 
@@ -279,14 +292,6 @@ class Config(object):
             self.retry_fqn = os.path.join(
                 self.log_file_directory, self.retry_file_name)
 
-    @property
-    def retry_count(self):
-        return self._retry_count
-
-    @retry_count.setter
-    def retry_count(self, value):
-        self._retry_count = value
-
     @staticmethod
     def _lookup(config, lookup, default):
         if lookup in config:
@@ -306,6 +311,8 @@ class Config(object):
                'use_local_files:: \'{}\' ' \
                'log_to_file:: \'{}\' ' \
                'log_file_directory:: \'{}\' ' \
+               'success_log_file_name:: \'{}\' ' \
+               'success_fqn:: \'{}\' ' \
                'failure_log_file_name:: \'{}\' ' \
                'failure_fqn:: \'{}\' ' \
                'retry_file_name:: \'{}\' ' \
@@ -315,7 +322,8 @@ class Config(object):
                 self.working_directory, self.work_fqn, self.netrc_file,
                 self.collection, self.task_types, self.stream,
                 self.resource_id, self.use_local_files, self.log_to_file,
-                self.log_file_directory, self.failure_log_file_name,
+                self.log_file_directory, self.success_log_file_name,
+                self.success_fqn, self.failure_log_file_name,
                 self.failure_fqn, self.retry_file_name, self.retry_fqn,
                 self.retry_count, self.logging_level)
 
@@ -350,6 +358,9 @@ class Config(object):
             self.stream = self._lookup(config, 'stream', 'raw')
             self.task_types = self._set_task_types(config, [TaskType.SCRAPE])
             self.collection = self._lookup(config, 'collection', 'TEST')
+            self.success_log_file_name = self._lookup(config,
+                                                      'success_log_file_name',
+                                                      'success_log.txt')
             self.failure_log_file_name = self._lookup(config,
                                                       'failure_log_file_name',
                                                       'failure_log.txt')

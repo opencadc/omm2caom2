@@ -329,6 +329,8 @@ def test_organize_executes():
     test_config.use_local_files = True
     log_file_directory = os.path.join(THIS_DIR, 'logs')
     test_config.log_file_directory = log_file_directory
+    success_log_file_name = 'success_log.txt'
+    test_config.success_log_file_name = success_log_file_name
     failure_log_file_name = 'failure_log.txt'
     test_config.failure_log_file_name = failure_log_file_name
     retry_file_name = 'retries.txt'
@@ -422,28 +424,35 @@ def test_capture_failure():
     test_config = _init_config()
     log_file_directory = os.path.join(THIS_DIR, 'logs')
     test_config.log_file_directory = log_file_directory
+    success_log_file_name = 'success_log.txt'
+    test_config.success_log_file_name = success_log_file_name
     failure_log_file_name = 'failure_log.txt'
     test_config.failure_log_file_name = failure_log_file_name
     retry_file_name = 'retries.txt'
     test_config.retry_file_name = retry_file_name
 
-    failure = os.path.join(log_file_directory, failure_log_file_name)
-    retry = os.path.join(log_file_directory, retry_file_name)
+    # success = test_config.success_fqn
+    # failure = os.path.join(log_file_directory, failure_log_file_name)
+    # retry = os.path.join(log_file_directory, retry_file_name)
 
     if not os.path.exists(log_file_directory):
         os.mkdir(log_file_directory)
-    if os.path.exists(failure):
-        os.remove(failure)
-    if os.path.exists(retry):
-        os.remove(retry)
+    if os.path.exists(test_config.success_fqn):
+        os.remove(test_config.success_fqn)
+    if os.path.exists(test_config.failure_fqn):
+        os.remove(test_config.failure_fqn)
+    if os.path.exists(test_config.retry_fqn):
+        os.remove(test_config.retry_fqn)
 
     # clean up from last execution
 
     test_oe = omm_composable.OrganizeExecutes(test_config)
     test_oe.capture_failure(test_obs_id, None, 'exception text')
+    test_oe.capture_success(test_obs_id, 'C121212_01234_CAL.fits.gz')
 
-    assert os.path.exists(failure)
-    assert os.path.exists(retry)
+    assert os.path.exists(test_config.success_fqn)
+    assert os.path.exists(test_config.failure_fqn)
+    assert os.path.exists(test_config.retry_fqn)
 
 
 def _communicate():

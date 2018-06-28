@@ -529,6 +529,9 @@ class OrganizeExecutes(object):
         failure.close()
         retry = open(self.config.retry_fqn, 'w')
         retry.close()
+        success = open(self.config.success_fqn, 'w')
+        success.close()
+        self.success_count = 0
 
     def choose(self, obs_id, file_name=None):
         executors = []
@@ -596,6 +599,15 @@ class OrganizeExecutes(object):
             finally:
                 retry.close()
 
+    def capture_success(self, obs_id, file_name):
+        success = open(self.config.success_fqn, 'a')
+        try:
+            success.write(
+                '{} {} {}\n'.format(datetime.now(), obs_id, file_name))
+            self.success_count += 1
+        finally:
+            success.close()
+
     @staticmethod
     def _minimize_error_message(e):
         """Turn the long-winded stack trace into something minimal that lends
@@ -638,43 +650,37 @@ def _unset_file_logging(config, log_h):
         logging.getLogger().removeHandler(log_h)
 
 
+def _do_one(config, organizer, obs_id, file_name=None):
+    log_h = _set_up_file_logging(config, obs_id)
+    try:
+        executors = organizer.choose(obs_id, file_name)
+        for executor in executors:
+            logging.info(
+                'Step {} for {}'.format(executor.task_type, obs_id))
+            executor.execute(context=None)
+            organizer.capture_success(obs_id, file_name)
+    except Exception as e:
+        organizer.capture_failure(obs_id, file_name,
+                                  e=traceback.format_exc())
+    finally:
+        _unset_file_logging(config, log_h)
+
+
 def _run_todo_file(config, organizer):
     with open(config.work_fqn) as f:
         for line in f:
             obs_id = line.strip()
-            log_h = _set_up_file_logging(config, obs_id)
-            try:
-                logging.info('Process {}'.format(obs_id))
-                executors = organizer.choose(obs_id)
-                for executor in executors:
-                    logging.info(
-                        'Step {} for {}'.format(executor.task_type, obs_id))
-                    executor.execute(context=None)
-            except Exception as e:
-                organizer.capture_failure(obs_id, file_name=None,
-                                          e=traceback.format_exc())
-            finally:
-                _unset_file_logging(config, log_h)
+            logging.info('Process observation id {}'.format(obs_id))
+            _do_one(config, organizer, obs_id, file_name=None)
 
 
 def _run_local_files(config, organizer):
     todo_list = os.listdir(config.working_directory)
     for do_file in todo_list:
         if do_file.endswith('.fits') or do_file.endswith('.fits.gz'):
-            logging.info('Process {}'.format(do_file))
+            logging.info('Process file {}'.format(do_file))
             obs_id = OmmName.remove_extensions(do_file)
-            log_h = _set_up_file_logging(config, obs_id)
-            try:
-                executors = organizer.choose(obs_id, do_file)
-                for executor in executors:
-                    logging.info(
-                        'Step {} for {}'.format(executor.task_type, obs_id))
-                    executor.execute(context=None)
-            except Exception as e:
-                organizer.capture_failure(obs_id, do_file,
-                                          traceback.format_exc())
-            finally:
-                _unset_file_logging(config, log_h)
+            _do_one(config, organizer, obs_id, do_file)
 
 
 def run_by_file():
@@ -690,6 +696,7 @@ def run_by_file():
             _run_local_files(config, organize)
         else:
             _run_todo_file(config, organize)
+        logging.info('Processed {} correctly.'.format(organize.success_count))
     except Exception as e:
         logging.error(e)
         tb = traceback.format_exc()
