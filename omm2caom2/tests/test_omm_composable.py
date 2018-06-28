@@ -75,7 +75,6 @@ from astropy.io import fits
 
 from omm2caom2 import omm_composable, omm_footprint_augmentation
 from omm2caom2 import omm_preview_augmentation, manage_composable
-from caom2utils import fits2caom2
 from caom2 import obs_reader_writer, SimpleObservation, Algorithm
 from omm2caom2 import CadcException, OmmName
 
@@ -325,9 +324,15 @@ def test_data_scrape_execute():
 
 
 def test_organize_executes():
-    test_obs_id = 'test_obs_id'
+    test_obs_id = 'Ctest_obs_id_SCI'
     test_config = _init_config()
     test_config.use_local_files = True
+    log_file_directory = os.path.join(THIS_DIR, 'logs')
+    test_config.log_file_directory = log_file_directory
+    failure_log_file_name = 'failure_log.txt'
+    test_config.failure_log_file_name = failure_log_file_name
+    retry_file_name = 'retries.txt'
+    test_config.retry_file_name = retry_file_name
     exec_cmd_orig = manage_composable.exec_cmd_info
 
     try:
@@ -410,6 +415,35 @@ def test_data_cmd_info():
         assert manage_composable.exec_cmd_info.called
     finally:
         manage_composable.exec_cmd_orig = exec_cmd_orig
+
+
+def test_capture_failure():
+    test_obs_id = 'test_obs_id'
+    test_config = _init_config()
+    log_file_directory = os.path.join(THIS_DIR, 'logs')
+    test_config.log_file_directory = log_file_directory
+    failure_log_file_name = 'failure_log.txt'
+    test_config.failure_log_file_name = failure_log_file_name
+    retry_file_name = 'retries.txt'
+    test_config.retry_file_name = retry_file_name
+
+    failure = os.path.join(log_file_directory, failure_log_file_name)
+    retry = os.path.join(log_file_directory, retry_file_name)
+
+    if not os.path.exists(log_file_directory):
+        os.mkdir(log_file_directory)
+    if os.path.exists(failure):
+        os.remove(failure)
+    if os.path.exists(retry):
+        os.remove(retry)
+
+    # clean up from last execution
+
+    test_oe = omm_composable.OrganizeExecutes(test_config)
+    test_oe.capture_failure(test_obs_id, None, 'exception text')
+
+    assert os.path.exists(failure)
+    assert os.path.exists(retry)
 
 
 def _communicate():

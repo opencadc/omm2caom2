@@ -523,7 +523,7 @@ def main_app():
         blueprints = _build_blueprints(uri)
         gen_proc(args, blueprints)
     except Exception as e:
-        logging.error('Failed caom2gen execution for {}.'.format(args))
+        logging.error('Failed omm2caom2 execution for {}.'.format(args))
         logging.error(e)
         tb = traceback.format_exc()
         logging.error(tb)

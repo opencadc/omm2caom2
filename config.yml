@@ -1,17 +1,26 @@
-working_directory: /usr/src/app/test_data
+working_directory: /usr/src/app/int_test/failures
 # the netrc_filename value must be a fully-qualified name
 netrc_filename: /usr/src/app/test_netrc
 # operational value is ivo://cadc.nrc.ca/caom2repo
 resource_id: ivo://cadc.nrc.ca/sc2repo
 todo_file_name: todo.txt
 # values True False
-use_local_files: True
+use_local_files: False
 # values DEBUG INFO WARN ERROR
 logging_level: INFO
 # values True False
 log_to_file: True
 # fully qualified name for a directory to write log files
 log_file_directory: /usr/src/app/logs
+# the filename where failure logs are written
+#
+# this file is created in the logs directory, default is 'failure_log.txt'
+failure_log_file_name: failure_log.txt
+# the filename where retry ids are written. This file is only written
+# if use_local_files is False.
+#
+# this file is created in the logs directory, default is 'retries.txt'
+retry_file_name: retries.txt
 # ad stream value - sorry
 stream: raw
 # how to control the work that gets done
@@ -32,4 +41,3 @@ stream: raw
 #
 task_types: 
   - ingest
-  - modify

@@ -72,6 +72,8 @@ import os
 import site
 import traceback
 
+from datetime import datetime
+
 from omm2caom2 import omm_preview_augmentation, omm_footprint_augmentation
 from omm2caom2 import manage_composable, OmmName
 from caom2 import obs_reader_writer
@@ -523,45 +525,89 @@ class OrganizeExecutes(object):
         self.task_types = config.task_types
         self.logger = logging.getLogger()
         self.logger.setLevel(config.logging_level)
+        failure = open(self.config.failure_fqn, 'w')
+        failure.close()
+        retry = open(self.config.retry_fqn, 'w')
+        retry.close()
 
     def choose(self, obs_id, file_name=None):
         executors = []
-        for task_type in self.task_types:
-            self.logger.debug(task_type)
-            if task_type == manage_composable.TaskType.SCRAPE:
-                if self.config.use_local_files:
-                    executors.append(
-                        Omm2Caom2Scrape(self.config, obs_id, file_name))
-                else:
-                    raise manage_composable.CadcException(
-                        'use_local_files must be True with Task Type "SCRAPE"')
-            elif task_type == manage_composable.TaskType.STORE:
-                if self.config.use_local_files:
-                    executors.append(
-                        Omm2Caom2Store(self.config, obs_id, file_name))
-                else:
-                    raise manage_composable.CadcException(
-                        'use_local_files must be True with Task Type "STORE"')
-            elif task_type == manage_composable.TaskType.INGEST:
-                if self.config.use_local_files:
-                    executors.append(
-                        Omm2Caom2LocalMeta(self.config, obs_id, file_name))
-                else:
-                    executors.append(Omm2Caom2Meta(self.config, obs_id))
-            elif task_type == manage_composable.TaskType.MODIFY:
-                if self.config.use_local_files:
-                    if isinstance(executors[0], Omm2Caom2Scrape):
+        if OmmName.is_valid(obs_id):
+            for task_type in self.task_types:
+                self.logger.debug(task_type)
+                if task_type == manage_composable.TaskType.SCRAPE:
+                    if self.config.use_local_files:
                         executors.append(
-                            Omm2Caom2DataScrape(self.config, obs_id, file_name))
+                            Omm2Caom2Scrape(self.config, obs_id, file_name))
                     else:
+                        raise manage_composable.CadcException(
+                            'use_local_files must be True with '
+                            'Task Type "SCRAPE"')
+                elif task_type == manage_composable.TaskType.STORE:
+                    if self.config.use_local_files:
                         executors.append(
-                            Omm2Caom2LocalData(self.config, obs_id, file_name))
+                            Omm2Caom2Store(self.config, obs_id, file_name))
+                    else:
+                        raise manage_composable.CadcException(
+                            'use_local_files must be True with '
+                            'Task Type "STORE"')
+                elif task_type == manage_composable.TaskType.INGEST:
+                    if self.config.use_local_files:
+                        executors.append(
+                            Omm2Caom2LocalMeta(self.config, obs_id, file_name))
+                    else:
+                        executors.append(Omm2Caom2Meta(self.config, obs_id))
+                elif task_type == manage_composable.TaskType.MODIFY:
+                    if self.config.use_local_files:
+                        if isinstance(executors[0], Omm2Caom2Scrape):
+                            executors.append(
+                                Omm2Caom2DataScrape(self.config, obs_id,
+                                                    file_name))
+                        else:
+                            executors.append(
+                                Omm2Caom2LocalData(self.config, obs_id,
+                                                   file_name))
+                    else:
+                        executors.append(Omm2Caom2Data(self.config, obs_id))
                 else:
-                    executors.append(Omm2Caom2Data(self.config, obs_id))
-            else:
-                raise manage_composable.CadcException(
-                    'Do not understand task type {}'.format(task_type))
+                    raise manage_composable.CadcException(
+                        'Do not understand task type {}'.format(task_type))
+        else:
+            logging.error('{} failed naming validation check. Must match '
+                          'this regular expression {}.'.format(
+                            obs_id, OmmName.OMM_NAME_PATTERN))
+            self.capture_failure(obs_id, file_name, 'Invalid observation ID')
         return executors
+
+    def capture_failure(self, obs_id, file_name, e):
+        failure = open(self.config.failure_fqn, 'a')
+        try:
+            min_error = self._minimize_error_message(e)
+            failure.write(
+                '{} {} {} {}\n'.format(datetime.now(), obs_id, file_name,
+                                       min_error))
+        finally:
+            failure.close()
+
+        if not self.config.use_local_files:
+            retry = open(self.config.retry_fqn, 'a')
+            try:
+                retry.write('{}\n'.format(obs_id))
+            finally:
+                retry.close()
+
+    @staticmethod
+    def _minimize_error_message(e):
+        """Turn the long-winded stack trace into something minimal that lends
+        itself to awk."""
+        if 'IllegalPolygonException' in e:
+            return 'IllegalPolygonException'
+        elif 'Timeout' in e:
+            return 'Timeout'
+        elif 'failed to load external entity' in e:
+            return 'caom2repo xml error'
+        else:
+            return e
 
 
 def _set_up_file_logging(config, obs_id):
@@ -593,21 +639,18 @@ def _run_todo_file(config, organizer):
         for line in f:
             obs_id = line.strip()
             log_h = _set_up_file_logging(config, obs_id)
-            if OmmName.is_valid(obs_id):
-                try:
-                    logging.info('Process {}'.format(obs_id))
-                    executors = organizer.choose(obs_id)
-                    for executor in executors:
-                        logging.info(
-                            'Step {} for {}'.format(executor.task_type, obs_id))
-                        executor.execute(context=None)
-                finally:
-                    _unset_file_logging(config, log_h)
-            else:
-                logging.error(
-                    '{} failed naming validation check. Must match '
-                    'this regular expression {}.'.format(
-                        obs_id, OmmName.OMM_NAME_PATTERN))
+            try:
+                logging.info('Process {}'.format(obs_id))
+                executors = organizer.choose(obs_id)
+                for executor in executors:
+                    logging.info(
+                        'Step {} for {}'.format(executor.task_type, obs_id))
+                    executor.execute(context=None)
+            except Exception as e:
+                organizer.capture_failure(obs_id, file_name=None,
+                                          e=traceback.format_exc())
+            finally:
+                _unset_file_logging(config, log_h)
 
 
 def _run_local_files(config, organizer):
@@ -616,21 +659,18 @@ def _run_local_files(config, organizer):
         if do_file.endswith('.fits') or do_file.endswith('.fits.gz'):
             logging.info('Process {}'.format(do_file))
             obs_id = OmmName.remove_extensions(do_file)
-            if OmmName.is_valid(obs_id):
-                log_h = _set_up_file_logging(config, obs_id)
-                try:
-                    executors = organizer.choose(obs_id, do_file)
-                    for executor in executors:
-                        logging.info(
-                            'Step {} for {}'.format(executor.task_type, obs_id))
-                        executor.execute(context=None)
-                finally:
-                    _unset_file_logging(config, log_h)
-            else:
-                logging.error(
-                    '{} failed naming validation check. Must match '
-                    'this regular expression {}.'.format(
-                        obs_id, OmmName.OMM_NAME_PATTERN))
+            log_h = _set_up_file_logging(config, obs_id)
+            try:
+                executors = organizer.choose(obs_id, do_file)
+                for executor in executors:
+                    logging.info(
+                        'Step {} for {}'.format(executor.task_type, obs_id))
+                    executor.execute(context=None)
+            except Exception as e:
+                organizer.capture_failure(obs_id, do_file,
+                                          traceback.format_exc())
+            finally:
+                _unset_file_logging(config, log_h)
 
 
 def run_by_file():
