@@ -602,10 +602,14 @@ class OrganizeExecutes(object):
         itself to awk."""
         if 'IllegalPolygonException' in e:
             return 'IllegalPolygonException'
-        elif 'Timeout' in e:
-            return 'Timeout'
+        elif 'Read timed out' in e:
+            return 'Read timed out'
         elif 'failed to load external entity' in e:
             return 'caom2repo xml error'
+        elif 'Did not retrieve' in e:
+            return 'cadc-data get error'
+        elif 'NAXES was not set' in e:
+            return 'NAXES was not set'
         else:
             return e
 
