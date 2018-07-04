@@ -116,7 +116,7 @@ def visit(observation, **kwargs):
                 logging.debug('working on file {}'.format(science_fqn))
                 _do_prev(file_id, science_fqn, working_dir, netrc_fqn, plane,
                          logging_level_param)
-                logging.debug(
+                logging.info(
                     'Completed preview generation for {}.'.format(file_id))
             count += 2
     return {'artifacts': count}
