@@ -525,12 +525,13 @@ class OrganizeExecutes(object):
         self.task_types = config.task_types
         self.logger = logging.getLogger()
         self.logger.setLevel(config.logging_level)
-        failure = open(self.config.failure_fqn, 'w')
-        failure.close()
-        retry = open(self.config.retry_fqn, 'w')
-        retry.close()
-        success = open(self.config.success_fqn, 'w')
-        success.close()
+        if self.config.log_to_file:
+            failure = open(self.config.failure_fqn, 'w')
+            failure.close()
+            retry = open(self.config.retry_fqn, 'w')
+            retry.close()
+            success = open(self.config.success_fqn, 'w')
+            success.close()
         self.success_count = 0
 
     def choose(self, obs_id, file_name=None):
@@ -583,30 +584,32 @@ class OrganizeExecutes(object):
         return executors
 
     def capture_failure(self, obs_id, file_name, e):
-        failure = open(self.config.failure_fqn, 'a')
-        try:
-            min_error = self._minimize_error_message(e)
-            failure.write(
-                '{} {} {} {}\n'.format(datetime.now(), obs_id, file_name,
-                                       min_error))
-        finally:
-            failure.close()
-
-        if not self.config.use_local_files:
-            retry = open(self.config.retry_fqn, 'a')
+        if self.config.log_to_file:
+            failure = open(self.config.failure_fqn, 'a')
             try:
-                retry.write('{}\n'.format(obs_id))
+                min_error = self._minimize_error_message(e)
+                failure.write(
+                    '{} {} {} {}\n'.format(datetime.now(), obs_id, file_name,
+                                           min_error))
             finally:
-                retry.close()
+                failure.close()
+
+            if not self.config.use_local_files:
+                retry = open(self.config.retry_fqn, 'a')
+                try:
+                    retry.write('{}\n'.format(obs_id))
+                finally:
+                    retry.close()
 
     def capture_success(self, obs_id, file_name):
-        success = open(self.config.success_fqn, 'a')
-        try:
-            success.write(
-                '{} {} {}\n'.format(datetime.now(), obs_id, file_name))
-            self.success_count += 1
-        finally:
-            success.close()
+        self.success_count += 1
+        if self.config.log_to_file:
+            success = open(self.config.success_fqn, 'a')
+            try:
+                success.write(
+                    '{} {} {}\n'.format(datetime.now(), obs_id, file_name))
+            finally:
+                success.close()
 
     @staticmethod
     def _minimize_error_message(e):
@@ -701,3 +704,19 @@ def run_by_file():
         logging.error(e)
         tb = traceback.format_exc()
         logging.error(tb)
+
+
+def run_single(**argv):
+    import sys
+    config = manage_composable.Config()
+    config.collection = 'OMM'
+    config.working_directory = '/root/airflow'
+    config.use_local_files = False
+    config.logging_level = 'INFO'
+    config.log_to_file = False
+    config.task_types = [manage_composable.TaskType.INGEST]
+    config.resource_id = 'ivo://cadc.nrc.ca/sc2repo'
+    organizer = OrganizeExecutes(config)
+    logging.error(sys.argv[2])
+    logging.error(sys.argv[3])
+    _do_one(config, organizer, sys.argv[1])
