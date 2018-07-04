@@ -440,13 +440,13 @@ def exec_cmd(cmd):
         child = subprocess.Popen(cmd_array, stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
         output, outerr = child.communicate()
-        logging.debug('stdout {}'.format(output))
-        logging.debug('stderr {}'.format(outerr))
+        logging.debug('stdout {}'.format(output.decode('utf-8'))
+        logging.debug('stderr {}'.format(outerr.decode('utf-8'))
         if child.returncode != 0:
             logging.debug('Command {} failed.'.format(cmd))
             raise CadcException(
                 'Command {} had stdout{} stderr {}'.format(
-                    cmd, output, outerr))
+                    cmd, output.decode('utf-8'), outerr.decode('utf-8')))
     except Exception as e:
         logging.debug('Error with command {}:: {}'.format(cmd, e))
         raise CadcException('Could not execute cmd {}'.format(cmd))
