@@ -661,7 +661,7 @@ def _do_one(config, organizer, obs_id, file_name=None):
             logging.info(
                 'Step {} for {}'.format(executor.task_type, obs_id))
             executor.execute(context=None)
-            organizer.capture_success(obs_id, file_name)
+        organizer.capture_success(obs_id, file_name)
     except Exception as e:
         organizer.capture_failure(obs_id, file_name,
                                   e=traceback.format_exc())
