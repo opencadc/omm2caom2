@@ -166,7 +166,7 @@ class CaomName(object):
         return self.get_file_name().replace('.gz', '')
 
 
-def accumulate_obs(bp):
+def accumulate_obs(bp, uri):
     """Configure the OMM-specific ObsBlueprint at the CAOM model Observation
     level."""
     logging.debug('Begin accumulate_obs.')
@@ -191,6 +191,9 @@ def accumulate_obs(bp):
     bp.add_fits_attribute('Observation.telescope.keywords', 'OBSERVER')
     bp.set('Observation.environment.ambientTemp',
            'get_obs_env_ambient_temp(header)')
+    # if '_SCIRED' in uri:
+    bp.add_table_attribute('CompositeObservation.members', 'FICS', extension=1,
+                           index=None)
 
 
 def accumulate_plane(bp):
@@ -378,6 +381,12 @@ def get_telescope_z(header):
     return None
 
 
+def get_members(header):
+    # return [] - results in a SimpleObservation in the service
+    # return 'caom:OMM/C180616_0135_SCI' - results in a CompositeObservation
+    return ''
+
+
 def update(observation, **kwargs):
     """Called to fill multiple CAOM model elements and/or attributes, must
     have this signature for import_module loading and execution.
@@ -497,7 +506,7 @@ def _build_blueprints(uri):
     module = importlib.import_module(__name__)
     blueprint = ObsBlueprint(module=module)
     accumulate_position(blueprint)
-    accumulate_obs(blueprint)
+    accumulate_obs(blueprint, uri)
     accumulate_plane(blueprint)
     accumulate_artifact(blueprint)
     accumulate_part(blueprint)

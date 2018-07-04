@@ -157,7 +157,7 @@ class CaomExecute(object):
             if os.path.exists(self.model_fqn):
                 os.remove(self.model_fqn)
         except manage_composable.CadcException as e:
-           pass
+            pass
         # TODO - how to tell the difference between 'it doesn't exist', and
         # there's a real failure to pay attention to?
         # raise CadcException('Could not delete the observation in {}'.format(
