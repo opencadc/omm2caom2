@@ -207,7 +207,7 @@ class CaomExecute(object):
         fqn = os.path.join(self.working_dir, self.fname)
         uri = OmmName(self.obs_id).get_file_uri()
         plugin = self._find_fits2caom2_plugin()
-        cmd = 'omm2caom2 {} --netrc {} --observation {} {} --out {} ' \
+        cmd = 'omm2caom2 {} --no_validate --netrc {} --observation {} {} --out {} ' \
               '--plugin {} --local {} --lineage {}/{}'.format(
                 self.logging_level_param, self.netrc_fqn, self.collection,
                 self.obs_id, self.model_fqn, plugin, fqn, self.obs_id, uri)
@@ -665,6 +665,7 @@ def _do_one(config, organizer, obs_id, file_name=None):
     except Exception as e:
         organizer.capture_failure(obs_id, file_name,
                                   e=traceback.format_exc())
+        raise e
     finally:
         _unset_file_logging(config, log_h)
 

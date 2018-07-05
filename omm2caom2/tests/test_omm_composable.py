@@ -423,6 +423,7 @@ def test_capture_failure():
     test_obs_id = 'test_obs_id'
     test_config = _init_config()
     log_file_directory = os.path.join(THIS_DIR, 'logs')
+    test_config.log_to_file = True
     test_config.log_file_directory = log_file_directory
     success_log_file_name = 'success_log.txt'
     test_config.success_log_file_name = success_log_file_name

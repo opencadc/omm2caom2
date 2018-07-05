@@ -440,13 +440,13 @@ def exec_cmd(cmd):
         child = subprocess.Popen(cmd_array, stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
         output, outerr = child.communicate()
-        logging.debug('stdout {}'.format(output))
-        logging.debug('stderr {}'.format(outerr))
+        logging.error('stdout {}'.format(output.decode('utf-8')))
+        logging.error('stderr {}'.format(outerr.decode('utf-8')))
         if child.returncode != 0:
             logging.debug('Command {} failed.'.format(cmd))
             raise CadcException(
                 'Command {} had stdout{} stderr {}'.format(
-                    cmd, output, outerr))
+                    cmd, output.decode('utf-8'), outerr.decode('utf-8')))
     except Exception as e:
         logging.debug('Error with command {}:: {}'.format(cmd, e))
         raise CadcException('Could not execute cmd {}'.format(cmd))
@@ -465,7 +465,8 @@ def exec_cmd_info(cmd):
         output, outerr = subprocess.Popen(cmd_array, stdout=subprocess.PIPE,
                                           stderr=subprocess.PIPE).communicate()
         if outerr is not None and len(outerr) > 0 and outerr[0] is not None:
-            raise CadcException('Command {} had stderr {}'.format(cmd, outerr))
+            raise CadcException('Command {} had stderr {}'.format(
+                cmd, outerr.decode('utf-8')))
         if output is not None and len(output) > 0:
             return output.decode('utf-8')
     except Exception as e:
@@ -490,9 +491,11 @@ def exec_cmd_redirect(cmd, fqn):
             outerr = subprocess.Popen(
                 cmd_array, stdout=outfile, stderr=subprocess.PIPE).communicate()
             if outerr is not None and len(outerr) > 0 and outerr[0] is not None:
-                logging.debug('Command {} had stderr {}'.format(cmd, outerr))
+                logging.debug('Command {} had stderr {}'.format(
+                    cmd, outerr.decode('utf-8')))
                 raise CadcException(
-                    'Command {} had outerr {}'.format(cmd, outerr))
+                    'Command {} had outerr {}'.format(
+                        cmd, outerr.decode('utf-8')))
     except Exception as e:
         logging.debug('Error with command {}:: {}'.format(cmd, e))
         raise CadcException('Could not execute cmd {}'.format(cmd))

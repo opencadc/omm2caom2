@@ -77,6 +77,7 @@ import traceback
 from caom2 import TargetType, ObservationIntentType, CalibrationLevel
 from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
 from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
+from caom2 import ObservationURI, PlaneURI, TypedSet
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
 # from caom2utils import augment
 from omm2caom2 import astro_composable, manage_composable
@@ -150,6 +151,10 @@ class OmmName(object):
         pattern = re.compile(OmmName.OMM_NAME_PATTERN)
         return pattern.match(name)
 
+    @staticmethod
+    def is_composite(uri):
+        return '_SCIRED' in uri or '_CALRED' in uri
+
 
 class CaomName(object):
 
@@ -191,9 +196,9 @@ def accumulate_obs(bp, uri):
     bp.add_fits_attribute('Observation.telescope.keywords', 'OBSERVER')
     bp.set('Observation.environment.ambientTemp',
            'get_obs_env_ambient_temp(header)')
-    # if '_SCIRED' in uri:
-    bp.add_table_attribute('CompositeObservation.members', 'FICS', extension=1,
-                           index=None)
+    if OmmName.is_composite(uri):
+        bp.add_table_attribute('CompositeObservation.members', 'FICS',
+                               extension=1, index=0)
 
 
 def accumulate_plane(bp):
@@ -381,12 +386,6 @@ def get_telescope_z(header):
     return None
 
 
-def get_members(header):
-    # return [] - results in a SimpleObservation in the service
-    # return 'caom:OMM/C180616_0135_SCI' - results in a CompositeObservation
-    return ''
-
-
 def update(observation, **kwargs):
     """Called to fill multiple CAOM model elements and/or attributes, must
     have this signature for import_module loading and execution.
@@ -399,14 +398,25 @@ def update(observation, **kwargs):
     assert isinstance(observation, Observation), \
         'observation parameter of type Observation'
 
+    if OmmName.is_composite(observation.observation_id):
+        _update_provenance(observation)
+
     for plane in observation.planes:
         for artifact in observation.planes[plane].artifacts:
-            for part in observation.planes[plane].artifacts[artifact].parts:
-                p = observation.planes[plane].artifacts[artifact].parts[part]
+            parts = observation.planes[plane].artifacts[artifact].parts
+            # the reduced files have a second extension that contains the
+            # provenance information only - fits2caom2 generates a part
+            # for that extension which has no unique WCS information, so
+            # just remove it
+            if len(parts) == 2:
+                parts.pop('1')
+
+            if len(parts) == 1:
+                p = parts['0']
                 if len(p.chunks) == 0:
-                    # always have a time axis, and usually an energy axis as
-                    # well, so create a chunk
-                    part.chunks.append(Chunk())
+                    # always have a time axis, and usually an energy
+                    # axis as well, so create a chunk
+                    p.chunks.append(Chunk())
 
                 for chunk in p.chunks:
                     if 'headers' in kwargs:
@@ -493,6 +503,48 @@ def _update_position(chunk):
     logging.debug('End _update_position')
 
 
+def _update_provenance(observation):
+    """The provenance information in the reduced product headers is not
+    patterned according to the content of ad. Make the provenance information
+    conform, at the Observation and Plane level."""
+    logging.debug('Begin _update_provenance')
+
+    obs_type = None
+    for ii in DATATYPE_LOOKUP:
+        if DATATYPE_LOOKUP[ii] == observation.type:
+            obs_type = ii
+            break
+    if obs_type == 'REDUC':
+        extension = '_SCI'
+    elif obs_type == 'FLAT':
+        extension = '_CAL'
+    else:
+        logging.debug(
+            'Observation.type is {}. No naming addition.'.format(obs_type))
+        return
+
+    new_members = TypedSet(ObservationURI,)
+    new_inputs = TypedSet(PlaneURI,)
+    for member in observation.members:
+        new_obs_id = 'C{}'.format(
+            member.observation_id.replace('.fits.gz', extension))
+        new_member = ObservationURI('caom:OMM/{}'.format(new_obs_id))
+        new_members.add(new_member)
+
+        # the product id is the same as the observation id for OMM
+        new_input = PlaneURI.get_plane_uri(new_member, new_obs_id)
+        new_inputs.add(new_input)
+
+    # remove the wrongly formatted values
+    while len(observation.members) > 0:
+        observation.members.pop()
+
+    observation.members.update(new_members)
+    observation.planes[observation.observation_id].provenance.inputs.update(
+        new_inputs)
+    logging.debug('End _update_provenance')
+
+
 def _build_blueprints(uri):
     """This application relies on the caom2utils fits2caom2 ObsBlueprint
     definition for mapping FITS file values to CAOM model element
@@ -515,14 +567,16 @@ def _build_blueprints(uri):
 
 
 def _get_uri(args):
+    result = None
     if args.observation:
-        return OmmName(args.observation[0]).get_file_uri()
+        result = OmmName(args.observation[1]).get_file_uri()
     elif args.local:
         obs_id = OmmName.remove_extensions(os.path.basename(args.local[0]))
-        return OmmName(obs_id).get_file_uri()
+        result = OmmName(obs_id).get_file_uri()
     else:
         raise manage_composable.CadcException(
             'Could not define uri from these ares {}'.format(args))
+    return result
 
 
 def main_app():
