@@ -42,10 +42,10 @@ RUN pip install caom2repo && pip install PyYAML
 
 WORKDIR /usr/src/app
 RUN git clone https://github.com/SharonGoliath/caom2tools.git && \
-  cd caom2tools && git checkout s2235 && git pull origin s2235 && \
+  cd caom2tools && git checkout s2323 && git pull origin s2323 && \
   pip install ./caom2utils && pip install ./caom2
   
-RUN pip install git+https://github.com/SharonGoliath/omm2caom2.git@s2235
+RUN pip install git+https://github.com/SharonGoliath/omm2caom2.git@s2323
 
 COPY ./docker-entrypoint.sh ./
 
