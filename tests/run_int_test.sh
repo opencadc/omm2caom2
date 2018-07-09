@@ -104,7 +104,10 @@ check_store_ingest_modify() {
   check_complete store_ingest_modify C180616_0135_SCI
   # caom2repo service is working
   xml="${RUN_ROOT}/store_ingest_modify/C180616_0135_SCI.fits.xml"
+  log="${RUN_ROOT}/store_ingest_modify/logs/C180616_0135_SCI.log"
   file_does_not_have_content "caom2:metaChecksum" ${xml}
+  # the content checksum is being executed
+  file_has_content "TaskType.UNKNOWN" ${log}
 }
 
 check_ingest_modify_local() {
@@ -152,7 +155,15 @@ do
     sudo rm ${run_dir}/logs/*.txt || exit $?
     if [[ ${ii} != "failures" && ${ii} != "ingest_modify" ]]
     then
-      sudo rm ${run_dir}/*.xml || exit $?
+      if [[ ${ii} == "scrape" && -e ${run_dir}/C120902_sh2-132_J_old_SCIRED.fits.xml ]]
+      then
+        sudo rm ${run_dir}/C120902_sh2-132_J_old_SCIRED.fits.xml || exit $?
+      elif [[ ${ii} == "ingest_modify_local" && -e ${run_dir}/C080121_0339_SCI.fits.xml ]]
+      then
+        sudo rm ${run_dir}/C080121_0339_SCI.fits.xml || exit $?
+      else
+        sudo rm ${run_dir}/*.xml || exit $?
+      fi
     fi
     if [[ ${ii} != "failures" && ${ii} != "scrape" && ${ii} != "ingest_modify" ]]
     then

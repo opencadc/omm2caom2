@@ -587,7 +587,6 @@ def main_app():
         gen_proc(args, blueprints)
     except Exception as e:
         logging.error('Failed omm2caom2 execution for {}.'.format(args))
-        logging.error(e)
         tb = traceback.format_exc()
         logging.error(tb)
         sys.exit(-1)

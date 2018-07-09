@@ -422,8 +422,6 @@ def exec_cmd(cmd):
         child = subprocess.Popen(cmd_array, stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
         output, outerr = child.communicate()
-        logging.error('stdout {}'.format(output.decode('utf-8')))
-        logging.error('stderr {}'.format(outerr.decode('utf-8')))
         if child.returncode != 0:
             logging.debug('Command {} failed.'.format(cmd))
             raise CadcException(
