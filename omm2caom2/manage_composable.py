@@ -95,6 +95,7 @@ class TaskType(Enum):
     SCRAPE = 'scrape'
     INGEST = 'ingest'
     MODIFY = 'modify'
+    UNKNOWN = 'unknown'
 
 
 class Config(object):

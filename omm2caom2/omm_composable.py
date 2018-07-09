@@ -81,7 +81,8 @@ from caom2 import obs_reader_writer
 
 __all__ = ['Omm2Caom2Meta', 'Omm2Caom2Data', 'run_by_file',
            'Omm2Caom2LocalMeta', 'Omm2Caom2LocalData', 'Omm2Caom2Store',
-           'Omm2Caom2Scrape', 'OrganizeExecutes', 'CaomExecute']
+           'Omm2Caom2Scrape', 'Omm2Caom2CompareChecksum', 'OrganizeExecutes',
+           'CaomExecute']
 
 
 class CaomExecute(object):
@@ -300,9 +301,6 @@ class Omm2Caom2LocalMeta(CaomExecute):
         self.logger.debug('make sure named credentials exist')
         self._check_credentials_exist()
 
-        self.logger.debug('are the checksums the same?')
-        self._compare_checksums()
-
         self.logger.debug('remove the existing observation, if it exists, '
                           'because metadata generation is less repeatable '
                           'for updates than for creates.')
@@ -425,9 +423,6 @@ class Omm2Caom2LocalData(Omm2Caom2Data):
         self.logger.debug('make sure named credentials exist')
         self._check_credentials_exist()
 
-        self.logger.debug('are the checksums the same?')
-        self._compare_checksums()
-
         self.logger.debug('get the observation for the existing model')
         self._repo_cmd_read()
         observation = self._read_model()
@@ -468,9 +463,6 @@ class Omm2Caom2Store(CaomExecute):
 
         self.logger.debug('store the input file to ad')
         self._cadc_data_put()
-
-        self.logger.debug('are the checksums the same?')
-        self._compare_checksums()
 
         self.logger.debug('End execute for {}'.format(__name__))
 
@@ -528,6 +520,31 @@ class Omm2Caom2DataScrape(Omm2Caom2LocalData):
 
         self.logger.debug('output the updated xml')
         self._write_model(observation)
+
+        self.logger.debug('End execute for {}'.format(__name__))
+
+
+class Omm2Caom2CompareChecksum(CaomExecute):
+    """Defines the pipeline step for comparing the checksum of a file on disk
+    with the checksum of the supposedly-the-same file stored at CADC.
+
+    This step should be invoked with any other task type that relies on
+    files on local disk.
+    """
+
+    def __init__(self, config, obs_id, file_name):
+        super(Omm2Caom2CompareChecksum, self).__init__(
+            config, manage_composable.TaskType.UNKNOWN, obs_id)
+        self._define_local_dirs()
+        self.fname = file_name
+
+    def execute(self, context):
+        self.logger.debug('Begin execute for {} '
+                          'CompareChecksum'.format(__name__))
+        self.logger.debug('the steps:')
+
+        self.logger.debug('generate the xml from the file on disk')
+        self._compare_checksums()
 
         self.logger.debug('End execute for {}'.format(__name__))
 
@@ -591,6 +608,10 @@ class OrganizeExecutes(object):
                 else:
                     raise manage_composable.CadcException(
                         'Do not understand task type {}'.format(task_type))
+            if (self.config.use_local_files and
+                    manage_composable.TaskType.SCRAPE not in self.task_types):
+                executors.append(
+                    Omm2Caom2CompareChecksum(self.config, obs_id, file_name))
         else:
             logging.error('{} failed naming validation check. Must match '
                           'this regular expression {}.'.format(
