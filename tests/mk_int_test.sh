@@ -46,7 +46,7 @@ task_types:
   - scrape
 " >> ${2}
 
-  cadc-data get --netrc ${NETRC} -o ${1} OMM C120902_sh2-132_J_old_SCIRED || exit $?
+  cadc-data get --netrc ${NETRC} -o ${1}/C120902_sh2-132_J_old_SCIRED.fits.gz OMM C120902_sh2-132_J_old_SCIRED || exit $?
 }
 
 test_preconditions_scrape_modify() {
@@ -57,7 +57,7 @@ task_types:
   - modify
 " >> ${2}
 
-  cadc-data get -z --netrc ${NETRC} -o ${1} OMM C170324_0054_SCI || exit $?
+  cadc-data get -z --netrc ${NETRC} -o ${1}/C170324_0054_SCI.fits OMM C170324_0054_SCI || exit $?
 }
 
 test_preconditions_store_ingest_modify() {
@@ -69,7 +69,7 @@ task_types:
   - modify
 " >> ${2}
 
-  cadc-data get -z --netrc ${NETRC} -o ${1} OMM C180616_0135_SCI || exit $?
+  cadc-data get -z --netrc ${NETRC} -o ${1}/C180616_0135_SCI.fits OMM C180616_0135_SCI || exit $?
 }
 
 test_preconditions_ingest_modify_local() {
@@ -80,7 +80,7 @@ task_types:
   - modify
 " >> ${2}
 
-  cadc-data get -z --netrc ${NETRC} -o ${1} OMM C080121_0339_SCI || exit $?
+  cadc-data get -z --netrc ${NETRC} -o ${1}/C080121_0339_SCI.fits OMM C080121_0339_SCI || exit $?
 }
 
 test_preconditions_ingest_modify() {
@@ -104,6 +104,13 @@ do
   if [[ ! -e ${cur_dir} ]]
   then
       mkdir ${ii} || exit $?
+      mkdir ${ii}/logs || exit $?
+  fi
+
+  if [[ ! -e ${MK_ROOT}/test_netrc ]]
+  then
+    netrc_file="${cur_dir}/test_netrc"
+    cp ${MK_ROOT}/test_netrc ${netrc_file} || exit $?
   fi
 
   de_file="${cur_dir}/docker-entrypoint.sh"

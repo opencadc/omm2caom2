@@ -7,8 +7,7 @@ OMM_ROOT=/home/goliaths/work/cadc/omm2caom2
 file_is_zero() {
   if [[ -e  ${1} ]]
   then
-    filesize=$(stat -c%s ${1})
-    if [[ ${filesize} -eq 0 ]]
+    if [[ ! -s ${1} ]]
     then
       echo "${1} not generated."
       exit -1
@@ -23,8 +22,7 @@ file_is_zero() {
 file_is_not_zero() {
   if [[ -e  ${1} ]]
   then
-    filesize=$(stat -c%s ${1})
-    if [[ ${filesize} -ne 0 ]]
+    if [[ -s ${1} ]]
     then
       echo "${1} generated."
       exit -1
