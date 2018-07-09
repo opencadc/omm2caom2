@@ -213,6 +213,12 @@ class CaomExecute(object):
                 self.obs_id, self.model_fqn, plugin, fqn, self.obs_id, uri)
         manage_composable.exec_cmd(cmd)
 
+    def _compare_checksums(self):
+        fqn = os.path.join(self.working_dir, self.fname)
+        manage_composable.compare_checksum(
+            self.netrc_fqn, self.collection, fqn)
+
+
     @staticmethod
     def _find_fits2caom2_plugin():
         packages = site.getsitepackages()
@@ -293,6 +299,9 @@ class Omm2Caom2LocalMeta(CaomExecute):
         self.logger.debug('the steps:')
         self.logger.debug('make sure named credentials exist')
         self._check_credentials_exist()
+
+        self.logger.debug('are the checksums the same?')
+        self._compare_checksums()
 
         self.logger.debug('remove the existing observation, if it exists, '
                           'because metadata generation is less repeatable '
@@ -416,6 +425,9 @@ class Omm2Caom2LocalData(Omm2Caom2Data):
         self.logger.debug('make sure named credentials exist')
         self._check_credentials_exist()
 
+        self.logger.debug('are the checksums the same?')
+        self._compare_checksums()
+
         self.logger.debug('get the observation for the existing model')
         self._repo_cmd_read()
         observation = self._read_model()
@@ -456,6 +468,9 @@ class Omm2Caom2Store(CaomExecute):
 
         self.logger.debug('store the input file to ad')
         self._cadc_data_put()
+
+        self.logger.debug('are the checksums the same?')
+        self._compare_checksums()
 
         self.logger.debug('End execute for {}'.format(__name__))
 

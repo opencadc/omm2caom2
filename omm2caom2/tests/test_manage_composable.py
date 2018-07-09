@@ -69,6 +69,7 @@
 
 import logging
 import os
+import pytest
 
 from mock import Mock, patch
 
@@ -97,7 +98,7 @@ def test_run_by_file():
         f.close()
         omm_composable.run_by_file()
     except manage_composable.CadcException as e:
-        assert False, 'but the work list is empty'
+        assert False, 'but the work list is empty {}'.format(e)
 
 
 @patch('omm2caom2.manage_composable.logging')
@@ -116,3 +117,21 @@ def test_exec_cmd_redirect():
     manage_composable.exec_cmd_redirect(test_cmd, fqn)
     assert os.path.exists(fqn)
     assert os.stat(fqn).st_size > 0
+
+
+@patch('caom2utils.fits2caom2.CadcDataClient.get_file_info')
+def test_compare_checksum(mock_get_file_info):
+
+    # fail case - file doesn't exist
+    test_file = os.path.join(TESTDATA_DIR, 'test_omm.fits.gz')
+    test_netrc = os.path.join(TESTDATA_DIR, 'test_netrc')
+    with pytest.raises(manage_composable.CadcException):
+        manage_composable.compare_checksum(test_netrc, 'OMM', test_file)
+
+    # fail case - file exists, different checksum - make a 0-byte test file
+    test_file = os.path.join(TESTDATA_DIR, 'C111107_0694_SCI.fits')
+    f = open(test_file, 'w')
+    f.write('test')
+    f.close()
+    with pytest.raises(manage_composable.CadcException):
+        manage_composable.compare_checksum(test_netrc, 'OMM', test_file)

@@ -71,9 +71,7 @@ import logging
 
 from astropy.time import Time, TimeDelta
 
-from omm2caom2 import manage_composable
-
-__all__ = ['convert_time']
+__all__ = ['convert_time', 'get_datetime']
 
 
 def convert_time(headers):
@@ -84,7 +82,7 @@ def convert_time(headers):
         logging.debug(
             'Use date {} and exposure {} to convert time.'.format(date,
                                                                   exposure))
-        t_start = Time(manage_composable.get_datetime(date))
+        t_start = Time(date)
         dt = TimeDelta(exposure, format='sec')
         t_end = t_start + dt
         t_start.format = 'mjd'
@@ -95,3 +93,21 @@ def convert_time(headers):
             mjd_start, mjd_end))
         return mjd_start, mjd_end
     return None, None
+
+
+def get_datetime(from_value):
+    """
+    Ensure datetime values are in MJD.
+    :param from_value:
+    :return: datetime instance
+    """
+
+    if from_value is not None:
+        try:
+            result = Time(from_value)
+            return result
+        except ValueError:
+            logging.error('Cannot parse datetime {}'.format(from_value))
+            return None
+    else:
+        return None

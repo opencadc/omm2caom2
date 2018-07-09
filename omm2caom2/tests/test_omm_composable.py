@@ -140,6 +140,8 @@ def test_meta_local_execute():
     assert os.path.exists(netrc)
     exec_cmd_orig = manage_composable.exec_cmd
     manage_composable.exec_cmd = Mock()
+    compare_orig = manage_composable.compare_checksum
+    manage_composable.compare_checksum = Mock()
 
     test_config = _init_config()
     test_config.working_directory = TESTDATA_DIR
@@ -154,8 +156,10 @@ def test_meta_local_execute():
         except CadcException as e:
             assert False, e
         assert manage_composable.exec_cmd.called
+        assert manage_composable.compare_checksum.called
     finally:
         manage_composable.exec_cmd = exec_cmd_orig
+        manage_composable.compare_checksum = compare_orig
 
 
 def test_data_execute():
@@ -212,6 +216,8 @@ def test_data_local_execute():
     read_orig = obs_reader_writer.ObservationReader.read
     exec_cmd_orig = manage_composable.exec_cmd
     manage_composable.exec_cmd = Mock()
+    compare_orig = manage_composable.compare_checksum
+    manage_composable.compare_checksum = Mock()
 
     try:
         omm_footprint_augmentation.visit = Mock()
@@ -230,6 +236,7 @@ def test_data_local_execute():
 
         # check that things worked as expected - no cleanup
         assert manage_composable.exec_cmd.called
+        assert manage_composable.compare_checksum.called
         assert omm_footprint_augmentation.visit.called
         assert omm_preview_augmentation.visit.called
     finally:
@@ -237,6 +244,7 @@ def test_data_local_execute():
         omm_footprint_augmentation.visit = fp_visit_orig
         omm_preview_augmentation.visit = prev_visit_orig
         manage_composable.exec_cmd = exec_cmd_orig
+        manage_composable.compare_checksum = compare_orig
 
 
 def test_data_store():
@@ -244,6 +252,8 @@ def test_data_store():
     test_config = _init_config()
     exec_cmd_orig = manage_composable.exec_cmd
     manage_composable.exec_cmd = Mock()
+    compare_orig = manage_composable.compare_checksum
+    manage_composable.compare_checksum = Mock()
 
     try:
 
@@ -256,9 +266,11 @@ def test_data_store():
         except CadcException as e:
             assert False, e
         assert manage_composable.exec_cmd.called
+        assert manage_composable.compare_checksum.called
 
     finally:
         manage_composable.exec_cmd = exec_cmd_orig
+        manage_composable.compare_checksum = compare_orig
 
 
 def test_scrape():

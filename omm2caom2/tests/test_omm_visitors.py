@@ -117,9 +117,9 @@ def test_preview_aug_visit():
 
 def test_preview_augment_plane():
     put_omm_orig = omm_preview_augmentation._put_omm
-    check_omm_orig = omm_preview_augmentation._check_omm
+    compare_checksum_org = manage_composable.compare_checksum
     omm_preview_augmentation._put_omm = Mock()
-    omm_preview_augmentation._check_omm = Mock()
+    manage_composable.compare_checksum = Mock()
     preview = os.path.join(TESTDATA_DIR, OmmName(TEST_OBS).get_prev())
     thumb = os.path.join(TESTDATA_DIR, OmmName(TEST_OBS).get_thumb())
     if os.path.exists(preview):
@@ -146,36 +146,9 @@ def test_preview_augment_plane():
     assert os.path.exists(preview)
     assert os.path.exists(thumb)
     assert omm_preview_augmentation._put_omm.called
-    assert omm_preview_augmentation._check_omm.called
+    assert manage_composable.compare_checksum.called
     omm_preview_augmentation._put_omm = put_omm_orig
-    omm_preview_augmentation._check_omm = check_omm_orig
-
-
-def test_check_omm():
-    exec_cmd_orig = manage_composable.exec_cmd_info
-    try:
-        manage_composable.exec_cmd_info = \
-            Mock(return_value='INFO:cadc-data:info\n'
-                              'File C170324_0054_SCI_prev.jpg:\n'
-                              '    archive: OMM\n'
-                              '   encoding: None\n'
-                              '    lastmod: Mon, 25 Jun 2018 16:52:07 GMT\n'
-                              '     md5sum: f37d21c53055498d1b5cb7753e1c6d6f\n'
-                              '       name: C170324_0054_SCI_prev.jpg\n'
-                              '       size: 754408\n'
-                              '       type: image/jpeg\n'
-                              '    umd5sum: 704b494a972eed30b18b817e243ced7d\n'
-                              '      usize: 754408\n')
-        test_uri = 'ad:OMM/C170324_0054_SCI_prev.jpg'
-        test_product_type = ProductType.THUMBNAIL
-        test_release_type = ReleaseType.DATA
-        test_artifact = Artifact(test_uri, test_product_type, test_release_type)
-        test_artifact.content_checksum = ChecksumURI(
-            '704b494a972eed30b18b817e243ced7d')
-        omm_preview_augmentation._check_omm(test_artifact, None, None, None)
-        assert manage_composable.exec_cmd_info.called
-    finally:
-        manage_composable.exec_cmd_orig = exec_cmd_orig
+    manage_composable.compare_checksum = compare_checksum_org
 
 
 def _read_obs_from_file():

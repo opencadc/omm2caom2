@@ -70,8 +70,6 @@
 import logging
 import os
 
-from hashlib import md5
-
 from caom2 import Artifact, ProductType, ReleaseType, ChecksumURI
 from caom2 import Observation
 from omm2caom2 import manage_composable, CaomName, OmmName
@@ -127,11 +125,10 @@ def _augment(plane, uri, fqn, product_type):
 
 
 def _artifact_metadata(uri, fqn, product_type):
-    md5uri = ChecksumURI(md5(open(fqn, 'rb').read()).hexdigest())
-    return Artifact(uri, product_type, ReleaseType.DATA,
-                    content_type='image/jpg',
-                    content_length=os.path.getsize(fqn),
-                    content_checksum=md5uri)
+    local_meta = manage_composable.get_file_meta(fqn)
+    md5uri = ChecksumURI(local_meta['md5sum'])
+    return Artifact(uri, product_type, ReleaseType.DATA, local_meta['type'],
+                    local_meta['size'], md5uri)
 
 
 def _do_prev(file_id, science_fqn, working_dir, netrc_fqn, plane,
@@ -161,10 +158,8 @@ def _do_prev(file_id, science_fqn, working_dir, netrc_fqn, plane,
     _augment(plane, prev_uri, preview_fqn, ProductType.PREVIEW)
     _augment(plane, thumb_uri, thumb_fqn, ProductType.THUMBNAIL)
 
-    _check_omm(plane.artifacts[prev_uri], logging_level_param, netrc_fqn,
-               preview)
-    _check_omm(plane.artifacts[thumb_uri], logging_level_param, netrc_fqn,
-               thumb)
+    manage_composable.compare_checksum(netrc_fqn, 'OMM', preview_fqn)
+    manage_composable.compare_checksum(netrc_fqn, 'OMM', thumb_fqn)
 
 
 def _put_omm(working_dir, jpg_name, netrc_fqn, logging_level_param):
@@ -177,14 +172,3 @@ def _put_omm(working_dir, jpg_name, netrc_fqn, logging_level_param):
         manage_composable.exec_cmd(cmd)
     finally:
         os.chdir(cwd)
-
-
-def _check_omm(artifact, logging_level_param, netrc_fqn, fname):
-    check_cmd = 'cadc-data info {} --netrc-file {} OMM {}'.format(
-        logging_level_param, netrc_fqn, fname)
-    output = manage_composable.exec_cmd_info(check_cmd)
-    ad_md5sum = ChecksumURI(output.split('umd5sum: ')[1].split()[0])
-    if artifact.content_checksum != ad_md5sum:
-        raise manage_composable.CadcException(
-            '{} checksum failure with ad, expected {}, '
-            'got {}'.format(fname, artifact.content_checksum, ad_md5sum))

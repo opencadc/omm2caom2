@@ -83,3 +83,17 @@ def test_convert_time():
     assert mjd_end is not None
     assert math.isclose(mjd_start, 56173.044953703706), mjd_start
     assert math.isclose(mjd_end, 56173.04518518518), mjd_end
+
+
+def test_get_datetime():
+    result = astro_composable.get_datetime('2006-12-12T12:12:12')
+    assert result is not None
+    assert result == '2006-12-12 12:12:12.000'
+
+    result = astro_composable.get_datetime('2006-12-12 12:12:12.001')
+    assert result is not None
+    assert result == '2006-12-12 12:12:12.001'
+
+    result = astro_composable.get_datetime('2006-12-12')
+    assert result is not None
+    assert result == '2006-12-12 00:00:00.000'

@@ -73,10 +73,16 @@ import subprocess
 import yaml
 
 from aenum import Enum
-from datetime import datetime
+from hashlib import md5
+from os import stat
 
-__all__ = ['CadcException', 'Config', 'get_datetime', 'to_float', 'TaskType',
-           'exec_cmd', 'exec_cmd_redirect', 'exec_cmd_info']
+from cadcutils import net
+from cadcdata import CadcDataClient
+
+
+__all__ = ['CadcException', 'Config', 'to_float', 'TaskType',
+           'exec_cmd', 'exec_cmd_redirect', 'exec_cmd_info',
+           'get_cadc_meta', 'get_file_meta', 'compare_checksum']
 
 
 class CadcException(Exception):
@@ -397,31 +403,6 @@ class Config(object):
             return None
 
 
-def get_datetime(from_value):
-    """
-    Ensure datetime values are in MJD.
-    :param from_value:
-    :return: datetime instance
-    """
-
-    if from_value:
-        try:
-            return datetime.strptime(from_value, '%Y-%m-%dT%H:%M:%S')
-        except ValueError:
-            try:
-                return datetime.strptime(from_value,
-                                         '%Y-%m-%d %H:%M:%S.%f')
-            except ValueError:
-                try:
-                    return datetime.strptime(from_value, '%Y-%m-%d')
-                except ValueError:
-                    logging.error(
-                        'Cannot parse datetime {}'.format(from_value))
-                    return None
-    else:
-        return None
-
-
 def to_float(value):
     """Cast to float, without throwing an exception."""
     return float(value) if value is not None else None
@@ -499,3 +480,62 @@ def exec_cmd_redirect(cmd, fqn):
     except Exception as e:
         logging.debug('Error with command {}:: {}'.format(cmd, e))
         raise CadcException('Could not execute cmd {}'.format(cmd))
+
+
+def get_cadc_meta(netrc_fqn, collection, fname):
+    """
+    Gets contentType, contentLength and contentChecksum of a CADC artifact
+    :param netrc_fqn: user credentials
+    :param collection: archive file has been stored to
+    :param fname: name of file in the archive
+    :return:
+    """
+    subject = net.Subject(username=None, certificate=None, netrc=netrc_fqn)
+    client = CadcDataClient(subject)
+    return client.get_file_info(collection, fname)
+
+
+def get_file_meta(fqn):
+    """
+    Gets contentType, contentLength and contentChecksum of an artifact on disk.
+
+    :param fqn: Fully-qualified name of the file for which to get the metadata.
+    :return:
+    """
+    meta = {}
+    s = stat(fqn)
+    meta['size'] = s.st_size
+    meta['md5sum'] = md5(open(fqn, 'rb').read()).hexdigest()
+    if fqn.endswith('.header') or fqn.endswith('.txt'):
+        meta['type'] = 'text/plain'
+    elif fqn.endswith('.gif'):
+        meta['type'] = 'image/gif'
+    elif fqn.endswith('.png'):
+        meta['type'] = 'image/png'
+    else:
+        meta['type'] = 'application/octet-stream'
+    return meta
+
+
+def compare_checksum(netrc_fqn, collection, fqn):
+    """
+    Raise CadcException if the checksum of a file in ad is not the same as
+    the checksum of a file on disk.
+
+    :param netrc_fqn: fully-qualified file name for the netrc file
+    :param collection: archive file has been stored to
+    :param fqn: Fully-qualified name of the file for which to get the metadata.
+    """
+    fname = os.path.basename(fqn)
+    try:
+        local_meta = get_file_meta(fqn)
+        ad_meta = get_cadc_meta(netrc_fqn, collection, fname)
+        if ((fqn.endswith('.gz') and
+             local_meta['md5sum'] != ad_meta['md5sum']) or
+                ((local_meta['md5sum'] != ad_meta['umd5sum']) or ())):
+            raise CadcException(
+                '{} md5sum not the same as the one in the ad '
+                '{} collection.'.format(fqn, collection))
+    except Exception as e:
+        raise CadcException('Could not find md5 checksum for {} in the ad {} '
+                            'collection. {}'.format(fqn, collection, e))
