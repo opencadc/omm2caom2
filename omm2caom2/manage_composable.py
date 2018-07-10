@@ -422,6 +422,8 @@ def exec_cmd(cmd):
         child = subprocess.Popen(cmd_array, stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
         output, outerr = child.communicate()
+        logging.debug('stdout {}'.format(output.decode('utf-8')))
+        logging.debug('stderr {}'.format(outerr.decode('utf-8')))
         if child.returncode != 0:
             logging.debug('Command {} failed.'.format(cmd))
             raise CadcException(
@@ -529,9 +531,10 @@ def compare_checksum(netrc_fqn, collection, fqn):
     try:
         local_meta = get_file_meta(fqn)
         ad_meta = get_cadc_meta(netrc_fqn, collection, fname)
-        if ((fqn.endswith('.gz') and
-             local_meta['md5sum'] != ad_meta['md5sum']) or
-                ((local_meta['md5sum'] != ad_meta['umd5sum']) or ())):
+        if ((fqn.endswith('.gz') and local_meta['md5sum'] !=
+             ad_meta['md5sum']) or (
+                not fqn.endswith('.gz') and local_meta['md5sum'] !=
+                ad_meta['umd5sum'])):
             raise CadcException(
                 '{} md5sum not the same as the one in the ad '
                 '{} collection.'.format(fqn, collection))

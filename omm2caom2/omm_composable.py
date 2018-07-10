@@ -72,6 +72,7 @@ import os
 import site
 import traceback
 
+from argparse import ArgumentParser
 from datetime import datetime
 
 from omm2caom2 import omm_preview_augmentation, omm_footprint_augmentation
@@ -552,17 +553,32 @@ class Omm2Caom2CompareChecksum(CaomExecute):
 class OrganizeExecutes(object):
     """How to turn on/off various steps in the OMM pipeline."""
 
-    def __init__(self, config):
+    def __init__(self, config, todo_file=None):
         self.config = config
         self.task_types = config.task_types
         self.logger = logging.getLogger()
         self.logger.setLevel(config.logging_level)
-        if self.config.log_to_file:
-            failure = open(self.config.failure_fqn, 'w')
+        if todo_file is not None:
+            self.todo_fqn = todo_file
+            todo_name = os.path.basename(todo_file).split('.')[0]
+            self.success_fqn = os.path.join(self.config.log_file_directory,
+                                            '{}_success.log'.format(todo_name))
+            self.failure_fqn = os.path.join(self.config.log_file_directory,
+                                            '{}_failure.log'.format(todo_name))
+            self.retry_fqn = os.path.join(self.config.log_file_directory,
+                                          '{}_retry.log'.format(todo_name))
+        else:
+            self.todo_fqn = config.work_fqn
+            self.success_fqn = config.success_fqn
+            self.failure_fqn = config.failure_fqn
+            self.retry_fqn = config.retry_fqn
+
+        if config.log_to_file:
+            failure = open(self.failure_fqn, 'w')
             failure.close()
-            retry = open(self.config.retry_fqn, 'w')
+            retry = open(self.retry_fqn, 'w')
             retry.close()
-            success = open(self.config.success_fqn, 'w')
+            success = open(self.success_fqn, 'w')
             success.close()
         self.success_count = 0
 
@@ -621,7 +637,7 @@ class OrganizeExecutes(object):
 
     def capture_failure(self, obs_id, file_name, e):
         if self.config.log_to_file:
-            failure = open(self.config.failure_fqn, 'a')
+            failure = open(self.failure_fqn, 'a')
             try:
                 min_error = self._minimize_error_message(e)
                 failure.write(
@@ -631,7 +647,7 @@ class OrganizeExecutes(object):
                 failure.close()
 
             if not self.config.use_local_files:
-                retry = open(self.config.retry_fqn, 'a')
+                retry = open(self.retry_fqn, 'a')
                 try:
                     retry.write('{}\n'.format(obs_id))
                 finally:
@@ -640,7 +656,7 @@ class OrganizeExecutes(object):
     def capture_success(self, obs_id, file_name):
         self.success_count += 1
         if self.config.log_to_file:
-            success = open(self.config.success_fqn, 'a')
+            success = open(self.success_fqn, 'a')
             try:
                 success.write(
                     '{} {} {}\n'.format(datetime.now(), obs_id, file_name))
@@ -663,6 +679,8 @@ class OrganizeExecutes(object):
             return 'NAXES was not set'
         elif 'Invalid SpatialWCS' in e:
             return 'Invalid SpatialWCS'
+        elif 'getProxyCertificate failed' in e:
+            return 'getProxyCertificate failed'
         else:
             return e
 
@@ -699,7 +717,8 @@ def _do_one(config, organizer, obs_id, file_name=None):
             logging.info(
                 'Step {} for {}'.format(executor.task_type, obs_id))
             executor.execute(context=None)
-        organizer.capture_success(obs_id, file_name)
+        if len(executors) > 0:
+            organizer.capture_success(obs_id, file_name)
     except Exception as e:
         organizer.capture_failure(obs_id, file_name,
                                   e=traceback.format_exc())
@@ -709,7 +728,7 @@ def _do_one(config, organizer, obs_id, file_name=None):
 
 
 def _run_todo_file(config, organizer):
-    with open(config.work_fqn) as f:
+    with open(organizer.todo_fqn) as f:
         for line in f:
             obs_id = line.strip()
             logging.info('Process observation id {}'.format(obs_id))
@@ -733,10 +752,18 @@ def run_by_file():
         logging.debug(config)
         logger = logging.getLogger()
         logger.setLevel(config.logging_level)
-        organize = OrganizeExecutes(config)
         if config.use_local_files:
+            organize = OrganizeExecutes(config)
             _run_local_files(config, organize)
         else:
+            parser = ArgumentParser()
+            parser.add_argument('--todo',
+                                help='Fully-qualified todo file name.')
+            args = parser.parse_args()
+            if args.todo is not None:
+                organize = OrganizeExecutes(config, args.todo)
+            else:
+                organize = OrganizeExecutes(config)
             _run_todo_file(config, organize)
         logging.info('Processed {} correctly.'.format(organize.success_count))
     except Exception as e:

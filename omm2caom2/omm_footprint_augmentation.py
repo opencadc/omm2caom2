@@ -165,6 +165,8 @@ def _update_position(chunk, science_fqn):
             index += 2
             logging.debug('Adding vertex\n{}'.format(vertex))
         chunk.position.axis.bounds = bounds
+    else:
+        logging.info('No position information for footprint generation.')
     logging.debug('Done _update_position.')
 
 
