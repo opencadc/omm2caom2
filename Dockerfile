@@ -45,7 +45,7 @@ RUN git clone https://github.com/SharonGoliath/caom2tools.git && \
   cd caom2tools && git checkout s2323 && git pull origin s2323 && \
   pip install ./caom2utils && pip install ./caom2
   
-RUN pip install git+https://github.com/SharonGoliath/omm2caom2.git@s2323
+RUN pip install git+https://github.com/SharonGoliath/omm2caom2.git
 
 COPY ./docker-entrypoint.sh ./
 
