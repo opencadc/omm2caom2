@@ -107,14 +107,21 @@ check_store_ingest_modify() {
   log="${RUN_ROOT}/store_ingest_modify/logs/C180616_0135_SCI.log"
   file_does_not_have_content "caom2:metaChecksum" ${xml}
   # the content checksum is being executed
-  file_has_content "TaskType.UNKNOWN" ${log}
+  file_does_not_have_content "TaskType.UNKNOWN" ${log}
 }
 
 check_ingest_modify_local() {
   check_complete ingest_modify_local C080121_0339_SCI
   # caom2repo service is working
   xml="${RUN_ROOT}/ingest_modify_local/C080121_0339_SCI.fits.xml"
+  #
+  # this file will not have footprintfinder results, because there
+  # is no WCS in it - but check to make sure that is what's
+  # actually happening, and that the log message is doing the output
+  #
+  log="${RUN_ROOT}/ingest_modify_local/logs/C180108_0002_SCI.log"
   file_does_not_have_content "caom2:metaChecksum" ${xml}
+  file_does_not_have_content "footprint generation" ${log}
 }
 
 check_ingest_modify() {
@@ -132,6 +139,13 @@ check_ingest_modify() {
   file_exists ${thumb}
 }
 
+check_todo_parameter() {
+  echo 'check_todo_parameter'
+  failure_log="${RUN_ROOT}/todo_parameter/logs/abc_failure.log"
+  success_log="${RUN_ROOT}/todo_parameter/logs/abc_success.log"
+  file_is_zero ${failure_log}
+  file_is_not_zero ${success_log}
+}
 
 # copy the latest version of omm2caom2 code that's required for a python install
 mkdir -p omm2caom2 || exit $?
@@ -145,6 +159,28 @@ cp ${OMM_ROOT}/omm2caom2/*.py omm2caom2/omm2caom2 || exit $?
 docker build -f ./Dockerfile -t omm_run_int ./ || exit $?
 
 # run the container permutations that I care about
+
+# first test the permutations that support a command-line parameter for the
+# todo file
+for ii in todo_parameter
+do
+  echo "Run ${ii} test case ..."
+  run_dir=${RUN_ROOT}/${ii}
+  if [[ -e ${run_dir}/logs/abc_success.log ]]
+  then
+    sudo rm ${run_dir}/logs/*.log || exit $?
+  fi
+  output="$(docker run --rm -v ${run_dir}:/usr/src/app omm_run_int omm_run --todo ./abc.txt 2>&1)"
+  result=$?
+  if [[ ${result} -ne 0 ]]
+  then
+    echo "omm_run failed for ${ii}"
+    exit -1
+  fi
+  check_${ii}
+done
+
+# then those permutations that don't support the command-line parameter
 for ii in failures scrape scrape_modify store_ingest_modify ingest_modify_local ingest_modify
 do
   echo "Run ${ii} test case ..."

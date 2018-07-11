@@ -81,6 +81,7 @@ task_types:
 " >> ${2}
 
   cadc-data get -z --netrc ${NETRC} -o ${1}/C080121_0339_SCI.fits OMM C080121_0339_SCI || exit $?
+  cadc-data get --netrc ${NETRC} -o ${1}/C180108_0002_SCI.fits.gz OMM C180108_0002_SCI || exit $?
 }
 
 test_preconditions_ingest_modify() {
@@ -96,21 +97,26 @@ task_types:
 " > ${todo_file}
 }
 
+test_preconditions_todo_parameter() {
+  echo 'test_preconditions_todo_parameter'
+  echo "use_local_files: False
+task_types:
+  - ingest
+" >> ${2}
+
+  todo_file="${1}/abc.txt"
+  echo "bc
+" > ${todo_file}
+}
+
 cp ${NETRC} ${MK_ROOT}
 cp /home/goliaths/work/cadc/Dockerfile ${MK_ROOT}
-for ii in failures scrape scrape_modify store_ingest_modify ingest_modify_local ingest_modify
+for ii in failures scrape scrape_modify store_ingest_modify ingest_modify_local ingest_modify todo_parameter
 do
   cur_dir="${MK_ROOT}/${ii}"
   if [[ ! -e ${cur_dir} ]]
   then
       mkdir ${ii} || exit $?
-      mkdir ${ii}/logs || exit $?
-  fi
-
-  if [[ ! -e ${MK_ROOT}/test_netrc ]]
-  then
-    netrc_file="${cur_dir}/test_netrc"
-    cp ${MK_ROOT}/test_netrc ${netrc_file} || exit $?
   fi
 
   de_file="${cur_dir}/docker-entrypoint.sh"

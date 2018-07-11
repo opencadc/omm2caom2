@@ -531,13 +531,14 @@ def compare_checksum(netrc_fqn, collection, fqn):
     try:
         local_meta = get_file_meta(fqn)
         ad_meta = get_cadc_meta(netrc_fqn, collection, fname)
-        if ((fqn.endswith('.gz') and local_meta['md5sum'] !=
-             ad_meta['md5sum']) or (
-                not fqn.endswith('.gz') and local_meta['md5sum'] !=
-                ad_meta['umd5sum'])):
-            raise CadcException(
-                '{} md5sum not the same as the one in the ad '
-                '{} collection.'.format(fqn, collection))
     except Exception as e:
         raise CadcException('Could not find md5 checksum for {} in the ad {} '
                             'collection. {}'.format(fqn, collection, e))
+
+    if ((fqn.endswith('.gz') and local_meta['md5sum'] !=
+         ad_meta['md5sum']) or (
+            not fqn.endswith('.gz') and local_meta['md5sum'] !=
+            ad_meta['umd5sum'])):
+        raise CadcException(
+            '{} md5sum not the same as the one in the ad '
+            '{} collection.'.format(fqn, collection))

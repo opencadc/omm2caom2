@@ -195,7 +195,7 @@ class CaomExecute(object):
         try:
             result = manage_composable.exec_cmd_info(cmd)
             looked_up_name = None
-            if result is not None:
+            if result is not None and 'name: ' in result:
                 looked_up_name = result.split('name: ')[1].split()[0]
                 self.logger.debug(
                     'Found file name in storage {}'.format(looked_up_name))
@@ -679,8 +679,14 @@ class OrganizeExecutes(object):
             return 'NAXES was not set'
         elif 'Invalid SpatialWCS' in e:
             return 'Invalid SpatialWCS'
-        elif 'getProxyCertificate failed' in e:
+        elif 'getProxyCertficate failed' in e:
             return 'getProxyCertificate failed'
+        elif 'AlreadyExistsException' in e:
+            return 'already exists'
+        elif 'Could not find the file' in e:
+            return 'cadc-data info failed'
+        elif 'md5sum not the same' in e:
+            return 'md5sum not the same'
         else:
             return e
 
@@ -722,7 +728,6 @@ def _do_one(config, organizer, obs_id, file_name=None):
     except Exception as e:
         organizer.capture_failure(obs_id, file_name,
                                   e=traceback.format_exc())
-        raise e
     finally:
         _unset_file_logging(config, log_h)
 
