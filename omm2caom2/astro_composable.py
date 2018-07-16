@@ -71,18 +71,23 @@ import logging
 
 from astropy.time import Time, TimeDelta
 
-__all__ = ['convert_time', 'get_datetime']
+__all__ = ['find_time_bounds', 'get_datetime', 'convert_time']
 
 
-def convert_time(headers):
-    logging.debug('Begin convert_time.')
+def find_time_bounds(headers):
+    logging.debug('Begin find_time_bounds.')
     date = headers[0].get('DATE-OBS')
     exposure = headers[0].get('TEXP')
-    if date is not None and exposure is not None:
+    return convert_time(date, exposure)
+
+
+def convert_time(start_time, exposure):
+    logging.debug('Begin convert_time.')
+    if start_time is not None and exposure is not None:
         logging.debug(
-            'Use date {} and exposure {} to convert time.'.format(date,
+            'Use date {} and exposure {} to convert time.'.format(start_time,
                                                                   exposure))
-        t_start = Time(date)
+        t_start = Time(start_time, format='mjd')
         dt = TimeDelta(exposure, format='sec')
         t_end = t_start + dt
         t_start.format = 'mjd'

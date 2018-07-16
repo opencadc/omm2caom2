@@ -74,10 +74,12 @@ import re
 import sys
 import traceback
 
+from astropy.io import fits
+
 from caom2 import TargetType, ObservationIntentType, CalibrationLevel
 from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
 from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
-from caom2 import ObservationURI, PlaneURI, TypedSet
+from caom2 import ObservationURI, PlaneURI, TypedSet, CoordBounds1D
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
 # from caom2utils import augment
 from omm2caom2 import astro_composable, manage_composable
@@ -398,34 +400,30 @@ def update(observation, **kwargs):
     assert isinstance(observation, Observation), \
         'observation parameter of type Observation'
 
-    if OmmName.is_composite(observation.observation_id):
-        _update_provenance(observation)
+    if 'headers' in kwargs:
+        headers = kwargs['headers']
 
-    for plane in observation.planes:
-        for artifact in observation.planes[plane].artifacts:
-            parts = observation.planes[plane].artifacts[artifact].parts
-            # the reduced files have a second extension that contains the
-            # provenance information only - fits2caom2 generates a part
-            # for that extension which has no unique WCS information, so
-            # just remove it
-            if len(parts) == 2:
-                parts.pop('1')
+        for plane in observation.planes:
+            for artifact in observation.planes[plane].artifacts:
+                parts = observation.planes[plane].artifacts[artifact].parts
+                for part in parts:
+                    p = parts[part]
+                    if len(p.chunks) == 0 and part == '0':
+                        # always have a time axis, and usually an energy
+                        # axis as well, so create a chunk for the zero-th part
+                        p.chunks.append(Chunk())
 
-            if len(parts) == 1:
-                p = parts['0']
-                if len(p.chunks) == 0:
-                    # always have a time axis, and usually an energy
-                    # axis as well, so create a chunk
-                    p.chunks.append(Chunk())
-
-                for chunk in p.chunks:
-                    if 'headers' in kwargs:
+                    for chunk in p.chunks:
                         chunk.naxis = 4
-                        headers = kwargs['headers']
                         chunk.product_type = get_product_type(headers)
                         _update_energy(chunk, headers)
                         _update_time(chunk, headers)
                         _update_position(chunk)
+
+        if OmmName.is_composite(observation.observation_id):
+            _update_provenance(observation)
+            _update_time_bounds(observation)
+
     logging.debug('Done update.')
     return True
 
@@ -460,13 +458,13 @@ def _update_energy(chunk, headers):
 def _update_time(chunk, headers):
     """Create TemporalWCS information using FITS header information.
     This information should always be available from the file."""
-    logging.debug('Begin _update_time.')
+    logging.error('Begin _update_time.')
     assert isinstance(chunk, Chunk), 'Expecting type Chunk'
 
     mjd_start = headers[0].get('MJD_STAR')
     mjd_end = headers[0].get('MJD_END')
     if mjd_start is None or mjd_end is None:
-        mjd_start, mjd_end = astro_composable.convert_time(headers)
+        mjd_start, mjd_end = astro_composable.find_time_bounds(headers)
     if mjd_start is None or mjd_end is None:
         chunk.time = None
         logging.debug('Cannot calculate mjd_start {} or mjd_end {}'.format(
@@ -543,6 +541,50 @@ def _update_provenance(observation):
     observation.planes[observation.observation_id].provenance.inputs.update(
         new_inputs)
     logging.debug('End _update_provenance')
+
+
+def _update_time_bounds(observation):
+    """Add chunk time bounds to the chunk from the first part, by
+     referencing information from the second header. """
+
+    lower_values = ''
+    upper_values = ''
+    with fits.open(
+            '/usr/src/app/test_composite/Cdemo_ext2_SCIRED.fits') as fits_data:
+        xtension = fits_data[1].header['XTENSION']
+        extname = fits_data[1].header['EXTNAME']
+        if 'BINTABLE' in xtension and 'PROVENANCE' in extname:
+            for ii in fits_data[1].data[0]['STARTTIME']:
+                lower_values = '{} {}'.format(ii, lower_values)
+            for ii in fits_data[1].data[0]['DURATION']:
+                upper_values = '{} {} '.format(ii, upper_values)
+        else:
+            raise manage_composable.CadcException(
+                'Opened a composite file that does not match the '
+                'expected profile (XTENSION=BINTABLE/EXTNAME=PROVENANCE). '
+                '{} {}'.format(xtension, extname))
+
+    for plane in observation.planes:
+        for artifact in observation.planes[plane].artifacts:
+            parts = observation.planes[plane].artifacts[artifact].parts
+            for p in parts:
+                if p == '0':
+                    lower = lower_values.split()
+                    upper = upper_values.split()
+                    if len(lower) != len(upper):
+                        raise manage_composable.CadcException(
+                            'Cannot make RefCoords with inconsistent values.')
+                    chunk = parts[p].chunks[0]
+                    bounds = CoordBounds1D()
+                    chunk.time.axis.bounds = bounds
+                    for ii in range(len(lower)):
+                        mjd_start, mjd_end = astro_composable.convert_time(
+                            manage_composable.to_float(lower[ii]),
+                            manage_composable.to_float(upper[ii]))
+                        lower_refcoord = RefCoord(0.5, mjd_start)
+                        upper_refcoord = RefCoord(1.5, mjd_end)
+                        r = CoordRange1D(lower_refcoord, upper_refcoord)
+                        bounds.samples.append(r)
 
 
 def _build_blueprints(uri):
