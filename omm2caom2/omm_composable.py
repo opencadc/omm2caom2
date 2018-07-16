@@ -687,6 +687,8 @@ class OrganizeExecutes(object):
             return 'cadc-data info failed'
         elif 'md5sum not the same' in e:
             return 'md5sum not the same'
+        elif 'Start tag expected' in e:
+            return 'XML Syntax Exception'
         else:
             return e
 

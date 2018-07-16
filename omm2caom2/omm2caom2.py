@@ -192,8 +192,8 @@ def accumulate_obs(bp, uri):
     bp.add_fits_attribute('Observation.target_position.equinox', 'EQUINOX')
     bp.set_default('Observation.target_position.equinox', '2000.0')
     bp.add_fits_attribute('Observation.telescope.name', 'TELESCOP')
-    bp.add_fits_attribute('Observation.telescope.geoLocationX', 'OBS_LAT')
-    bp.add_fits_attribute('Observation.telescope.geoLocationY', 'OBS_LON')
+    bp.set('Observation.telescope.geoLocationX', 'get_telescope_x(header)')
+    bp.set('Observation.telescope.geoLocationY', 'get_telescope_y(header)')
     bp.set('Observation.telescope.geoLocationZ', 'get_telescope_z(header)')
     bp.add_fits_attribute('Observation.telescope.keywords', 'OBSERVER')
     bp.set('Observation.environment.ambientTemp',
@@ -371,8 +371,9 @@ def get_start_ref_coord_val(header):
         return None
 
 
-def get_telescope_z(header):
-    """Calculate the telescope elevation from FITS header values.
+def get_telescope_x(header):
+    """Calculate the telescope x coordinate in geocentric m from FITS header
+    values.
 
     Called to fill a blueprint value, must have a
     parameter named header for import_module loading and execution.
@@ -382,9 +383,45 @@ def get_telescope_z(header):
     if telescope is None:
         return None
     if 'OMM' in telescope:
-        return 1100.
+        return 1448027.602
     elif 'CTIO' in telescope:
-        return 2200.
+        return 1815596.320
+    return None
+
+
+def get_telescope_y(header):
+    """Calculate the telescope y coordinate in geocentric m from FITS header
+    values.
+
+    Called to fill a blueprint value, must have a
+    parameter named header for import_module loading and execution.
+
+    :param header Array of astropy headers"""
+    telescope = header[0].get('TELESCOP')
+    if telescope is None:
+        return None
+    if 'OMM' in telescope:
+        return -4242089.498
+    elif 'CTIO' in telescope:
+        return -5213682.445
+    return None
+
+
+def get_telescope_z(header):
+    """Calculate the telescope elevation in geocentric m from FITS header
+    values.
+
+    Called to fill a blueprint value, must have a
+    parameter named header for import_module loading and execution.
+
+    :param header Array of astropy headers"""
+    telescope = header[0].get('TELESCOP')
+    if telescope is None:
+        return None
+    if 'OMM' in telescope:
+        return 4523791.027
+    elif 'CTIO' in telescope:
+        return -3187689.895
     return None
 
 
