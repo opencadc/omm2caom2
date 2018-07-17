@@ -87,7 +87,10 @@ def convert_time(start_time, exposure):
         logging.debug(
             'Use date {} and exposure {} to convert time.'.format(start_time,
                                                                   exposure))
-        t_start = Time(start_time, format='mjd')
+        if type(start_time) is float:
+            t_start = Time(start_time, format='mjd')
+        else:
+            t_start = Time(start_time)
         dt = TimeDelta(exposure, format='sec')
         t_end = t_start + dt
         t_start.format = 'mjd'

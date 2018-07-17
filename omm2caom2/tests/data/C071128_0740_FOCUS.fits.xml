@@ -24,9 +24,9 @@
   </caom2:targetPosition>
   <caom2:telescope>
     <caom2:name>CTIO-1.5m</caom2:name>
-    <caom2:geoLocationX>1815596.320</caom2:geoLocationX>
-    <caom2:geoLocationY>-5213682.445</caom2:geoLocationY>
-    <caom2:geoLocationZ>-3187689.895</caom2:geoLocationZ>
+    <caom2:geoLocationX>1814303.7455372282</caom2:geoLocationX>
+    <caom2:geoLocationY>-5214365.7436216</caom2:geoLocationY>
+    <caom2:geoLocationZ>-3187340.5659875614</caom2:geoLocationZ>
   </caom2:telescope>
   <caom2:instrument>
     <caom2:name>CPAPIR</caom2:name>

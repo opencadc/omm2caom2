@@ -581,6 +581,15 @@ class OrganizeExecutes(object):
             success = open(self.success_fqn, 'w')
             success.close()
         self.success_count = 0
+        self.complete_record_count = 0
+
+    @property
+    def complete_record_count(self):
+        return self._complete_record_count
+
+    @complete_record_count.setter
+    def complete_record_count(self, value):
+        self._complete_record_count = value
 
     def choose(self, obs_id, file_name=None):
         executors = []
@@ -660,6 +669,8 @@ class OrganizeExecutes(object):
             try:
                 success.write(
                     '{} {} {}\n'.format(datetime.now(), obs_id, file_name))
+                logging.info('Progress - processed {} of {} records.'.format(
+                    self.success_count, self.complete_record_count))
             finally:
                 success.close()
 
@@ -736,6 +747,9 @@ def _do_one(config, organizer, obs_id, file_name=None):
 
 def _run_todo_file(config, organizer):
     with open(organizer.todo_fqn) as f:
+        todo_list_length = sum(1 for _ in f)
+    organizer.complete_record_count = todo_list_length
+    with open(organizer.todo_fqn) as f:
         for line in f:
             obs_id = line.strip()
             logging.info('Process observation id {}'.format(obs_id))
@@ -743,12 +757,17 @@ def _run_todo_file(config, organizer):
 
 
 def _run_local_files(config, organizer):
-    todo_list = os.listdir(config.working_directory)
+    file_list = os.listdir(config.working_directory)
+    todo_list = []
+    for f in file_list:
+        if f.endswith('.fits') or f.endswith('.fits.gz'):
+            todo_list.append(f)
+
+    organizer.complete_record_count = len(todo_list)
     for do_file in todo_list:
-        if do_file.endswith('.fits') or do_file.endswith('.fits.gz'):
-            logging.info('Process file {}'.format(do_file))
-            obs_id = OmmName.remove_extensions(do_file)
-            _do_one(config, organizer, obs_id, do_file)
+        logging.info('Process file {}'.format(do_file))
+        obs_id = OmmName.remove_extensions(do_file)
+        _do_one(config, organizer, obs_id, do_file)
 
 
 def run_by_file():
@@ -772,7 +791,8 @@ def run_by_file():
             else:
                 organize = OrganizeExecutes(config)
             _run_todo_file(config, organize)
-        logging.info('Processed {} correctly.'.format(organize.success_count))
+        logging.info('Done, processed {} of {} correctly.'.format(
+            organize.success_count, organize.complete_record_count))
     except Exception as e:
         logging.error(e)
         tb = traceback.format_exc()

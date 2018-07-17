@@ -75,6 +75,7 @@ import sys
 import traceback
 
 from astropy.io import fits
+from astropy.coordinates import EarthLocation
 
 from caom2 import TargetType, ObservationIntentType, CalibrationLevel
 from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
@@ -385,7 +386,7 @@ def get_telescope_x(header):
     if 'OMM' in telescope:
         return 1448027.602
     elif 'CTIO' in telescope:
-        return 1815596.320
+        return EarthLocation.of_site('ctio').x.value
     return None
 
 
@@ -403,7 +404,7 @@ def get_telescope_y(header):
     if 'OMM' in telescope:
         return -4242089.498
     elif 'CTIO' in telescope:
-        return -5213682.445
+        return EarthLocation.of_site('ctio').y.value
     return None
 
 
@@ -421,7 +422,7 @@ def get_telescope_z(header):
     if 'OMM' in telescope:
         return 4523791.027
     elif 'CTIO' in telescope:
-        return -3187689.895
+        return EarthLocation.of_site('ctio').z.value
     return None
 
 
@@ -439,6 +440,8 @@ def update(observation, **kwargs):
 
     if 'headers' in kwargs:
         headers = kwargs['headers']
+    if 'fqn' in kwargs:
+        fqn = kwargs['fqn']
 
         for plane in observation.planes:
             for artifact in observation.planes[plane].artifacts:
@@ -459,7 +462,7 @@ def update(observation, **kwargs):
 
         if OmmName.is_composite(observation.observation_id):
             _update_provenance(observation)
-            _update_time_bounds(observation)
+            _update_time_bounds(observation, fqn)
 
     logging.debug('Done update.')
     return True
@@ -495,7 +498,7 @@ def _update_energy(chunk, headers):
 def _update_time(chunk, headers):
     """Create TemporalWCS information using FITS header information.
     This information should always be available from the file."""
-    logging.error('Begin _update_time.')
+    logging.debug('Begin _update_time.')
     assert isinstance(chunk, Chunk), 'Expecting type Chunk'
 
     mjd_start = headers[0].get('MJD_STAR')
@@ -521,7 +524,7 @@ def _update_time(chunk, headers):
         chunk.time.timesys = 'UTC'
         chunk.time.trefpos = 'TOPOCENTER'
         chunk.time_axis = 4
-    logging.debug('Done _update_time.')
+    logging.error('Done _update_time.')
 
 
 def _update_position(chunk):
@@ -580,14 +583,13 @@ def _update_provenance(observation):
     logging.debug('End _update_provenance')
 
 
-def _update_time_bounds(observation):
+def _update_time_bounds(observation, fqn):
     """Add chunk time bounds to the chunk from the first part, by
      referencing information from the second header. """
 
     lower_values = ''
     upper_values = ''
-    with fits.open(
-            '/usr/src/app/test_composite/Cdemo_ext2_SCIRED.fits') as fits_data:
+    with fits.open(fqn) as fits_data:
         xtension = fits_data[1].header['XTENSION']
         extname = fits_data[1].header['EXTNAME']
         if 'BINTABLE' in xtension and 'PROVENANCE' in extname:
@@ -622,6 +624,12 @@ def _update_time_bounds(observation):
                         upper_refcoord = RefCoord(1.5, mjd_end)
                         r = CoordRange1D(lower_refcoord, upper_refcoord)
                         bounds.samples.append(r)
+                    # if execution has gotten to this point, remove range if
+                    # it exists, since only one of bounds or range should be
+                    # provided, and bounds is more specific. PD, slack,
+                    # 2018-07-16
+                    if chunk.time.axis.range is not None:
+                        chunk.time.axis.range = None
 
 
 def _build_blueprints(uri):

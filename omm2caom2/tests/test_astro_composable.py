@@ -78,7 +78,7 @@ def test_convert_time():
     hdr1 = fits.Header()
     hdr1['DATE-OBS'] = '2012-09-03T01:04:44'
     hdr1['TEXP'] = 20.000
-    mjd_start, mjd_end = astro_composable.convert_time([hdr1])
+    mjd_start, mjd_end = astro_composable.find_time_bounds([hdr1])
     assert mjd_start is not None
     assert mjd_end is not None
     assert math.isclose(mjd_start, 56173.044953703706), mjd_start
