@@ -466,11 +466,11 @@ def _update_time(chunk, headers):
                 mjd_start, mjd_start))
         start = RefCoord(0.5, mjd_start)
         end = RefCoord(1.5, mjd_end)
-        time_cf = CoordFunction1D(1, headers[0].get('TEXP'), start)
+        time_cf = CoordFunction1D(1, headers[0].get('TEFF'), start)
         time_axis = CoordAxis1D(Axis('TIME', 'd'), function=time_cf)
         time_axis.range = CoordRange1D(start, end)
         chunk.time = TemporalWCS(time_axis)
-        chunk.time.exposure = headers[0].get('TEXP')
+        chunk.time.exposure = headers[0].get('TEFF')
         chunk.time.resolution = 0.1
         chunk.time.timesys = 'UTC'
         chunk.time.trefpos = 'TOPOCENTER'

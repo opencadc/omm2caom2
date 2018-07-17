@@ -143,7 +143,7 @@
                       </caom2:range>
                       <caom2:function>
                         <caom2:naxis>1</caom2:naxis>
-                        <caom2:delta>10.0</caom2:delta>
+                        <caom2:delta>9.471</caom2:delta>
                         <caom2:refCoord>
                           <caom2:pix>0.5</caom2:pix>
                           <caom2:val>58286.116111111114</caom2:val>
@@ -152,7 +152,7 @@
                     </caom2:axis>
                     <caom2:timesys>UTC</caom2:timesys>
                     <caom2:trefpos>TOPOCENTER</caom2:trefpos>
-                    <caom2:exposure>10.0</caom2:exposure>
+                    <caom2:exposure>9.471</caom2:exposure>
                     <caom2:resolution>0.1</caom2:resolution>
                   </caom2:time>
                 </caom2:chunk>
