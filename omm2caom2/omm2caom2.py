@@ -75,14 +75,12 @@ import sys
 import traceback
 
 from astropy.io import fits
-from astropy.coordinates import EarthLocation, UnknownSiteException
 
 from caom2 import TargetType, ObservationIntentType, CalibrationLevel
 from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
 from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
 from caom2 import ObservationURI, PlaneURI, TypedSet, CoordBounds1D
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
-# from caom2utils import augment
 from omm2caom2 import astro_composable, manage_composable
 
 
@@ -97,6 +95,12 @@ DATATYPE_LOOKUP = {'CALIB': 'flat',
                    'TEST': 'test',
                    'REJECT': 'reject',
                    'CALRED': 'flat'}
+
+DEFAULT_GEOCENTRIC = {
+    'OMM': {'x': 1448045.773, 'y': -4242075.462, 'z': 4523808.146,
+            'elevation': 1108.},
+    'CTIO': {'x': 1814303.745, 'y': -5214365.744, 'z': -3187340.566,
+             'elevation': 2200.}}
 
 
 class OmmName(object):
@@ -193,9 +197,6 @@ def accumulate_obs(bp, uri):
     bp.add_fits_attribute('Observation.target_position.equinox', 'EQUINOX')
     bp.set_default('Observation.target_position.equinox', '2000.0')
     bp.add_fits_attribute('Observation.telescope.name', 'TELESCOP')
-    bp.set('Observation.telescope.geoLocationX', 'get_telescope_x(header)')
-    bp.set('Observation.telescope.geoLocationY', 'get_telescope_y(header)')
-    bp.set('Observation.telescope.geoLocationZ', 'get_telescope_z(header)')
     bp.add_fits_attribute('Observation.telescope.keywords', 'OBSERVER')
     bp.set('Observation.environment.ambientTemp',
            'get_obs_env_ambient_temp(header)')
@@ -372,70 +373,6 @@ def get_start_ref_coord_val(header):
         return None
 
 
-def get_telescope_x(header):
-    """Calculate the telescope x coordinate in geocentric m from FITS header
-    values.
-
-    Called to fill a blueprint value, must have a
-    parameter named header for import_module loading and execution.
-
-    :param header Array of astropy headers"""
-    telescope = header[0].get('TELESCOP')
-    if telescope is None:
-        return None
-    if 'OMM' in telescope:
-        try:
-            return EarthLocation.of_site('omm').x.value
-        except UnknownSiteException as e:
-            # astropy hasn't accepted the pull request yet
-            return 1448027.602
-    elif 'CTIO' in telescope:
-        return EarthLocation.of_site('ctio').x.value
-    return None
-
-
-def get_telescope_y(header):
-    """Calculate the telescope y coordinate in geocentric m from FITS header
-    values.
-
-    Called to fill a blueprint value, must have a
-    parameter named header for import_module loading and execution.
-
-    :param header Array of astropy headers"""
-    telescope = header[0].get('TELESCOP')
-    if telescope is None:
-        return None
-    if 'OMM' in telescope:
-        try:
-            return EarthLocation.of_site('omm').y.value
-        except UnknownSiteException as e:
-            return -4242089.498
-    elif 'CTIO' in telescope:
-        return EarthLocation.of_site('ctio').y.value
-    return None
-
-
-def get_telescope_z(header):
-    """Calculate the telescope elevation in geocentric m from FITS header
-    values.
-
-    Called to fill a blueprint value, must have a
-    parameter named header for import_module loading and execution.
-
-    :param header Array of astropy headers"""
-    telescope = header[0].get('TELESCOP')
-    if telescope is None:
-        return None
-    if 'OMM' in telescope:
-        try:
-            return EarthLocation.of_site('omm').z.value
-        except UnknownSiteException as e:
-            return 4523791.027
-    elif 'CTIO' in telescope:
-        return EarthLocation.of_site('ctio').z.value
-    return None
-
-
 def update(observation, **kwargs):
     """Called to fill multiple CAOM model elements and/or attributes, must
     have this signature for import_module loading and execution.
@@ -448,31 +385,35 @@ def update(observation, **kwargs):
     assert isinstance(observation, Observation), \
         'observation parameter of type Observation'
 
+    headers = None
     if 'headers' in kwargs:
         headers = kwargs['headers']
+    fqn = None
     if 'fqn' in kwargs:
         fqn = kwargs['fqn']
 
-        for plane in observation.planes:
-            for artifact in observation.planes[plane].artifacts:
-                parts = observation.planes[plane].artifacts[artifact].parts
-                for part in parts:
-                    p = parts[part]
-                    if len(p.chunks) == 0 and part == '0':
-                        # always have a time axis, and usually an energy
-                        # axis as well, so create a chunk for the zero-th part
-                        p.chunks.append(Chunk())
+    _update_telescope_location(observation, headers)
 
-                    for chunk in p.chunks:
-                        chunk.naxis = 4
-                        chunk.product_type = get_product_type(headers)
-                        _update_energy(chunk, headers)
-                        _update_time(chunk, headers)
-                        _update_position(chunk)
+    for plane in observation.planes:
+        for artifact in observation.planes[plane].artifacts:
+            parts = observation.planes[plane].artifacts[artifact].parts
+            for part in parts:
+                p = parts[part]
+                if len(p.chunks) == 0 and part == '0':
+                    # always have a time axis, and usually an energy
+                    # axis as well, so create a chunk for the zero-th part
+                    p.chunks.append(Chunk())
 
-        if OmmName.is_composite(observation.observation_id):
-            _update_provenance(observation)
-            _update_time_bounds(observation, fqn)
+                for chunk in p.chunks:
+                    chunk.naxis = 4
+                    chunk.product_type = get_product_type(headers)
+                    _update_energy(chunk, headers)
+                    _update_time(chunk, headers)
+                    _update_position(chunk)
+
+    if OmmName.is_composite(observation.observation_id):
+        _update_provenance(observation)
+        _update_time_bounds(observation, fqn)
 
     logging.debug('Done update.')
     return True
@@ -640,6 +581,51 @@ def _update_time_bounds(observation, fqn):
                     # 2018-07-16
                     if chunk.time.axis.range is not None:
                         chunk.time.axis.range = None
+
+
+def _update_telescope_location(observation, headers):
+    """Provide geocentric telescope location information, based on
+    geodetic information from the headers."""
+
+    logging.debug('Begin _update_telescope_location')
+    if not isinstance(observation, Observation):
+        raise manage_composable.CadcException('Input type is Observation.')
+
+    telescope = headers[0].get('TELESCOP').upper()
+
+    if telescope is None:
+        logging.warning('No telescope name. Could not set telescope '
+                        'location for {}'.format(observation.observation_id))
+        return
+
+    if 'OMM' in telescope or 'CTIO' in telescope:
+        lat = headers[0].get('OBS_LAT')
+        long = headers[0].get('OBS_LON')
+
+        # make a reliable lookup value
+        if 'OMM' in telescope:
+            telescope = 'OMM'
+        if 'CTIO' in telescope:
+            telescope = 'CTIO'
+
+        if lat is None or long is None:
+            observation.telescope.geo_location_x = \
+                DEFAULT_GEOCENTRIC[telescope]['x']
+            observation.telescope.geo_location_y = \
+                DEFAULT_GEOCENTRIC[telescope]['y']
+            observation.telescope.geo_location_z = \
+                DEFAULT_GEOCENTRIC[telescope]['z']
+        else:
+            observation.telescope.geo_location_x, \
+                observation.telescope.geo_location_y, \
+                observation.telescope.geo_location_z = \
+                astro_composable.get_location(
+                    lat, long, DEFAULT_GEOCENTRIC[telescope]['elevation'])
+    else:
+        raise manage_composable.CadcException(
+            'Unexpected telescope name {}'.format(telescope))
+
+    logging.debug('Done _update_telescope_location')
 
 
 def _build_blueprints(uri):

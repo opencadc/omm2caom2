@@ -97,3 +97,10 @@ def test_get_datetime():
     result = astro_composable.get_datetime('2006-12-12')
     assert result is not None
     assert result == '2006-12-12 00:00:00.000'
+
+
+def test_get_location():
+    x, y, z = astro_composable.get_location(21.0, -32.0, 12)
+    assert x == 5051887.288718968, x
+    assert y == -3156769.536020791, y
+    assert z == 2271399.319625149, z

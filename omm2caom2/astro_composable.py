@@ -69,6 +69,7 @@
 
 import logging
 
+from astropy.coordinates import EarthLocation
 from astropy.time import Time, TimeDelta
 
 __all__ = ['find_time_bounds', 'get_datetime', 'convert_time']
@@ -119,3 +120,9 @@ def get_datetime(from_value):
             return None
     else:
         return None
+
+
+def get_location(latitude, longitude, elevation):
+    result = EarthLocation.from_geodetic(
+        longitude, latitude, elevation, 'WGS84')
+    return result.x.value, result.y.value, result.z.value
