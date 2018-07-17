@@ -75,7 +75,7 @@ import sys
 import traceback
 
 from astropy.io import fits
-from astropy.coordinates import EarthLocation
+from astropy.coordinates import EarthLocation, UnknownSiteException
 
 from caom2 import TargetType, ObservationIntentType, CalibrationLevel
 from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
@@ -384,7 +384,11 @@ def get_telescope_x(header):
     if telescope is None:
         return None
     if 'OMM' in telescope:
-        return 1448027.602
+        try:
+            return EarthLocation.of_site('omm').x.value
+        except UnknownSiteException as e:
+            # astropy hasn't accepted the pull request yet
+            return 1448027.602
     elif 'CTIO' in telescope:
         return EarthLocation.of_site('ctio').x.value
     return None
@@ -402,7 +406,10 @@ def get_telescope_y(header):
     if telescope is None:
         return None
     if 'OMM' in telescope:
-        return -4242089.498
+        try:
+            return EarthLocation.of_site('omm').y.value
+        except UnknownSiteException as e:
+            return -4242089.498
     elif 'CTIO' in telescope:
         return EarthLocation.of_site('ctio').y.value
     return None
@@ -420,7 +427,10 @@ def get_telescope_z(header):
     if telescope is None:
         return None
     if 'OMM' in telescope:
-        return 4523791.027
+        try:
+            return EarthLocation.of_site('omm').z.value
+        except UnknownSiteException as e:
+            return 4523791.027
     elif 'CTIO' in telescope:
         return EarthLocation.of_site('ctio').z.value
     return None
