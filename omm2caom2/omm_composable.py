@@ -864,7 +864,7 @@ def run_single(**argv):
     config.log_to_file = False
     config.task_types = [manage_composable.TaskType.INGEST]
     config.resource_id = 'ivo://cadc.nrc.ca/sc2repo'
-    config.username = sys.argv[2]
+    config.proxy = sys.argv[2]
     organizer = OrganizeExecutes(config)
     obs_id = OmmName.remove_extensions(sys.argv[1])
     _do_one(config, organizer, obs_id)

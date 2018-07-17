@@ -164,8 +164,7 @@ class Config(object):
 
         # for the love of pete, don't use these from the config.yml file
         # they're here for programmatic passing around, and nothing else
-        self.username = None
-        self.password = None
+        self.proxy = None
 
     @property
     def working_directory(self):
@@ -305,20 +304,12 @@ class Config(object):
                 self.log_file_directory, self.retry_file_name)
 
     @property
-    def username(self):
-        return self._username
+    def proxy(self):
+        return self._proxy
 
-    @username.setter
-    def username(self, value):
-        self._username = value
-
-    @property
-    def password(self):
-        return self._password
-
-    @password.setter
-    def password(self, value):
-        self._password = value
+    @proxy.setter
+    def proxy(self, value):
+        self._proxy = value
 
     @staticmethod
     def _lookup(config, lookup, default):
