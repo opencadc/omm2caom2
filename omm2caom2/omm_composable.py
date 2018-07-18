@@ -118,14 +118,7 @@ class CaomExecute(object):
 
     def _create_dir(self):
         """Create the working area if it does not already exist."""
-        if not os.path.exists(self.working_dir):
-            os.mkdir(self.working_dir)
-            if not os.path.exists(self.working_dir):
-                raise manage_composable.CadcException(
-                    'Could not mkdir {}'.format(self.working_dir))
-            if not os.access(self.working_dir, os.W_OK | os.X_OK):
-                raise manage_composable.CadcException(
-                    '{} is not writeable.'.format(self.working_dir))
+        manage_composable.create_dir(self.working_dir)
 
     def _cleanup(self):
         """Remove a directory and all its contents."""
@@ -627,7 +620,8 @@ class OrganizeExecutes(object):
             self.failure_fqn = config.failure_fqn
             self.retry_fqn = config.retry_fqn
 
-        if config.log_to_file:
+        if self.config.log_to_file:
+            manage_composable.create_dir(self.config.log_file_directory)
             failure = open(self.failure_fqn, 'w')
             failure.close()
             retry = open(self.retry_fqn, 'w')
@@ -765,8 +759,6 @@ def _set_up_file_logging(config, obs_id):
         log_fqn = os.path.join(config.working_directory,
                                OmmName(obs_id).get_log_file())
         if config.log_file_directory is not None:
-            if not os.path.exists(config.log_file_directory):
-                os.mkdir(config.log_file_directory)
             log_fqn = os.path.join(config.log_file_directory,
                                    OmmName(obs_id).get_log_file())
         log_h = logging.FileHandler(log_fqn)

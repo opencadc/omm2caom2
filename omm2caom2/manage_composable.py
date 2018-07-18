@@ -81,7 +81,7 @@ from cadcdata import CadcDataClient
 
 
 __all__ = ['CadcException', 'Config', 'to_float', 'TaskType',
-           'exec_cmd', 'exec_cmd_redirect', 'exec_cmd_info',
+           'exec_cmd', 'exec_cmd_redirect', 'exec_cmd_info', 'create_dir',
            'get_cadc_meta', 'get_file_meta', 'compare_checksum']
 
 
@@ -525,6 +525,8 @@ def get_file_meta(fqn):
         meta['type'] = 'image/gif'
     elif fqn.endswith('.png'):
         meta['type'] = 'image/png'
+    elif fqn.endswith('.jpg'):
+        meta['type'] = 'image/jpeg'
     else:
         meta['type'] = 'application/octet-stream'
     return meta
@@ -554,3 +556,15 @@ def compare_checksum(netrc_fqn, collection, fqn):
         raise CadcException(
             '{} md5sum not the same as the one in the ad '
             '{} collection.'.format(fqn, collection))
+
+
+def create_dir(dir_name):
+    """Create the working area if it does not already exist."""
+    if not os.path.exists(dir_name):
+        os.mkdir(dir_name)
+        if not os.path.exists(dir_name):
+            raise CadcException(
+                'Could not mkdir {}'.format(dir_name))
+        if not os.access(dir_name, os.W_OK | os.X_OK):
+            raise CadcException(
+                '{} is not writeable.'.format(dir_name))
