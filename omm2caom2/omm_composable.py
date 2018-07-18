@@ -80,6 +80,7 @@ from omm2caom2 import manage_composable, OmmName
 from caom2 import obs_reader_writer
 from cadcutils import net
 from cadcdata import CadcDataClient
+from caom2repo import CAOM2RepoClient
 
 
 __all__ = ['Omm2Caom2Meta', 'Omm2Caom2Data', 'run_by_file',
@@ -289,6 +290,7 @@ class Omm2Caom2MetaClient(CaomExecute):
         super(Omm2Caom2MetaClient, self).__init__(
             config, manage_composable.TaskType.INGEST, obs_id)
         self.config = config
+        self.subject = net.Subject(username=None, certificate=self.config.proxy)
 
     def execute(self, context):
         self.logger.debug('Begin execute for {} Meta'.format(__name__))
@@ -297,40 +299,60 @@ class Omm2Caom2MetaClient(CaomExecute):
         self.logger.debug('Find the file name as stored.')
         self._find_file_name_storage_client()
 
-        # self.logger.debug('create the work space, if it does not exist')
-        # self._create_dir()
-        #
-        # self.logger.debug('remove the existing observation, if it exists, '
-        #                   'because metadata generation is less repeatable '
-        #                   'for updates than for creates.')
-        # self._repo_cmd_delete()
-        #
-        # self.logger.debug('generate the xml, as the main_app will retrieve '
-        #                   'the headers')
-        # self._fits2caom2_cmd()
-        #
-        # self.logger.debug('store the xml')
-        # self._repo_cmd('create')
-        #
-        # self.logger.debug('clean up the workspace')
-        # self._cleanup()
+        self.logger.debug('create the work space, if it does not exist')
+        self._create_dir()
+
+        self.logger.debug('remove the existing observation, if it exists, '
+                          'because metadata generation is less repeatable '
+                          'for updates than for creates.')
+        self._repo_cmd_delete_client()
+
+        self.logger.debug('generate the xml, as the main_app will retrieve '
+                          'the headers')
+        self._fits2caom2_cmd()
+
+        self.logger.debug('store the xml')
+        self._repo_cmd_client()
+
+        self.logger.debug('clean up the workspace')
+        self._cleanup()
 
         self.logger.debug('End execute for {}'.format(__name__))
 
-    # def _fits2caom2_cmd(self):
-    #     uri = OmmName(self.obs_id).get_file_uri()
-    #     plugin = self._find_fits2caom2_plugin()
-    #     cmd = 'omm2caom2 {} --netrc {} --observation {} {} --out {} ' \
-    #           '--plugin {} --lineage {}/{}'.format(
-    #         self.logging_level_param, self.netrc_fqn, self.collection,
-    #         self.obs_id, self.model_fqn, plugin, self.obs_id, uri)
-    #     manage_composable.exec_cmd(cmd)
-
     def _find_file_name_storage_client(self):
-        subject = net.Subject(username=None, certificate=self.config.username)
-        client = CadcDataClient(subject)
+        client = CadcDataClient(self.subject)
         file_info = client.get_file_info(self.collection, self.obs_id)
         self.fname = file_info['name']
+
+    def _repo_cmd_delete_client(self):
+        """Retrieve the existing observaton model metadata."""
+        client = CAOM2RepoClient(self.subject, self.config.logging_level,
+                                 self.resource_id)
+        try:
+            client.delete(self.collection, self.obs_id)
+        except Exception as e:
+            pass  # TODO for now
+
+    def _repo_cmd_client(self):
+        client = CAOM2RepoClient(self.subject, self.config.logging_level,
+                                 self.resource_id)
+        try:
+            reader = obs_reader_writer.ObservationReader(False)
+            observation = reader.read(self.model_fqn)
+            client.create(observation)
+        except Exception as e:
+            raise manage_composable.CadcException(
+                'Could not create an observation record for {} in ()'.format(
+                    self.obs_id, self.resource_id))
+
+    def _fits2caom2_cmd(self):
+        uri = OmmName(self.obs_id).get_file_uri()
+        plugin = self._find_fits2caom2_plugin()
+        cmd = 'omm2caom2 {} --netrc {} --observation {} {} --out {} ' \
+              '--plugin {} --lineage {}/{}'.format(
+            self.logging_level_param, self.netrc_fqn, self.collection,
+            self.obs_id, self.model_fqn, plugin, self.obs_id, uri)
+        manage_composable.exec_cmd(cmd)
 
 
 class Omm2Caom2LocalMeta(CaomExecute):
