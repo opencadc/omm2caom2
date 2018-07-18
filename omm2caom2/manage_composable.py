@@ -513,6 +513,8 @@ def get_file_meta(fqn):
         meta['type'] = 'image/gif'
     elif fqn.endswith('.png'):
         meta['type'] = 'image/png'
+    elif fqn.endswith('.jpg'):
+        meta['type'] = 'image/jpeg'
     else:
         meta['type'] = 'application/octet-stream'
     return meta
