@@ -807,9 +807,11 @@ def _do_one(config, organizer, obs_id, file_name=None):
             executor.execute(context=None)
         if len(executors) > 0:
             organizer.capture_success(obs_id, file_name)
+            return 0
     except Exception as e:
         organizer.capture_failure(obs_id, file_name,
                                   e=traceback.format_exc())
+        return -1
     finally:
         _unset_file_logging(config, log_h)
 
@@ -881,4 +883,6 @@ def run_single(**argv):
     config.proxy = sys.argv[2]
     organizer = OrganizeExecutes(config)
     obs_id = OmmName.remove_extensions(sys.argv[1])
-    _do_one(config, organizer, obs_id)
+    result = _do_one(config, organizer, obs_id)
+    import sys
+    sys.exit(result)
