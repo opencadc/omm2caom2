@@ -69,12 +69,9 @@
 import os
 import pytest
 
-from mock import Mock
-
 from omm2caom2 import omm_footprint_augmentation, omm_preview_augmentation
 from omm2caom2 import manage_composable, OmmName
-from caom2 import ObservationReader, ChecksumURI, Artifact, ProductType
-from caom2 import ReleaseType
+from caom2 import ObservationReader
 
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -116,10 +113,6 @@ def test_preview_aug_visit():
 
 
 def test_preview_augment_plane():
-    put_omm_orig = omm_preview_augmentation._put_omm
-    compare_checksum_org = manage_composable.compare_checksum
-    omm_preview_augmentation._put_omm = Mock()
-    manage_composable.compare_checksum = Mock()
     preview = os.path.join(TESTDATA_DIR, OmmName(TEST_OBS).get_prev())
     thumb = os.path.join(TESTDATA_DIR, OmmName(TEST_OBS).get_thumb())
     if os.path.exists(preview):
@@ -129,26 +122,13 @@ def test_preview_augment_plane():
     test_obs = _read_obs_from_file()
     assert len(test_obs.planes[TEST_OBS].artifacts) == 1
 
-    # expected failure due to unspecified kwargs value for test_netrc
-    with pytest.raises(manage_composable.CadcException):
-        test_result = omm_preview_augmentation.visit(test_obs)
-
-    test_kwargs = {'netrc_fqn': os.path.join(TESTDATA_DIR, 'test_netrc')}
-    # expected failure due to non-existent file
-    with pytest.raises(manage_composable.CadcException):
-        test_result = omm_preview_augmentation.visit(test_obs, **test_kwargs)
-
-    test_kwargs['working_directory'] = TESTDATA_DIR
+    test_kwargs = {'working_directory': TESTDATA_DIR}
     test_result = omm_preview_augmentation.visit(test_obs, **test_kwargs)
     assert test_result is not None, 'expected a visit return value'
     assert test_result['artifacts'] == 2
     assert len(test_obs.planes[TEST_OBS].artifacts) == 3
     assert os.path.exists(preview)
     assert os.path.exists(thumb)
-    assert omm_preview_augmentation._put_omm.called
-    assert manage_composable.compare_checksum.called
-    omm_preview_augmentation._put_omm = put_omm_orig
-    manage_composable.compare_checksum = compare_checksum_org
 
 
 def _read_obs_from_file():

@@ -206,6 +206,22 @@ class CaomExecute(object):
             raise manage_composable.CadcException(
                 'Failed to execute {} with {}.'.format(cmd, e))
 
+    def _data_cmd_put(self, fname):
+        """Store a collection file."""
+        data_cmd = 'cadc-data put {} -c --netrc {} {} -s {} {}'.format(
+            self.logging_level_param, self.netrc_fqn, self.collection,
+            self.stream, fname)
+        manage_composable.exec_cmd(data_cmd)
+
+    def _data_cmd_put_client(self, fname):
+        """Store a collection file."""
+        fqn = os.path.join(self.working_dir, fname)
+        try:
+            self.cadc_data_client.put_file(self.collection, fqn, self.stream)
+        except Exception as e:
+            raise manage_composable.CadcException(
+                'Did not store {}'.format(fqn))
+
     def _fits2caom2_cmd_local(self):
         fqn = os.path.join(self.working_dir, self.fname)
         uri = OmmName(self.obs_id).get_file_uri()
@@ -226,13 +242,13 @@ class CaomExecute(object):
             self.obs_id, self.model_fqn, plugin, fqn, self.obs_id, uri)
         manage_composable.exec_cmd(cmd)
 
-    def _compare_checksums(self):
-        fqn = os.path.join(self.working_dir, self.fname)
+    def _compare_checksums(self, fname):
+        fqn = os.path.join(self.working_dir, fname)
         manage_composable.compare_checksum(
             self.netrc_fqn, self.collection, fqn)
 
-    def _compare_checksums_client(self):
-        fqn = os.path.join(self.working_dir, self.fname)
+    def _compare_checksums_client(self, fname):
+        fqn = os.path.join(self.working_dir, fname)
         manage_composable.compare_checksum_client(
             self.cadc_data_client, self.collection, fqn)
 
@@ -320,6 +336,39 @@ class CaomExecute(object):
                 'Could not update the observation record for {} in ()'.format(
                     self.obs_id, self.resource_id))
 
+    def _generate_previews(self, observation):
+        kwargs = {'working_directory': self.working_dir}
+        omm_preview_augmentation.visit(observation, **kwargs)
+        prev = OmmName(self.obs_id).get_prev()
+        thumb = OmmName(self.obs_id).get_thumb()
+        cwd = os.getcwd()
+        try:
+            os.chdir(self.working_dir)
+            self._data_cmd_put(prev)
+            self._data_cmd_put(thumb)
+        finally:
+            os.chdir(cwd)
+        self._compare_checksums(os.path.join(self.working_dir, prev))
+        self._compare_checksums(os.path.join(self.working_dir, thumb))
+
+    def _generate_previews_scrape(self, observation):
+        kwargs = {'working_directory': self.working_dir}
+        omm_preview_augmentation.visit(observation, **kwargs)
+
+    def _generate_previews_client(self, observation):
+        kwargs = {'working_directory': self.working_dir}
+        omm_preview_augmentation.visit(observation, **kwargs)
+        prev = OmmName(self.obs_id).get_prev()
+        thumb = OmmName(self.obs_id).get_thumb()
+        cwd = os.getcwd()
+        try:
+            os.chdir(self.working_dir)
+            self._data_cmd_put_client(prev)
+            self._data_cmd_put_client(thumb)
+        finally:
+            os.chdir(cwd)
+        self._compare_checksums_client(os.path.join(self.working_dir, prev))
+        self._compare_checksums_client(os.path.join(self.working_dir, thumb))
 
     @staticmethod
     def _find_fits2caom2_plugin():
@@ -520,12 +569,6 @@ class Omm2Caom2Data(CaomExecute):
 
         self.logger.debug('End execute for {}'.format(__name__))
 
-    def _generate_previews(self, observation):
-        kwargs = {'working_directory': self.working_dir,
-                  'netrc_fqn': self.netrc_fqn,
-                  'logging_level_param': self.logging_level_param}
-        omm_preview_augmentation.visit(observation, **kwargs)
-
     def _generate_footprint(self, observation):
         kwargs = {'working_directory': self.working_dir,
                   'science_file': self.fname,
@@ -594,8 +637,8 @@ class Omm2Caom2DataClient(CaomExecute):
         self.logger.debug('get the observation for the existing model')
         observation = self._repo_cmd_read_client()
 
-        self.logger.debug('generate the previews')
-        self._generate_previews(observation)
+        self.logger.debug('generate and store the previews')
+        self._generate_previews_client(observation)
 
         self.logger.debug('generate the footprint')
         self._generate_footprint(observation)
@@ -608,12 +651,6 @@ class Omm2Caom2DataClient(CaomExecute):
 
         self.logger.debug('End execute for {}'.format(__name__))
 
-    def _generate_previews(self, observation):
-        kwargs = {'working_directory': self.working_dir,
-                  'netrc_fqn': self.netrc_fqn,
-                  'logging_level_param': self.logging_level_param}
-        omm_preview_augmentation.visit(observation, **kwargs)
-
     def _generate_footprint(self, observation):
         kwargs = {'working_directory': self.working_dir,
                   'science_file': self.fname,
@@ -625,7 +662,11 @@ class Omm2Caom2LocalData(Omm2Caom2Data):
     """Defines the pipeline step for OMM generation and ingestion of footprints
     and previews into CAOM2. These are all the operations that require
     access to the file on disk. This class assumes it has access to the
-    files on disk."""
+    files on disk.
+
+    Previews will be stored to ad here, because if this Executor is being
+    used, it's assumed the local data files are being stored eventually.
+    """
 
     def __init__(self, config, obs_id, file_name):
         super(Omm2Caom2LocalData, self).__init__(config, obs_id)
@@ -678,7 +719,7 @@ class Omm2Caom2LocalDataClient(Omm2Caom2DataClient):
         observation = self._repo_cmd_read_client()
 
         self.logger.debug('generate the previews')
-        self._generate_previews(observation)
+        self._generate_previews_client(observation)
 
         self.logger.debug('generate the footprint')
         self._generate_footprint(observation)
@@ -709,16 +750,9 @@ class Omm2Caom2Store(CaomExecute):
         self._check_credentials_exist()
 
         self.logger.debug('store the input file to ad')
-        self._cadc_data_put()
+        self._data_cmd_put(self.fname)
 
         self.logger.debug('End execute for {}'.format(__name__))
-
-    def _cadc_data_put(self):
-        """Store a collection file."""
-        data_cmd = 'cadc-data put {} -c --netrc {} {} -s {} {}'.format(
-            self.logging_level_param, self.netrc_fqn, self.collection,
-            self.stream, self.fname)
-        manage_composable.exec_cmd(data_cmd)
 
 
 class Omm2Caom2StoreClient(CaomExecute):
@@ -741,18 +775,9 @@ class Omm2Caom2StoreClient(CaomExecute):
         self.logger.debug('Begin execute for {} Data'.format(__name__))
 
         self.logger.debug('store the input file to ad')
-        self._cadc_data_put_client()
+        self._data_cmd_put_client(self.fname)
 
         self.logger.debug('End execute for {}'.format(__name__))
-
-    def _cadc_data_put_client(self):
-        """Store a collection file."""
-        fqn = os.path.join(self.working_dir, self.fname)
-        try:
-            self.cadc_data_client.put_file(self.collection, fqn, self.stream)
-        except Exception as e:
-            raise manage_composable.CadcException(
-                'Did not save {}'.format(fqn))
 
 
 class Omm2Caom2Scrape(CaomExecute):
@@ -796,8 +821,9 @@ class Omm2Caom2DataScrape(Omm2Caom2LocalData):
         self.logger.debug('get observation for the existing model from disk')
         observation = self._read_model()
 
-        self.logger.debug('generate the previews')
-        self._generate_previews(observation)
+        self.logger.debug('generate the previews, do not store them, because '
+                          'scraping')
+        self._generate_previews_scrape(observation)
 
         self.logger.debug('generate the footprint')
         self._generate_footprint(observation)
@@ -828,7 +854,7 @@ class Omm2Caom2CompareChecksum(CaomExecute):
         self.logger.debug('the steps:')
 
         self.logger.debug('generate the xml from the file on disk')
-        self._compare_checksums()
+        self._compare_checksums(self.fname)
 
         self.logger.debug('End execute for {}'.format(__name__))
 
@@ -855,7 +881,7 @@ class Omm2Caom2CompareChecksumClient(CaomExecute):
         self.logger.debug('the steps:')
 
         self.logger.debug('generate the xml from the file on disk')
-        self._compare_checksums_client()
+        self._compare_checksums_client(self.fname)
 
         self.logger.debug('End execute for {}'.format(__name__))
 

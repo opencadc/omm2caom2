@@ -85,14 +85,6 @@ def visit(observation, **kwargs):
     working_dir = './'
     if 'working_directory' in kwargs:
         working_dir = kwargs['working_directory']
-    if 'netrc_fqn' in kwargs:
-        netrc_fqn = kwargs['netrc_fqn']
-    else:
-        raise manage_composable.CadcException(
-            '\'netrc_fqn\' missing from kwargs.'.format())
-    logging_level_param = ''
-    if 'logging_level_param' in kwargs:
-        logging_level_param = kwargs['logging_level_param']
 
     count = 0
     for i in observation.planes:
@@ -112,8 +104,7 @@ def visit(observation, **kwargs):
                             '{} preview visit file not found'.format(
                                 science_fqn))
                 logging.debug('working on file {}'.format(science_fqn))
-                _do_prev(file_id, science_fqn, working_dir, netrc_fqn, plane,
-                         logging_level_param)
+                _do_prev(file_id, science_fqn, working_dir, plane)
                 logging.info(
                     'Completed preview generation for {}.'.format(file_id))
             count += 2
@@ -131,8 +122,7 @@ def _artifact_metadata(uri, fqn, product_type):
                     local_meta['size'], md5uri)
 
 
-def _do_prev(file_id, science_fqn, working_dir, netrc_fqn, plane,
-             logging_level_param):
+def _do_prev(file_id, science_fqn, working_dir, plane):
     preview = OmmName(file_id).get_prev()
     preview_fqn = os.path.join(working_dir, preview)
     thumb = OmmName(file_id).get_thumb()
@@ -150,25 +140,7 @@ def _do_prev(file_id, science_fqn, working_dir, netrc_fqn, plane,
                '--asinh-scale --jpg --invert --compass {}'.format(science_fqn)
     manage_composable.exec_cmd_redirect(prev_cmd, thumb_fqn)
 
-    _put_omm(working_dir, preview, netrc_fqn, logging_level_param)
-    _put_omm(working_dir, thumb, netrc_fqn, logging_level_param)
-
     prev_uri = OmmName(file_id).get_prev_uri()
     thumb_uri = OmmName(file_id).get_thumb_uri()
     _augment(plane, prev_uri, preview_fqn, ProductType.PREVIEW)
     _augment(plane, thumb_uri, thumb_fqn, ProductType.THUMBNAIL)
-
-    manage_composable.compare_checksum(netrc_fqn, 'OMM', preview_fqn)
-    manage_composable.compare_checksum(netrc_fqn, 'OMM', thumb_fqn)
-
-
-def _put_omm(working_dir, jpg_name, netrc_fqn, logging_level_param):
-    cwd = os.getcwd()
-    try:
-        os.chdir(working_dir)
-        cmd = 'cadc-data put {} --netrc-file {} OMM {} ' \
-              '--archive-stream raw'.format(logging_level_param, netrc_fqn,
-                                            jpg_name)
-        manage_composable.exec_cmd(cmd)
-    finally:
-        os.chdir(cwd)

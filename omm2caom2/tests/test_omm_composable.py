@@ -182,6 +182,10 @@ def test_data_execute():
     os.path.exists = Mock(return_value=True)
     exec_cmd_orig = manage_composable.exec_cmd
     manage_composable.exec_cmd = Mock()
+    put_orig = omm_composable.CaomExecute._data_cmd_put
+    omm_composable.CaomExecute._data_cmd_put = Mock()
+    checksum_orig = omm_composable.CaomExecute._compare_checksums
+    omm_composable.CaomExecute._compare_checksums = Mock()
     test_config = _init_config()
 
     try:
@@ -198,6 +202,8 @@ def test_data_execute():
         assert manage_composable.exec_cmd.called
         assert omm_footprint_augmentation.visit.called
         assert omm_preview_augmentation.visit.called
+        assert omm_composable.CaomExecute._data_cmd_put.called
+        assert omm_composable.CaomExecute._compare_checksums.called
     finally:
         obs_reader_writer.ObservationReader.read = read_orig
         omm_footprint_augmentation.visit = footprint_orig
@@ -205,6 +211,8 @@ def test_data_execute():
         omm_composable.CaomExecute._data_cmd_info = data_cmd_orig
         os.path.exists = os_path_exists_orig
         manage_composable.exec_cmd = exec_cmd_orig
+        omm_composable.CaomExecute._data_cmd_put = put_orig
+        omm_composable.CaomExecute._compare_checksums = checksum_orig
 
 
 def test_data_local_execute():
@@ -215,6 +223,10 @@ def test_data_local_execute():
     read_orig = obs_reader_writer.ObservationReader.read
     exec_cmd_orig = manage_composable.exec_cmd
     manage_composable.exec_cmd = Mock()
+    put_orig = omm_composable.CaomExecute._data_cmd_put
+    omm_composable.CaomExecute._data_cmd_put = Mock()
+    checksum_orig = omm_composable.CaomExecute._compare_checksums
+    omm_composable.CaomExecute._compare_checksums = Mock()
 
     try:
         omm_footprint_augmentation.visit = Mock()
@@ -235,11 +247,15 @@ def test_data_local_execute():
         assert manage_composable.exec_cmd.called
         assert omm_footprint_augmentation.visit.called
         assert omm_preview_augmentation.visit.called
+        assert omm_composable.CaomExecute._data_cmd_put.called
+        assert omm_composable.CaomExecute._compare_checksums.called
     finally:
         obs_reader_writer.ObservationReader.read = read_orig
         omm_footprint_augmentation.visit = fp_visit_orig
         omm_preview_augmentation.visit = prev_visit_orig
         manage_composable.exec_cmd = exec_cmd_orig
+        omm_composable.CaomExecute._data_cmd_put = put_orig
+        omm_composable.CaomExecute._compare_checksums = checksum_orig
 
 
 def test_data_store():
