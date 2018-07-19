@@ -1194,8 +1194,7 @@ def run_single(**argv):
     config.use_local_files = False
     config.logging_level = 'INFO'
     config.log_to_file = False
-    config.task_types = [manage_composable.TaskType.INGEST,
-                         manage_composable.TaskType.MODIFY]
+    config.task_types = [manage_composable.TaskType.INGEST]
     config.resource_id = 'ivo://cadc.nrc.ca/sc2repo'
     config.proxy = sys.argv[2]
     organizer = OrganizeExecutes(config)
