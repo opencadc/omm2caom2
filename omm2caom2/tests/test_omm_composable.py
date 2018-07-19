@@ -77,6 +77,9 @@ from omm2caom2 import omm_composable, omm_footprint_augmentation
 from omm2caom2 import omm_preview_augmentation, manage_composable
 from caom2 import obs_reader_writer, SimpleObservation, Algorithm
 from omm2caom2 import CadcException, OmmName
+from cadcutils import net
+import cadcdata
+import caom2repo
 
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -391,6 +394,90 @@ def test_organize_executes():
         assert isinstance(executors[1], omm_composable.Omm2Caom2DataScrape)
     finally:
         manage_composable.exec_cmd_orig = exec_cmd_orig
+
+
+def test_organize_executes_client():
+    test_obs_id = 'Ctest_obs_id_SCI'
+    test_config = _init_config()
+    test_config.use_local_files = True
+    test_config.proxy = 'abc'
+    test_config.resource_id = 'ivo://cadc.nrc.ca/sc2tap'
+    log_file_directory = os.path.join(THIS_DIR, 'logs')
+    test_config.log_file_directory = log_file_directory
+    success_log_file_name = 'success_log.txt'
+    test_config.success_log_file_name = success_log_file_name
+    failure_log_file_name = 'failure_log.txt'
+    test_config.failure_log_file_name = failure_log_file_name
+    retry_file_name = 'retries.txt'
+    test_config.retry_file_name = retry_file_name
+    exec_cmd_orig = manage_composable.exec_cmd_info
+    subject_orig = net.Subject
+    cadc_client_orig = cadcdata.CadcDataClient
+    caom_client_orig = caom2repo.CAOM2RepoClient
+    try:
+        net.Subject = Mock()
+        cadcdata.CadcDataClient = Mock()
+        caom2repo.CAOM2RepoClient = Mock()
+
+        manage_composable.exec_cmd_info = \
+            Mock(return_value='INFO:cadc-data:info\n'
+                              'File C170324_0054_SCI_prev.jpg:\n'
+                              '    archive: OMM\n'
+                              '   encoding: None\n'
+                              '    lastmod: Mon, 25 Jun 2018 16:52:07 GMT\n'
+                              '     md5sum: f37d21c53055498d1b5cb7753e1c6d6f\n'
+                              '       name: C120902_sh2-132_J_old_SCIRED.fits.gz\n'
+                              '       size: 754408\n'
+                              '       type: image/jpeg\n'
+                              '    umd5sum: 704b494a972eed30b18b817e243ced7d\n'
+                              '      usize: 754408\n'.encode('utf-8'))
+
+        test_config.task_types = [manage_composable.TaskType.SCRAPE]
+        test_oe = omm_composable.OrganizeExecutes(test_config)
+        executors = test_oe.choose_client(test_obs_id)
+        assert executors is not None
+        assert len(executors) == 1
+        assert isinstance(executors[0], omm_composable.Omm2Caom2Scrape)
+
+        test_config.task_types = [manage_composable.TaskType.STORE,
+                                  manage_composable.TaskType.INGEST,
+                                  manage_composable.TaskType.MODIFY]
+        test_oe = omm_composable.OrganizeExecutes(test_config)
+        executors = test_oe.choose_client(test_obs_id)
+        assert executors is not None
+        assert len(executors) == 4
+        import logging
+        logging.error(executors)
+        assert isinstance(executors[0], omm_composable.Omm2Caom2StoreClient)
+        assert isinstance(executors[1], omm_composable.Omm2Caom2LocalMetaClient)
+        assert isinstance(executors[2], omm_composable.Omm2Caom2LocalDataClient)
+        assert isinstance(executors[3],
+                          omm_composable.Omm2Caom2CompareChecksumClient)
+
+        test_config.use_local_files = False
+        test_config.task_types = [manage_composable.TaskType.INGEST,
+                                  manage_composable.TaskType.MODIFY]
+        test_oe = omm_composable.OrganizeExecutes(test_config)
+        executors = test_oe.choose_client(test_obs_id)
+        assert executors is not None
+        assert len(executors) == 2
+        assert isinstance(executors[0], omm_composable.Omm2Caom2MetaClient)
+        assert isinstance(executors[1], omm_composable.Omm2Caom2DataClient)
+
+        test_config.task_types = [manage_composable.TaskType.SCRAPE,
+                                  manage_composable.TaskType.MODIFY]
+        test_config.use_local_files = True
+        test_oe = omm_composable.OrganizeExecutes(test_config)
+        executors = test_oe.choose_client(test_obs_id)
+        assert executors is not None
+        assert len(executors) == 2
+        assert isinstance(executors[0], omm_composable.Omm2Caom2Scrape)
+        assert isinstance(executors[1], omm_composable.Omm2Caom2DataScrape)
+    finally:
+        manage_composable.exec_cmd_orig = exec_cmd_orig
+        net.Subject = subject_orig
+        cadcdata.CadcDataClient = cadc_client_orig
+        caom2repo.CAOM2RepoClient = caom_client_orig
 
 
 def test_data_cmd_info():

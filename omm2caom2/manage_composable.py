@@ -82,7 +82,8 @@ from cadcdata import CadcDataClient
 
 __all__ = ['CadcException', 'Config', 'to_float', 'TaskType',
            'exec_cmd', 'exec_cmd_redirect', 'exec_cmd_info', 'create_dir',
-           'get_cadc_meta', 'get_file_meta', 'compare_checksum']
+           'get_cadc_meta', 'get_file_meta', 'compare_checksum',
+           'compare_checksum_client']
 
 
 class CadcException(Exception):
@@ -545,6 +546,32 @@ def compare_checksum(netrc_fqn, collection, fqn):
     try:
         local_meta = get_file_meta(fqn)
         ad_meta = get_cadc_meta(netrc_fqn, collection, fname)
+    except Exception as e:
+        raise CadcException('Could not find md5 checksum for {} in the ad {} '
+                            'collection. {}'.format(fqn, collection, e))
+
+    if ((fqn.endswith('.gz') and local_meta['md5sum'] !=
+         ad_meta['md5sum']) or (
+            not fqn.endswith('.gz') and local_meta['md5sum'] !=
+            ad_meta['umd5sum'])):
+        raise CadcException(
+            '{} md5sum not the same as the one in the ad '
+            '{} collection.'.format(fqn, collection))
+
+
+def compare_checksum_client(client, collection, fqn):
+    """
+    Raise CadcException if the checksum of a file in ad is not the same as
+    the checksum of a file on disk.
+
+    :param client: access to CADC data service
+    :param collection: archive file has been stored to
+    :param fqn: Fully-qualified name of the file for which to get the metadata.
+    """
+    fname = os.path.basename(fqn)
+    try:
+        local_meta = get_file_meta(fqn)
+        ad_meta = client.get_file_info(collection, fname)
     except Exception as e:
         raise CadcException('Could not find md5 checksum for {} in the ad {} '
                             'collection. {}'.format(fqn, collection, e))

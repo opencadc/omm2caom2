@@ -96,7 +96,8 @@ class CaomExecute(object):
     # TODO - a lot of this content should reside in the composable
     # library
 
-    def __init__(self, config, task_type, obs_id):
+    def __init__(self, config, task_type, obs_id, cadc_data_client=None,
+                 caom_repo_client=None, cert=None):
         self.logger = logging.getLogger()
         self.logger.setLevel(config.logging_level)
         formatter = logging.Formatter(
@@ -116,6 +117,10 @@ class CaomExecute(object):
         self.netrc_fqn = config.netrc_file
         self.resource_id = config.resource_id
         self.task_type = task_type
+        self.cadc_data_client = cadc_data_client
+        self.caom_repo_client = caom_repo_client
+        self.stream = config.stream
+        self.cert = cert
 
     def _create_dir(self):
         """Create the working area if it does not already exist."""
@@ -211,10 +216,109 @@ class CaomExecute(object):
                 self.obs_id, self.model_fqn, plugin, fqn, self.obs_id, uri)
         manage_composable.exec_cmd(cmd)
 
+    def _fits2caom2_cmd_local_client(self):
+        fqn = os.path.join(self.working_dir, self.fname)
+        uri = OmmName(self.obs_id).get_file_uri()
+        plugin = self._find_fits2caom2_plugin()
+        cmd = 'omm2caom2 {} --cert {} --observation {} {} --out {} ' \
+              '--plugin {} --local {} --lineage {}/{}'.format(
+            self.logging_level_param, self.cert, self.collection,
+            self.obs_id, self.model_fqn, plugin, fqn, self.obs_id, uri)
+        manage_composable.exec_cmd(cmd)
+
     def _compare_checksums(self):
         fqn = os.path.join(self.working_dir, self.fname)
         manage_composable.compare_checksum(
             self.netrc_fqn, self.collection, fqn)
+
+    def _compare_checksums_client(self):
+        fqn = os.path.join(self.working_dir, self.fname)
+        manage_composable.compare_checksum_client(
+            self.cadc_data_client, self.collection, fqn)
+
+    def _read_model(self):
+        reader = obs_reader_writer.ObservationReader(False)
+        observation = reader.read(self.model_fqn)
+        return observation
+
+    def _find_file_name_storage_client(self):
+        file_info = self.cadc_data_client.get_file_info(
+            self.collection, self.obs_id)
+        self.fname = file_info['name']
+
+    def _repo_cmd_delete_client(self):
+        """Retrieve the existing observaton model metadata."""
+        try:
+            self.caom_repo_client.delete(self.collection, self.obs_id)
+        except Exception as e:
+            pass  # TODO for now
+
+    def _repo_cmd_client(self):
+        try:
+            observation = self._read_model()
+            self.caom_repo_client.create(observation)
+        except Exception as e:
+            raise manage_composable.CadcException(
+                'Could not create an observation record for {} in ()'.format(
+                    self.obs_id, self.resource_id))
+
+    def _fits2caom2_cmd(self):
+        uri = OmmName(self.obs_id).get_file_uri()
+        plugin = self._find_fits2caom2_plugin()
+        cmd = 'omm2caom2 {} --netrc {} --observation {} {} --out {} ' \
+              '--plugin {} --lineage {}/{}'.format(
+            self.logging_level_param, self.netrc_fqn, self.collection,
+            self.obs_id, self.model_fqn, plugin, self.obs_id, uri)
+        manage_composable.exec_cmd(cmd)
+
+    def _fits2caom2_cmd_client(self):
+        uri = OmmName(self.obs_id).get_file_uri()
+        plugin = self._find_fits2caom2_plugin()
+        cmd = 'omm2caom2 {} --cert {} --observation {} {} --out {} ' \
+              '--plugin {} --lineage {}/{}'.format(
+            self.logging_level_param, self.cert, self.collection,
+            self.obs_id, self.model_fqn, plugin, self.obs_id, uri)
+        manage_composable.exec_cmd(cmd)
+
+    def _cadc_data_get_client(self):
+        """Retrieve a collection file, even if it already exists. This might
+        ensure that the latest version of the file is retrieved from
+        storage."""
+
+        # all the gets are supposed to be unzipped, so that the
+        # footprintfinder is more efficient, so make sure the fully
+        # qualified output name isn't the gzip'd version
+
+        if self.fname.endswith('.gz'):
+            fqn = os.path.join(self.working_dir, self.fname.replace('.gz', ''))
+        else:
+            fqn = os.path.join(self.working_dir, self.fname)
+
+        try:
+            self.cadc_data_client.get_file(
+                self.collection, self.fname, destination=fqn, decompress=True)
+            if not os.path.exists(fqn):
+                raise manage_composable.CadcException(
+                    '{} does not exist.'.format(fqn))
+        except Exception as e:
+            raise manage_composable.CadcException(
+                'Did not retrieve {}'.format(fqn))
+
+    def _repo_cmd_read_client(self):
+        try:
+            return self.caom_repo_client.read(self.collection, self.obs_id)
+        except Exception as e:
+            raise manage_composable.CadcException(
+                'Could not create an observation record for {} in ()'.format(
+                    self.obs_id, self.resource_id))
+
+    def _repo_cmd_update_client(self, observation):
+        try:
+            self.caom_repo_client.update(observation)
+        except Exception as e:
+            raise manage_composable.CadcException(
+                'Could not update the observation record for {} in ()'.format(
+                    self.obs_id, self.resource_id))
 
 
     @staticmethod
@@ -272,25 +376,16 @@ class Omm2Caom2Meta(CaomExecute):
 
         self.logger.debug('End execute for {}'.format(__name__))
 
-    def _fits2caom2_cmd(self):
-        uri = OmmName(self.obs_id).get_file_uri()
-        plugin = self._find_fits2caom2_plugin()
-        cmd = 'omm2caom2 {} --netrc {} --observation {} {} --out {} ' \
-              '--plugin {} --lineage {}/{}'.format(
-                self.logging_level_param, self.netrc_fqn, self.collection,
-                self.obs_id, self.model_fqn, plugin, self.obs_id, uri)
-        manage_composable.exec_cmd(cmd)
-
 
 class Omm2Caom2MetaClient(CaomExecute):
     """Defines the pipeline step for OMM ingestion of metadata into CAOM2.
     This requires access to only header information."""
 
-    def __init__(self, config, obs_id):
+    def __init__(self, config, obs_id,
+                 cadc_data_client, caom_repo_client, cert):
         super(Omm2Caom2MetaClient, self).__init__(
-            config, manage_composable.TaskType.INGEST, obs_id)
-        self.config = config
-        self.subject = net.Subject(username=None, certificate=self.config.proxy)
+            config, manage_composable.TaskType.INGEST, obs_id,
+            cadc_data_client, caom_repo_client, cert)
 
     def execute(self, context):
         self.logger.debug('Begin execute for {} Meta'.format(__name__))
@@ -309,7 +404,7 @@ class Omm2Caom2MetaClient(CaomExecute):
 
         self.logger.debug('generate the xml, as the main_app will retrieve '
                           'the headers')
-        self._fits2caom2_cmd()
+        self._fits2caom2_cmd_client()
 
         self.logger.debug('store the xml')
         self._repo_cmd_client()
@@ -318,41 +413,6 @@ class Omm2Caom2MetaClient(CaomExecute):
         self._cleanup()
 
         self.logger.debug('End execute for {}'.format(__name__))
-
-    def _find_file_name_storage_client(self):
-        client = CadcDataClient(self.subject)
-        file_info = client.get_file_info(self.collection, self.obs_id)
-        self.fname = file_info['name']
-
-    def _repo_cmd_delete_client(self):
-        """Retrieve the existing observaton model metadata."""
-        client = CAOM2RepoClient(self.subject, self.config.logging_level,
-                                 self.resource_id)
-        try:
-            client.delete(self.collection, self.obs_id)
-        except Exception as e:
-            pass  # TODO for now
-
-    def _repo_cmd_client(self):
-        client = CAOM2RepoClient(self.subject, self.config.logging_level,
-                                 self.resource_id)
-        try:
-            reader = obs_reader_writer.ObservationReader(False)
-            observation = reader.read(self.model_fqn)
-            client.create(observation)
-        except Exception as e:
-            raise manage_composable.CadcException(
-                'Could not create an observation record for {} in ()'.format(
-                    self.obs_id, self.resource_id))
-
-    def _fits2caom2_cmd(self):
-        uri = OmmName(self.obs_id).get_file_uri()
-        plugin = self._find_fits2caom2_plugin()
-        cmd = 'omm2caom2 {} --netrc {} --observation {} {} --out {} ' \
-              '--plugin {} --lineage {}/{}'.format(
-            self.logging_level_param, self.netrc_fqn, self.collection,
-            self.obs_id, self.model_fqn, plugin, self.obs_id, uri)
-        manage_composable.exec_cmd(cmd)
 
 
 class Omm2Caom2LocalMeta(CaomExecute):
@@ -381,6 +441,36 @@ class Omm2Caom2LocalMeta(CaomExecute):
 
         self.logger.debug('store the xml')
         self._repo_cmd('create')
+
+        self.logger.debug('End execute for {}'.format(__name__))
+
+
+class Omm2Caom2LocalMetaClient(CaomExecute):
+    """Defines the pipeline step for OMM ingestion of metadata into CAOM2.
+    The file containing the metadata is located on disk."""
+
+    def __init__(self, config, obs_id, file_name,
+                 cadc_data_client, caom_repo_client, cert):
+        super(Omm2Caom2LocalMetaClient, self).__init__(
+            config, manage_composable.TaskType.INGEST, obs_id,
+            cadc_data_client, caom_repo_client, cert)
+        self._define_local_dirs()
+        self.fname = file_name
+
+    def execute(self, context):
+        self.logger.debug('Begin execute for {} Meta'.format(__name__))
+        self.logger.debug('the steps:')
+
+        self.logger.debug('remove the existing observation, if it exists, '
+                          'because metadata generation is less repeatable '
+                          'for updates than for creates.')
+        self._repo_cmd_delete_client()
+
+        self.logger.debug('generate the xml from the file on disk')
+        self._fits2caom2_cmd_local_client()
+
+        self.logger.debug('store the xml')
+        self._repo_cmd_client()
 
         self.logger.debug('End execute for {}'.format(__name__))
 
@@ -477,6 +567,60 @@ class Omm2Caom2Data(CaomExecute):
         self._find_file_name_storage()
 
 
+class Omm2Caom2DataClient(CaomExecute):
+    """Defines the pipeline step for OMM generation and ingestion of footprints
+    and previews into CAOM2. These are all the operations that require
+    access to the file on disk, not just the header data. """
+
+    def __init__(self, config, obs_id,
+                 cadc_data_client, caom_repo_client):
+        super(Omm2Caom2DataClient, self).__init__(
+            config, manage_composable.TaskType.MODIFY, obs_id,
+            cadc_data_client, caom_repo_client)
+        self.log_file_directory = config.log_file_directory
+
+    def execute(self, context):
+        self.logger.debug('Begin execute for {} Data'.format(__name__))
+
+        self.logger.debug('Find the file name as stored.')
+        self._find_file_name_storage_client()
+
+        self.logger.debug('create the work space, if it does not exist')
+        self._create_dir()
+
+        self.logger.debug('get the input file')
+        self._cadc_data_get_client()
+
+        self.logger.debug('get the observation for the existing model')
+        observation = self._repo_cmd_read_client()
+
+        self.logger.debug('generate the previews')
+        self._generate_previews(observation)
+
+        self.logger.debug('generate the footprint')
+        self._generate_footprint(observation)
+
+        self.logger.debug('store the updated xml')
+        self._repo_cmd_update_client(observation)
+
+        self.logger.debug('clean up the workspace')
+        self._cleanup()
+
+        self.logger.debug('End execute for {}'.format(__name__))
+
+    def _generate_previews(self, observation):
+        kwargs = {'working_directory': self.working_dir,
+                  'netrc_fqn': self.netrc_fqn,
+                  'logging_level_param': self.logging_level_param}
+        omm_preview_augmentation.visit(observation, **kwargs)
+
+    def _generate_footprint(self, observation):
+        kwargs = {'working_directory': self.working_dir,
+                  'science_file': self.fname,
+                  'log_file_directory': self.log_file_directory}
+        omm_footprint_augmentation.visit(observation, **kwargs)
+
+
 class Omm2Caom2LocalData(Omm2Caom2Data):
     """Defines the pipeline step for OMM generation and ingestion of footprints
     and previews into CAOM2. These are all the operations that require
@@ -512,6 +656,39 @@ class Omm2Caom2LocalData(Omm2Caom2Data):
         self.logger.debug('End execute for {}'.format(__name__))
 
 
+class Omm2Caom2LocalDataClient(Omm2Caom2DataClient):
+    """Defines the pipeline step for OMM generation and ingestion of footprints
+    and previews into CAOM2. These are all the operations that require
+    access to the file on disk. This class assumes it has access to the
+    files on disk."""
+
+    def __init__(self, config, obs_id, file_name,
+                 cadc_data_client, caom_repo_client):
+        super(Omm2Caom2LocalDataClient, self).__init__(
+            config, obs_id,
+            cadc_data_client=cadc_data_client,
+            caom_repo_client=caom_repo_client)
+        self._define_local_dirs()
+        self.fname = file_name
+
+    def execute(self, context):
+        self.logger.debug('Begin execute for {} Data'.format(__name__))
+
+        self.logger.debug('get the observation for the existing model')
+        observation = self._repo_cmd_read_client()
+
+        self.logger.debug('generate the previews')
+        self._generate_previews(observation)
+
+        self.logger.debug('generate the footprint')
+        self._generate_footprint(observation)
+
+        self.logger.debug('store the updated xml')
+        self._repo_cmd_update_client(observation)
+
+        self.logger.debug('End execute for {}'.format(__name__))
+
+
 class Omm2Caom2Store(CaomExecute):
     """Defines the pipeline step for OMM storage of a file. This requires
     access to the file on disk. It will gzip compress the file."""
@@ -542,6 +719,40 @@ class Omm2Caom2Store(CaomExecute):
             self.logging_level_param, self.netrc_fqn, self.collection,
             self.stream, self.fname)
         manage_composable.exec_cmd(data_cmd)
+
+
+class Omm2Caom2StoreClient(CaomExecute):
+    """Defines the pipeline step for OMM storage of a file. This requires
+    access to the file on disk."""
+
+    def __init__(self, config, obs_id, file_name,
+                 cadc_data_client, caom_repo_client):
+        super(Omm2Caom2StoreClient, self).__init__(
+            config, manage_composable.TaskType.STORE, obs_id,
+            cadc_data_client, caom_repo_client)
+        # when files are on disk don't worry about a separate directory
+        # per observation
+        self.working_dir = self.root_dir
+        self.storage_host = config.storage_host
+        self.stream = config.stream
+        self.fname = file_name
+
+    def execute(self, context):
+        self.logger.debug('Begin execute for {} Data'.format(__name__))
+
+        self.logger.debug('store the input file to ad')
+        self._cadc_data_put_client()
+
+        self.logger.debug('End execute for {}'.format(__name__))
+
+    def _cadc_data_put_client(self):
+        """Store a collection file."""
+        fqn = os.path.join(self.working_dir, self.fname)
+        try:
+            self.cadc_data_client.put_file(self.collection, fqn, self.stream)
+        except Exception as e:
+            raise manage_composable.CadcException(
+                'Did not save {}'.format(fqn))
 
 
 class Omm2Caom2Scrape(CaomExecute):
@@ -579,6 +790,9 @@ class Omm2Caom2DataScrape(Omm2Caom2LocalData):
     def execute(self, context):
         self.logger.debug('Begin execute for {} Data'.format(__name__))
 
+        self.logger.debug('make sure named credentials exist')
+        self._check_credentials_exist()
+
         self.logger.debug('get observation for the existing model from disk')
         observation = self._read_model()
 
@@ -615,6 +829,33 @@ class Omm2Caom2CompareChecksum(CaomExecute):
 
         self.logger.debug('generate the xml from the file on disk')
         self._compare_checksums()
+
+        self.logger.debug('End execute for {}'.format(__name__))
+
+
+class Omm2Caom2CompareChecksumClient(CaomExecute):
+    """Defines the pipeline step for comparing the checksum of a file on disk
+    with the checksum of the supposedly-the-same file stored at CADC.
+
+    This step should be invoked with any other task type that relies on
+    files on local disk.
+    """
+
+    def __init__(self, config, obs_id, file_name, cadc_data_client,
+                 caom_repo_client):
+        super(Omm2Caom2CompareChecksumClient, self).__init__(
+            config, manage_composable.TaskType.UNKNOWN, obs_id,
+            cadc_data_client, caom_repo_client)
+        self._define_local_dirs()
+        self.fname = file_name
+
+    def execute(self, context):
+        self.logger.debug('Begin execute for {} '
+                          'CompareChecksum'.format(__name__))
+        self.logger.debug('the steps:')
+
+        self.logger.debug('generate the xml from the file on disk')
+        self._compare_checksums_client()
 
         self.logger.debug('End execute for {}'.format(__name__))
 
@@ -687,8 +928,7 @@ class OrganizeExecutes(object):
                         executors.append(
                             Omm2Caom2LocalMeta(self.config, obs_id, file_name))
                     else:
-                        # executors.append(Omm2Caom2Meta(self.config, obs_id))
-                        executors.append(Omm2Caom2MetaClient(self.config, obs_id))
+                        executors.append(Omm2Caom2Meta(self.config, obs_id))
                 elif task_type == manage_composable.TaskType.MODIFY:
                     if self.config.use_local_files:
                         if isinstance(executors[0], Omm2Caom2Scrape):
@@ -712,6 +952,76 @@ class OrganizeExecutes(object):
             logging.error('{} failed naming validation check. Must match '
                           'this regular expression {}.'.format(
                             obs_id, OmmName.OMM_NAME_PATTERN))
+            self.capture_failure(obs_id, file_name, 'Invalid observation ID')
+        return executors
+
+    def choose_client(self, obs_id, file_name=None):
+        executors = []
+        if OmmName.is_valid(obs_id):
+            subject = net.Subject(username=None, certificate=self.config.proxy)
+            cadc_data_client = CadcDataClient(subject)
+            caom_repo_client = CAOM2RepoClient(
+                subject, self.config.logging_level, self.config.resource_id)
+            for task_type in self.task_types:
+                self.logger.debug(task_type)
+                if task_type == manage_composable.TaskType.SCRAPE:
+                    if self.config.use_local_files:
+                        executors.append(
+                            Omm2Caom2Scrape(self.config, obs_id, file_name))
+                    else:
+                        raise manage_composable.CadcException(
+                            'use_local_files must be True with '
+                            'Task Type "SCRAPE"')
+                elif task_type == manage_composable.TaskType.STORE:
+                    if self.config.use_local_files:
+                        executors.append(
+                            Omm2Caom2StoreClient(
+                                self.config, obs_id, file_name,
+                                cadc_data_client, caom_repo_client))
+                    else:
+                        raise manage_composable.CadcException(
+                            'use_local_files must be True with '
+                            'Task Type "STORE"')
+                elif task_type == manage_composable.TaskType.INGEST:
+                    if self.config.use_local_files:
+                        executors.append(
+                            Omm2Caom2LocalMetaClient(
+                                self.config, obs_id, file_name,
+                                cadc_data_client, caom_repo_client,
+                                self.config.proxy))
+                    else:
+                        executors.append(Omm2Caom2MetaClient(
+                            self.config, obs_id,
+                            cadc_data_client, caom_repo_client,
+                            self.config.proxy))
+                elif task_type == manage_composable.TaskType.MODIFY:
+                    if self.config.use_local_files:
+                        if isinstance(executors[0], Omm2Caom2Scrape):
+                            executors.append(
+                                Omm2Caom2DataScrape(self.config, obs_id,
+                                                    file_name))
+                        else:
+                            executors.append(
+                                Omm2Caom2LocalDataClient(
+                                    self.config, obs_id, file_name,
+                                    cadc_data_client, caom_repo_client))
+                    else:
+                        executors.append(Omm2Caom2DataClient(
+                            self.config, obs_id,
+                            cadc_data_client, caom_repo_client))
+                else:
+                    raise manage_composable.CadcException(
+                        'Do not understand task type {}'.format(task_type))
+            if (self.config.use_local_files and
+                    manage_composable.TaskType.SCRAPE not in self.task_types):
+                executors.append(
+                    Omm2Caom2CompareChecksumClient(
+                        self.config, obs_id, file_name,
+                        cadc_data_client, caom_repo_client))
+        else:
+            logging.error('{} failed naming validation check. Must match '
+                          'this regular expression {}.'.format(
+                obs_id, OmmName.OMM_NAME_PATTERN))
             self.capture_failure(obs_id, file_name, 'Invalid observation ID')
         return executors
 
@@ -797,10 +1107,10 @@ def _unset_file_logging(config, log_h):
         logging.getLogger().removeHandler(log_h)
 
 
-def _do_one(config, organizer, obs_id, file_name=None):
+def _do_one(config, organizer, organizer_choose, obs_id, file_name=None):
     log_h = _set_up_file_logging(config, obs_id)
     try:
-        executors = organizer.choose(obs_id, file_name)
+        executors = organizer_choose(obs_id, file_name)
         for executor in executors:
             logging.info(
                 'Step {} for {}'.format(executor.task_type, obs_id))
@@ -808,9 +1118,13 @@ def _do_one(config, organizer, obs_id, file_name=None):
         if len(executors) > 0:
             organizer.capture_success(obs_id, file_name)
             return 0
+        else:
+            logging.info('No executors for {}'.format(obs_id))
+            return -1  # cover the case where file name validation fails
     except Exception as e:
         organizer.capture_failure(obs_id, file_name,
                                   e=traceback.format_exc())
+        logging.info('Execution failed for {} with {}'.format(obs_id, e))
         return -1
     finally:
         _unset_file_logging(config, log_h)
@@ -824,7 +1138,8 @@ def _run_todo_file(config, organizer):
         for line in f:
             obs_id = line.strip()
             logging.info('Process observation id {}'.format(obs_id))
-            _do_one(config, organizer, obs_id, file_name=None)
+            _do_one(
+                config, organizer, organizer.choose, obs_id, file_name=None)
 
 
 def _run_local_files(config, organizer):
@@ -838,7 +1153,7 @@ def _run_local_files(config, organizer):
     for do_file in todo_list:
         logging.info('Process file {}'.format(do_file))
         obs_id = OmmName.remove_extensions(do_file)
-        _do_one(config, organizer, obs_id, do_file)
+        _do_one(config, organizer, organizer.choose, obs_id, do_file)
 
 
 def run_by_file():
@@ -874,15 +1189,16 @@ def run_single(**argv):
     import sys
     config = manage_composable.Config()
     config.collection = 'OMM'
-    config.working_directory = '/root/airflow'
+    # config.working_directory = '/root/airflow'
+    config.working_directory = '/usr/src/app'
     config.use_local_files = False
     config.logging_level = 'INFO'
     config.log_to_file = False
-    config.task_types = [manage_composable.TaskType.INGEST]
+    config.task_types = [manage_composable.TaskType.INGEST,
+                         manage_composable.TaskType.MODIFY]
     config.resource_id = 'ivo://cadc.nrc.ca/sc2repo'
     config.proxy = sys.argv[2]
     organizer = OrganizeExecutes(config)
     obs_id = OmmName.remove_extensions(sys.argv[1])
-    result = _do_one(config, organizer, obs_id)
-    import sys
+    result = _do_one(config, organizer, organizer.choose_client, obs_id)
     sys.exit(result)
