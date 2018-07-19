@@ -215,12 +215,11 @@ class CaomExecute(object):
 
     def _data_cmd_put_client(self, fname):
         """Store a collection file."""
-        fqn = os.path.join(self.working_dir, fname)
         try:
-            self.cadc_data_client.put_file(self.collection, fqn, self.stream)
+            self.cadc_data_client.put_file(self.collection, fname, self.stream)
         except Exception as e:
             raise manage_composable.CadcException(
-                'Did not store {}'.format(fqn))
+                'Did not store {} with {}'.format(fname, e))
 
     def _fits2caom2_cmd_local(self):
         fqn = os.path.join(self.working_dir, self.fname)
@@ -1215,14 +1214,15 @@ def run_single(**argv):
     import sys
     config = manage_composable.Config()
     config.collection = 'OMM'
-    # config.working_directory = '/root/airflow'
-    config.working_directory = '/usr/src/app'
+    config.working_directory = '/root/airflow'
     config.use_local_files = False
     config.logging_level = 'INFO'
     config.log_to_file = False
-    config.task_types = [manage_composable.TaskType.INGEST]
+    config.task_types = [manage_composable.TaskType.INGEST,
+                         manage_composable.TaskType.MODIFY]
     config.resource_id = 'ivo://cadc.nrc.ca/sc2repo'
     config.proxy = sys.argv[2]
+    config.stream = 'raw'
     organizer = OrganizeExecutes(config)
     obs_id = OmmName.remove_extensions(sys.argv[1])
     result = _do_one(config, organizer, organizer.choose_client, obs_id)
