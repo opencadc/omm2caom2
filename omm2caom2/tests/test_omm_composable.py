@@ -536,10 +536,6 @@ def test_capture_failure():
     retry_file_name = 'retries.txt'
     test_config.retry_file_name = retry_file_name
 
-    # success = test_config.success_fqn
-    # failure = os.path.join(log_file_directory, failure_log_file_name)
-    # retry = os.path.join(log_file_directory, retry_file_name)
-
     if not os.path.exists(log_file_directory):
         os.mkdir(log_file_directory)
     if os.path.exists(test_config.success_fqn):
@@ -561,24 +557,7 @@ def test_capture_failure():
 
 
 def _communicate():
-    # return ['return status', None]
     return ['return status', None]
-
-
-def _get_headers(uri, subject):
-    x = """SIMPLE  =                    T / Written by IDL:  Fri Oct  6 01:48:35 2017      
-BITPIX  =                  -32 / Bits per pixel                                 
-NAXIS   =                    2 / Number of dimensions                           
-NAXIS1  =                 2048 /                                                
-NAXIS2  =                 2048 /                                                
-DATATYPE= 'REDUC   '           /Data type, SCIENCE/CALIB/REJECT/FOCUS/TEST
-END
-"""
-    delim = '\nEND'
-    extensions = \
-        [e + delim for e in x.split(delim) if e.strip()]
-    headers = [fits.Header.fromstring(e, sep='\n') for e in extensions]
-    return headers
 
 
 def _get_test_metadata(subject, path):
@@ -595,10 +574,6 @@ def _read_obs(arg1):
     return SimpleObservation(collection='test_collection',
                              observation_id='test_obs_id',
                              algorithm=Algorithm(str('exposure')))
-
-
-def _get_file_headers(fname):
-    return _get_headers(None, None)
 
 
 def _get_fname():
