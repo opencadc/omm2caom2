@@ -84,8 +84,10 @@ from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
 from omm2caom2 import astro_composable, manage_composable
 
 
-__all__ = ['main_app', 'update', 'OmmName', 'CaomName']
+__all__ = ['main_app', 'update', 'OmmName', 'CaomName', 'COLLECTION']
 
+
+COLLECTION = 'OMM'
 
 # map the fits file values to the DataProductType enums
 DATATYPE_LOOKUP = {'CALIB': 'flat',
@@ -108,7 +110,7 @@ class OmmName(object):
     - support mixed-case file name storage
     - support gzipped and not zipped file names"""
 
-    def __init__(self, obs_id):
+    def __init__(self, obs_id, file_name=None):
         self.obs_id = obs_id
 
     OMM_NAME_PATTERN = 'C[\w\+\-]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
@@ -143,6 +145,9 @@ class OmmName(object):
 
     def get_log_file(self):
         return '{}.log'.format(self.obs_id)
+
+    def get_product_id(self):
+        return self.obs_id
 
     @staticmethod
     def _get_uri(fname):
