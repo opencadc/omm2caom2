@@ -81,10 +81,12 @@ from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
 from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
 from caom2 import ObservationURI, PlaneURI, TypedSet, CoordBounds1D
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
-from omm2caom2 import astro_composable, manage_composable
+from caom2pipe import astro_composable as ac
+from caom2pipe import manage_composable as mc
+from caom2pipe import execute_composable as ec
 
 
-__all__ = ['main_app', 'update', 'OmmName', 'CaomName', 'COLLECTION']
+__all__ = ['main_app', 'update', 'OmmName', 'COLLECTION']
 
 
 COLLECTION = 'OMM'
@@ -105,82 +107,19 @@ DEFAULT_GEOCENTRIC = {
              'elevation': 2200.}}
 
 
-class OmmName(object):
+class OmmName(ec.StorageName):
     """OMM naming rules:
     - support mixed-case file name storage
     - support gzipped and not zipped file names"""
 
-    def __init__(self, obs_id, file_name=None):
-        self.obs_id = obs_id
-
     OMM_NAME_PATTERN = 'C[\w\+\-]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
 
-    # TODO - MOVE THIS
-    def get_file_uri(self):
-        return 'ad:OMM/{}.gz'.format(self.get_file_name())
-
-    def get_file_name(self):
-        return '{}.fits'.format(self.obs_id)
-
-    def get_compressed_file_name(self):
-        return '{}.fits.gz'.format(self.obs_id)
-
-    def get_model_file_name(self):
-        return '{}.fits.xml'.format(self.obs_id)
-
-    def get_prev(self):
-        return '{}_prev.jpg'.format(self.obs_id)
-
-    def get_thumb(self):
-        return '{}_prev_256.jpg'.format(self.obs_id)
-
-    def get_prev_uri(self):
-        return self._get_uri(self.get_prev())
-
-    def get_thumb_uri(self):
-        return self._get_uri(self.get_thumb())
-
-    def get_obs_id(self):
-        return self.obs_id
-
-    def get_log_file(self):
-        return '{}.log'.format(self.obs_id)
-
-    def get_product_id(self):
-        return self.obs_id
-
-    @staticmethod
-    def _get_uri(fname):
-        return 'ad:OMM/{}'.format(fname)
-
-    @staticmethod
-    def remove_extensions(name):
-        return name.replace('.fits', '').replace('.gz', '').replace('.header',
-                                                                    '')
-
-    @staticmethod
-    def is_valid(name):
-        pattern = re.compile(OmmName.OMM_NAME_PATTERN)
-        return pattern.match(name)
+    def __init__(self, obs_id, file_name=None):
+        super(OmmName, self).__init__(obs_id, 'OMM', OmmName.OMM_NAME_PATTERN)
 
     @staticmethod
     def is_composite(uri):
         return '_SCIRED' in uri or '_CALRED' in uri
-
-
-class CaomName(object):
-
-    def __init__(self, uri):
-        self.uri = uri
-
-    def get_file_id(self):
-        return self.uri.split('/')[1].split('.')[0]
-
-    def get_file_name(self):
-        return self.uri.split('/')[1]
-
-    def get_uncomp_file_name(self):
-        return self.get_file_name().replace('.gz', '')
 
 
 def accumulate_obs(bp, uri):
@@ -353,10 +292,10 @@ def get_position_resolution(header):
 
     :param header Array of astropy headers"""
     temp = None
-    temp_astr = manage_composable.to_float(header[0].get('RMSASTR'))
+    temp_astr = mc.to_float(header[0].get('RMSASTR'))
     if temp_astr != -1.0:
         temp = temp_astr
-    temp_mass = manage_composable.to_float(header[0].get('RMS2MASS'))
+    temp_mass = mc.to_float(header[0].get('RMS2MASS'))
     if temp_mass != -1.0:
         temp = temp_mass
     return temp
@@ -460,7 +399,7 @@ def _update_time(chunk, headers):
     mjd_start = headers[0].get('MJD_STAR')
     mjd_end = headers[0].get('MJD_END')
     if mjd_start is None or mjd_end is None:
-        mjd_start, mjd_end = astro_composable.find_time_bounds(headers)
+        mjd_start, mjd_end = ac.find_time_bounds(headers)
     if mjd_start is None or mjd_end is None:
         chunk.time = None
         logging.debug('Cannot calculate mjd_start {} or mjd_end {}'.format(
@@ -554,7 +493,7 @@ def _update_time_bounds(observation, fqn):
             for ii in fits_data[1].data[0]['DURATION']:
                 upper_values = '{} {} '.format(ii, upper_values)
         else:
-            raise manage_composable.CadcException(
+            raise mc.CadcException(
                 'Opened a composite file that does not match the '
                 'expected profile (XTENSION=BINTABLE/EXTNAME=PROVENANCE). '
                 '{} {}'.format(xtension, extname))
@@ -567,15 +506,15 @@ def _update_time_bounds(observation, fqn):
                     lower = lower_values.split()
                     upper = upper_values.split()
                     if len(lower) != len(upper):
-                        raise manage_composable.CadcException(
+                        raise mc.CadcException(
                             'Cannot make RefCoords with inconsistent values.')
                     chunk = parts[p].chunks[0]
                     bounds = CoordBounds1D()
                     chunk.time.axis.bounds = bounds
                     for ii in range(len(lower)):
-                        mjd_start, mjd_end = astro_composable.convert_time(
-                            manage_composable.to_float(lower[ii]),
-                            manage_composable.to_float(upper[ii]))
+                        mjd_start, mjd_end = ac.convert_time(
+                            mc.to_float(lower[ii]),
+                            mc.to_float(upper[ii]))
                         lower_refcoord = RefCoord(0.5, mjd_start)
                         upper_refcoord = RefCoord(1.5, mjd_end)
                         r = CoordRange1D(lower_refcoord, upper_refcoord)
@@ -594,7 +533,7 @@ def _update_telescope_location(observation, headers):
 
     logging.debug('Begin _update_telescope_location')
     if not isinstance(observation, Observation):
-        raise manage_composable.CadcException('Input type is Observation.')
+        raise mc.CadcException('Input type is Observation.')
 
     telescope = headers[0].get('TELESCOP').upper()
 
@@ -624,10 +563,10 @@ def _update_telescope_location(observation, headers):
             observation.telescope.geo_location_x, \
                 observation.telescope.geo_location_y, \
                 observation.telescope.geo_location_z = \
-                astro_composable.get_location(
+                ac.get_location(
                     lat, long, DEFAULT_GEOCENTRIC[telescope]['elevation'])
     else:
-        raise manage_composable.CadcException(
+        raise mc.CadcException(
             'Unexpected telescope name {}'.format(telescope))
 
     logging.debug('Done _update_telescope_location')
@@ -662,7 +601,7 @@ def _get_uri(args):
         obs_id = OmmName.remove_extensions(os.path.basename(args.local[0]))
         result = OmmName(obs_id).get_file_uri()
     else:
-        raise manage_composable.CadcException(
+        raise mc.CadcException(
             'Could not define uri from these ares {}'.format(args))
     return result
 

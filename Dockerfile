@@ -34,7 +34,6 @@ RUN oldpath=`pwd` && cd /tmp \
 && cd $oldpath \
 && rm -Rf /tmp/fitscut*
 
-RUN pip install pyfits
 RUN pip install pytest && pip install mock && pip install flake8 && \
         pip install funcsigs && pip install xml-compare && \
         pip install pytest-cov && pip install aenum && pip install future

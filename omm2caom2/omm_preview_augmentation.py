@@ -72,7 +72,9 @@ import os
 
 from caom2 import Artifact, ProductType, ReleaseType, ChecksumURI
 from caom2 import Observation
-from omm2caom2 import manage_composable, CaomName, OmmName
+from caom2pipe import execute_composable as ec
+from caom2pipe import manage_composable as mc
+from omm2caom2 import OmmName
 
 __all__ = ['visit']
 
@@ -93,14 +95,14 @@ def visit(observation, **kwargs):
             artifact = plane.artifacts[j]
             if (artifact.uri.endswith('.fits.gz') or
                     artifact.uri.endswith('.fits')):
-                file_id = CaomName(artifact.uri).get_file_id()
-                file_name = CaomName(artifact.uri).get_file_name()
+                file_id = ec.CaomName(artifact.uri).get_file_id()
+                file_name = ec.CaomName(artifact.uri).get_file_name()
                 science_fqn = os.path.join(working_dir, file_name)
                 if not os.path.exists(science_fqn):
-                    file_name = CaomName(artifact.uri).get_uncomp_file_name()
+                    file_name = ec.CaomName(artifact.uri).get_uncomp_file_name()
                     science_fqn = os.path.join(working_dir, file_name)
                     if not os.path.exists(science_fqn):
-                        raise manage_composable.CadcException(
+                        raise mc.CadcException(
                             '{} preview visit file not found'.format(
                                 science_fqn))
                 logging.debug('working on file {}'.format(science_fqn))
@@ -116,7 +118,7 @@ def _augment(plane, uri, fqn, product_type):
 
 
 def _artifact_metadata(uri, fqn, product_type):
-    local_meta = manage_composable.get_file_meta(fqn)
+    local_meta = mc.get_file_meta(fqn)
     md5uri = ChecksumURI(local_meta['md5sum'])
     return Artifact(uri, product_type, ReleaseType.DATA, local_meta['type'],
                     local_meta['size'], md5uri)
@@ -132,13 +134,13 @@ def _do_prev(file_id, science_fqn, working_dir, plane):
         os.remove(preview_fqn)
     prev_cmd = 'fitscut --all --autoscale=99.5 --asinh-scale --jpg --invert ' \
                '--compass {}'.format(science_fqn)
-    manage_composable.exec_cmd_redirect(prev_cmd, preview_fqn)
+    mc.exec_cmd_redirect(prev_cmd, preview_fqn)
 
     if os.access(thumb_fqn, 0):
         os.remove(thumb_fqn)
     prev_cmd = 'fitscut --all --output-size=256 --autoscale=99.5 ' \
                '--asinh-scale --jpg --invert --compass {}'.format(science_fqn)
-    manage_composable.exec_cmd_redirect(prev_cmd, thumb_fqn)
+    mc.exec_cmd_redirect(prev_cmd, thumb_fqn)
 
     prev_uri = OmmName(file_id).get_prev_uri()
     thumb_uri = OmmName(file_id).get_thumb_uri()

@@ -70,8 +70,9 @@ import os
 import pytest
 
 from omm2caom2 import omm_footprint_augmentation, omm_preview_augmentation
-from omm2caom2 import manage_composable, OmmName
+from omm2caom2 import OmmName
 from caom2 import ObservationReader
+from caom2pipe import manage_composable as mc
 
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -94,7 +95,7 @@ def test_footprint_update_position():
     assert test_chunk.position.axis.bounds is None
 
     # expected failure due to required kwargs parameter
-    with pytest.raises(manage_composable.CadcException):
+    with pytest.raises(mc.CadcException):
         test_result = omm_footprint_augmentation.visit(test_obs)
 
     test_kwargs['working_directory'] = TESTDATA_DIR
