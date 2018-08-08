@@ -74,10 +74,18 @@ from omm2caom2 import OmmName, COLLECTION
 
 
 def map_todo_to_obs_id(file_name):
+    """:return obs_id, file_name where obs_id is without the extensions,
+    and file_name is with the extensions."""
     return OmmName.remove_extensions(file_name), file_name
 
 
 def omm_run():
+    ec.run_by_file(OmmName, 'omm2caom2', COLLECTION, map_todo_to_obs_id,
+                   use_client=False, preview=omm_preview_augmentation,
+                   footprint=omm_footprint_augmentation)
+
+
+def omm_run_proxy():
     proxy = '/usr/src/app/cadcproxy.pem'
     ec.run_by_file(OmmName, 'omm2caom2', COLLECTION, map_todo_to_obs_id,
                    use_client=True, proxy=proxy)

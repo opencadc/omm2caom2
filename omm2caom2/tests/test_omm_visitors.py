@@ -78,6 +78,7 @@ from caom2pipe import manage_composable as mc
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 TESTDATA_DIR = os.path.join(THIS_DIR, 'data')
 TEST_OBS = 'C170324_0054_SCI'
+TEST_FILE = '{}.fits.gz'.format(TEST_OBS)
 
 
 def test_footprint_aug_visit():
@@ -88,10 +89,10 @@ def test_footprint_aug_visit():
 
 
 def test_footprint_update_position():
-    test_kwargs = {'science_file': OmmName(TEST_OBS).get_file_name()}
+    test_kwargs = {'science_file': OmmName(TEST_OBS, TEST_FILE).get_file_name()}
     test_obs = _read_obs_from_file()
     test_chunk = test_obs.planes[TEST_OBS].artifacts[
-        OmmName(TEST_OBS).get_file_uri()].parts['0'].chunks[0]
+        OmmName(TEST_OBS, TEST_FILE).get_file_uri()].parts['0'].chunks[0]
     assert test_chunk.position.axis.bounds is None
 
     # expected failure due to required kwargs parameter
@@ -114,8 +115,10 @@ def test_preview_aug_visit():
 
 
 def test_preview_augment_plane():
-    preview = os.path.join(TESTDATA_DIR, OmmName(TEST_OBS).get_prev())
-    thumb = os.path.join(TESTDATA_DIR, OmmName(TEST_OBS).get_thumb())
+    preview = os.path.join(TESTDATA_DIR,
+                           OmmName(TEST_OBS, TEST_FILE).get_prev())
+    thumb = os.path.join(TESTDATA_DIR,
+                         OmmName(TEST_OBS, TEST_FILE).get_thumb())
     if os.path.exists(preview):
         os.remove(preview)
     if os.path.exists(thumb):
@@ -134,7 +137,7 @@ def test_preview_augment_plane():
 
 def _read_obs_from_file():
     test_fqn = os.path.join(TESTDATA_DIR,
-                            OmmName(TEST_OBS).get_model_file_name())
+                            OmmName(TEST_OBS, TEST_FILE).get_model_file_name())
     assert os.path.exists(test_fqn), test_fqn
     reader = ObservationReader(False)
     test_obs = reader.read(test_fqn)
