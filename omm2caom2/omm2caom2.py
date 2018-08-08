@@ -115,19 +115,15 @@ class OmmName(ec.StorageName):
     OMM_NAME_PATTERN = 'C[\w\+\-]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
 
     def __init__(self, obs_id, fname_on_disk=None, fname_in_ad=None):
-        super(OmmName, self).__init__(obs_id, 'OMM', OmmName.OMM_NAME_PATTERN)
+        super(OmmName, self).__init__(obs_id, 'OMM', OmmName.OMM_NAME_PATTERN,
+                                      fname_on_disk)
         if fname_in_ad is None:
             self.fname_in_ad = '{}.fits.gz'.format(obs_id)
         else:
             self.fname_in_ad = fname_in_ad
-        if fname_on_disk is not None:
-            self.fname_on_disk = fname_on_disk
 
     def get_file_uri(self):
         return 'ad:{}/{}'.format(self.collection, self.fname_in_ad)
-
-    def get_fname_on_disk(self):
-        return self.fname_on_disk
 
     @staticmethod
     def is_composite(uri):
