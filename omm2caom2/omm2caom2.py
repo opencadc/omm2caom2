@@ -125,9 +125,12 @@ class OmmName(ec.StorageName):
     def get_file_uri(self):
         return 'ad:{}/{}'.format(self.collection, self.fname_in_ad)
 
+    # @staticmethod
+    # def is_composite(uri):
+    #     return '_SCIRED' in uri or '_CALRED' in uri
     @staticmethod
     def is_composite(uri):
-        return '_SCIRED' in uri or '_CALRED' in uri
+        return 'Cdemo_ext2_SCIRED' in uri
 
 
 def accumulate_obs(bp, uri):

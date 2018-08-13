@@ -73,6 +73,9 @@ from omm2caom2 import omm_preview_augmentation, omm_footprint_augmentation
 from omm2caom2 import OmmName, COLLECTION
 
 
+data_visitors = [omm_preview_augmentation, omm_footprint_augmentation]
+
+
 def map_todo_to_obs_id(file_name):
     """:return obs_id, file_name where obs_id is without the extensions,
     and file_name is with the extensions."""
@@ -81,14 +84,13 @@ def map_todo_to_obs_id(file_name):
 
 def omm_run():
     ec.run_by_file(OmmName, 'omm2caom2', COLLECTION, map_todo_to_obs_id,
-                   use_client=False, preview=omm_preview_augmentation,
-                   footprint=omm_footprint_augmentation)
+                   use_client=False, data_visitors=data_visitors)
 
 
 def omm_run_proxy():
     proxy = '/usr/src/app/cadcproxy.pem'
     ec.run_by_file(OmmName, 'omm2caom2', COLLECTION, map_todo_to_obs_id,
-                   use_client=True, proxy=proxy)
+                   use_client=True, proxy=proxy, data_visitors=data_visitors)
 
 
 def omm_run_single():
@@ -108,6 +110,5 @@ def omm_run_single():
     file_name = sys.argv[1]
     obs_id = OmmName.remove_extensions(sys.argv[1])
     result = ec.run_single(config, OmmName, 'omm2caom2', obs_id, file_name,
-                           preview=omm_preview_augmentation,
-                           footprint=omm_footprint_augmentation)
+                           data_visitors=data_visitors)
     sys.exit(result)

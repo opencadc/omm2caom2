@@ -71,7 +71,6 @@ import pytest
 
 from omm2caom2 import omm_footprint_augmentation, omm_preview_augmentation
 from omm2caom2 import OmmName
-from caom2 import ObservationReader
 from caom2pipe import manage_composable as mc
 
 
@@ -89,8 +88,11 @@ def test_footprint_aug_visit():
 
 
 def test_footprint_update_position():
-    test_kwargs = {'science_file': OmmName(TEST_OBS, TEST_FILE).get_file_name()}
-    test_obs = _read_obs_from_file()
+    test_kwargs = {'science_file':
+                   OmmName(TEST_OBS, TEST_FILE).get_file_name()}
+    test_fqn = os.path.join(TESTDATA_DIR,
+                            OmmName(TEST_OBS, TEST_FILE).get_model_file_name())
+    test_obs = mc.read_obs_from_file(test_fqn)
     test_chunk = test_obs.planes[TEST_OBS].artifacts[
         OmmName(TEST_OBS, TEST_FILE).get_file_uri()].parts['0'].chunks[0]
     assert test_chunk.position.axis.bounds is None
@@ -123,22 +125,16 @@ def test_preview_augment_plane():
         os.remove(preview)
     if os.path.exists(thumb):
         os.remove(thumb)
-    test_obs = _read_obs_from_file()
+    test_fqn = os.path.join(TESTDATA_DIR,
+                            OmmName(TEST_OBS, TEST_FILE).get_model_file_name())
+    test_obs = mc.read_obs_from_file(test_fqn)
     assert len(test_obs.planes[TEST_OBS].artifacts) == 1
 
-    test_kwargs = {'working_directory': TESTDATA_DIR}
+    test_kwargs = {'working_directory': TESTDATA_DIR,
+                   'cadc_client': None}
     test_result = omm_preview_augmentation.visit(test_obs, **test_kwargs)
     assert test_result is not None, 'expected a visit return value'
     assert test_result['artifacts'] == 2
     assert len(test_obs.planes[TEST_OBS].artifacts) == 3
     assert os.path.exists(preview)
     assert os.path.exists(thumb)
-
-
-def _read_obs_from_file():
-    test_fqn = os.path.join(TESTDATA_DIR,
-                            OmmName(TEST_OBS, TEST_FILE).get_model_file_name())
-    assert os.path.exists(test_fqn), test_fqn
-    reader = ObservationReader(False)
-    test_obs = reader.read(test_fqn)
-    return test_obs

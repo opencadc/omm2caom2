@@ -74,7 +74,7 @@ from caom2 import Artifact, ProductType, ReleaseType, ChecksumURI
 from caom2 import Observation
 from caom2pipe import execute_composable as ec
 from caom2pipe import manage_composable as mc
-from omm2caom2 import OmmName
+from omm2caom2 import OmmName, COLLECTION
 
 __all__ = ['visit']
 
@@ -87,6 +87,10 @@ def visit(observation, **kwargs):
     working_dir = './'
     if 'working_directory' in kwargs:
         working_dir = kwargs['working_directory']
+    if 'cadc_client' in kwargs:
+        cadc_client = kwargs['cadc_client']
+    else:
+        raise mc.CadcException('Need a cadc_client parameter.')
 
     count = 0
     for i in observation.planes:
@@ -99,14 +103,15 @@ def visit(observation, **kwargs):
                 file_name = ec.CaomName(artifact.uri).get_file_name()
                 science_fqn = os.path.join(working_dir, file_name)
                 if not os.path.exists(science_fqn):
-                    file_name = ec.CaomName(artifact.uri).get_uncomp_file_name()
+                    file_name = \
+                        ec.CaomName(artifact.uri).get_uncomp_file_name()
                     science_fqn = os.path.join(working_dir, file_name)
                     if not os.path.exists(science_fqn):
                         raise mc.CadcException(
                             '{} preview visit file not found'.format(
                                 science_fqn))
                 logging.debug('working on file {}'.format(science_fqn))
-                _do_prev(file_id, science_fqn, working_dir, plane)
+                _do_prev(file_id, science_fqn, working_dir, plane, cadc_client)
                 logging.info(
                     'Completed preview generation for {}.'.format(file_id))
             count += 2
@@ -124,7 +129,7 @@ def _artifact_metadata(uri, fqn, product_type):
                     local_meta['size'], md5uri)
 
 
-def _do_prev(file_id, science_fqn, working_dir, plane):
+def _do_prev(file_id, science_fqn, working_dir, plane, cadc_client):
     preview = OmmName(file_id).get_prev()
     preview_fqn = os.path.join(working_dir, preview)
     thumb = OmmName(file_id).get_thumb()
@@ -146,3 +151,22 @@ def _do_prev(file_id, science_fqn, working_dir, plane):
     thumb_uri = OmmName(file_id).get_thumb_uri()
     _augment(plane, prev_uri, preview_fqn, ProductType.PREVIEW)
     _augment(plane, thumb_uri, thumb_fqn, ProductType.THUMBNAIL)
+    if cadc_client is not None:
+        _store_smalls(cadc_client, working_dir, preview, thumb)
+
+
+def _store_smalls(cadc_client, working_directory, preview_fname,
+                  thumb_fname):
+    cwd = os.getcwd()
+    try:
+        os.chdir(working_directory)
+        cadc_client.put_file(COLLECTION, preview_fname, 'raw')
+        cadc_client.put_file(COLLECTION, thumb_fname, 'raw')
+    except Exception as e:
+        raise mc.CadcException('Failed to store previews with {}'.format(e))
+    finally:
+        os.chdir(cwd)
+    mc.compare_checksum_client(cadc_client, COLLECTION,
+                               os.path.join(working_directory, preview_fname))
+    mc.compare_checksum_client(cadc_client, COLLECTION,
+                               os.path.join(working_directory, thumb_fname))
