@@ -74,17 +74,22 @@ import re
 import sys
 import traceback
 
+from astropy.io import fits
+
 from caom2 import TargetType, ObservationIntentType, CalibrationLevel
 from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
 from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
-from caom2 import ObservationURI, PlaneURI, TypedSet
+from caom2 import ObservationURI, PlaneURI, TypedSet, CoordBounds1D
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
-# from caom2utils import augment
-from omm2caom2 import astro_composable, manage_composable
+from caom2pipe import astro_composable as ac
+from caom2pipe import manage_composable as mc
+from caom2pipe import execute_composable as ec
 
 
-__all__ = ['main_app', 'update', 'OmmName', 'CaomName']
+__all__ = ['main_app', 'update', 'OmmName', 'COLLECTION']
 
+
+COLLECTION = 'OMM'
 
 # map the fits file values to the DataProductType enums
 DATATYPE_LOOKUP = {'CALIB': 'flat',
@@ -95,80 +100,37 @@ DATATYPE_LOOKUP = {'CALIB': 'flat',
                    'REJECT': 'reject',
                    'CALRED': 'flat'}
 
+DEFAULT_GEOCENTRIC = {
+    'OMM': {'x': 1448045.773, 'y': -4242075.462, 'z': 4523808.146,
+            'elevation': 1108.},
+    'CTIO': {'x': 1814303.745, 'y': -5214365.744, 'z': -3187340.566,
+             'elevation': 2200.}}
 
-class OmmName(object):
+
+class OmmName(ec.StorageName):
     """OMM naming rules:
     - support mixed-case file name storage
     - support gzipped and not zipped file names"""
 
-    def __init__(self, obs_id):
-        self.obs_id = obs_id
-
     OMM_NAME_PATTERN = 'C[\w\+\-]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
 
-    # TODO - MOVE THIS
+    def __init__(self, obs_id, fname_on_disk=None, fname_in_ad=None):
+        super(OmmName, self).__init__(obs_id, 'OMM', OmmName.OMM_NAME_PATTERN,
+                                      fname_on_disk)
+        if fname_in_ad is None:
+            self.fname_in_ad = '{}.fits.gz'.format(obs_id)
+        else:
+            self.fname_in_ad = fname_in_ad
+
     def get_file_uri(self):
-        return 'ad:OMM/{}.gz'.format(self.get_file_name())
+        return 'ad:{}/{}'.format(self.collection, self.fname_in_ad)
 
-    def get_file_name(self):
-        return '{}.fits'.format(self.obs_id)
-
-    def get_compressed_file_name(self):
-        return '{}.fits.gz'.format(self.obs_id)
-
-    def get_model_file_name(self):
-        return '{}.fits.xml'.format(self.obs_id)
-
-    def get_prev(self):
-        return '{}_prev.jpg'.format(self.obs_id)
-
-    def get_thumb(self):
-        return '{}_prev_256.jpg'.format(self.obs_id)
-
-    def get_prev_uri(self):
-        return self._get_uri(self.get_prev())
-
-    def get_thumb_uri(self):
-        return self._get_uri(self.get_thumb())
-
-    def get_obs_id(self):
-        return self.obs_id
-
-    def get_log_file(self):
-        return '{}.log'.format(self.obs_id)
-
-    @staticmethod
-    def _get_uri(fname):
-        return 'ad:OMM/{}'.format(fname)
-
-    @staticmethod
-    def remove_extensions(name):
-        return name.replace('.fits', '').replace('.gz', '').replace('.header',
-                                                                    '')
-
-    @staticmethod
-    def is_valid(name):
-        pattern = re.compile(OmmName.OMM_NAME_PATTERN)
-        return pattern.match(name)
-
+    # @staticmethod
+    # def is_composite(uri):
+    #     return '_SCIRED' in uri or '_CALRED' in uri
     @staticmethod
     def is_composite(uri):
-        return '_SCIRED' in uri or '_CALRED' in uri
-
-
-class CaomName(object):
-
-    def __init__(self, uri):
-        self.uri = uri
-
-    def get_file_id(self):
-        return self.uri.split('/')[1].split('.')[0]
-
-    def get_file_name(self):
-        return self.uri.split('/')[1]
-
-    def get_uncomp_file_name(self):
-        return self.get_file_name().replace('.gz', '')
+        return 'Cdemo_ext2_SCIRED' in uri
 
 
 def accumulate_obs(bp, uri):
@@ -190,9 +152,6 @@ def accumulate_obs(bp, uri):
     bp.add_fits_attribute('Observation.target_position.equinox', 'EQUINOX')
     bp.set_default('Observation.target_position.equinox', '2000.0')
     bp.add_fits_attribute('Observation.telescope.name', 'TELESCOP')
-    bp.set('Observation.telescope.geoLocationX', 'get_telescope_x(header)')
-    bp.set('Observation.telescope.geoLocationY', 'get_telescope_y(header)')
-    bp.set('Observation.telescope.geoLocationZ', 'get_telescope_z(header)')
     bp.add_fits_attribute('Observation.telescope.keywords', 'OBSERVER')
     bp.set('Observation.environment.ambientTemp',
            'get_obs_env_ambient_temp(header)')
@@ -344,10 +303,10 @@ def get_position_resolution(header):
 
     :param header Array of astropy headers"""
     temp = None
-    temp_astr = manage_composable.to_float(header[0].get('RMSASTR'))
+    temp_astr = mc.to_float(header[0].get('RMSASTR'))
     if temp_astr != -1.0:
         temp = temp_astr
-    temp_mass = manage_composable.to_float(header[0].get('RMS2MASS'))
+    temp_mass = mc.to_float(header[0].get('RMS2MASS'))
     if temp_mass != -1.0:
         temp = temp_mass
     return temp
@@ -369,60 +328,6 @@ def get_start_ref_coord_val(header):
         return None
 
 
-def get_telescope_x(header):
-    """Calculate the telescope x coordinate in geocentric m from FITS header
-    values.
-
-    Called to fill a blueprint value, must have a
-    parameter named header for import_module loading and execution.
-
-    :param header Array of astropy headers"""
-    telescope = header[0].get('TELESCOP')
-    if telescope is None:
-        return None
-    if 'OMM' in telescope:
-        return 1448027.602
-    elif 'CTIO' in telescope:
-        return 1815596.320
-    return None
-
-
-def get_telescope_y(header):
-    """Calculate the telescope y coordinate in geocentric m from FITS header
-    values.
-
-    Called to fill a blueprint value, must have a
-    parameter named header for import_module loading and execution.
-
-    :param header Array of astropy headers"""
-    telescope = header[0].get('TELESCOP')
-    if telescope is None:
-        return None
-    if 'OMM' in telescope:
-        return -4242089.498
-    elif 'CTIO' in telescope:
-        return -5213682.445
-    return None
-
-
-def get_telescope_z(header):
-    """Calculate the telescope elevation in geocentric m from FITS header
-    values.
-
-    Called to fill a blueprint value, must have a
-    parameter named header for import_module loading and execution.
-
-    :param header Array of astropy headers"""
-    telescope = header[0].get('TELESCOP')
-    if telescope is None:
-        return None
-    if 'OMM' in telescope:
-        return 4523791.027
-    elif 'CTIO' in telescope:
-        return -3187689.895
-    return None
-
-
 def update(observation, **kwargs):
     """Called to fill multiple CAOM model elements and/or attributes, must
     have this signature for import_module loading and execution.
@@ -435,34 +340,36 @@ def update(observation, **kwargs):
     assert isinstance(observation, Observation), \
         'observation parameter of type Observation'
 
-    if OmmName.is_composite(observation.observation_id):
-        _update_provenance(observation)
+    headers = None
+    if 'headers' in kwargs:
+        headers = kwargs['headers']
+    fqn = None
+    if 'fqn' in kwargs:
+        fqn = kwargs['fqn']
+
+    _update_telescope_location(observation, headers)
 
     for plane in observation.planes:
         for artifact in observation.planes[plane].artifacts:
             parts = observation.planes[plane].artifacts[artifact].parts
-            # the reduced files have a second extension that contains the
-            # provenance information only - fits2caom2 generates a part
-            # for that extension which has no unique WCS information, so
-            # just remove it
-            if len(parts) == 2:
-                parts.pop('1')
-
-            if len(parts) == 1:
-                p = parts['0']
-                if len(p.chunks) == 0:
+            for part in parts:
+                p = parts[part]
+                if len(p.chunks) == 0 and part == '0':
                     # always have a time axis, and usually an energy
-                    # axis as well, so create a chunk
+                    # axis as well, so create a chunk for the zero-th part
                     p.chunks.append(Chunk())
 
                 for chunk in p.chunks:
-                    if 'headers' in kwargs:
-                        chunk.naxis = 4
-                        headers = kwargs['headers']
-                        chunk.product_type = get_product_type(headers)
-                        _update_energy(chunk, headers)
-                        _update_time(chunk, headers)
-                        _update_position(chunk)
+                    chunk.naxis = 4
+                    chunk.product_type = get_product_type(headers)
+                    _update_energy(chunk, headers)
+                    _update_time(chunk, headers)
+                    _update_position(chunk)
+
+    if OmmName.is_composite(observation.observation_id):
+        _update_provenance(observation)
+        _update_time_bounds(observation, fqn)
+
     logging.debug('Done update.')
     return True
 
@@ -503,7 +410,7 @@ def _update_time(chunk, headers):
     mjd_start = headers[0].get('MJD_STAR')
     mjd_end = headers[0].get('MJD_END')
     if mjd_start is None or mjd_end is None:
-        mjd_start, mjd_end = astro_composable.convert_time(headers)
+        mjd_start, mjd_end = ac.find_time_bounds(headers)
     if mjd_start is None or mjd_end is None:
         chunk.time = None
         logging.debug('Cannot calculate mjd_start {} or mjd_end {}'.format(
@@ -514,16 +421,16 @@ def _update_time(chunk, headers):
                 mjd_start, mjd_start))
         start = RefCoord(0.5, mjd_start)
         end = RefCoord(1.5, mjd_end)
-        time_cf = CoordFunction1D(1, headers[0].get('TEXP'), start)
+        time_cf = CoordFunction1D(1, headers[0].get('TEFF'), start)
         time_axis = CoordAxis1D(Axis('TIME', 'd'), function=time_cf)
         time_axis.range = CoordRange1D(start, end)
         chunk.time = TemporalWCS(time_axis)
-        chunk.time.exposure = headers[0].get('TEXP')
+        chunk.time.exposure = headers[0].get('TEFF')
         chunk.time.resolution = 0.1
         chunk.time.timesys = 'UTC'
         chunk.time.trefpos = 'TOPOCENTER'
         chunk.time_axis = 4
-    logging.debug('Done _update_time.')
+    logging.error('Done _update_time.')
 
 
 def _update_position(chunk):
@@ -582,6 +489,100 @@ def _update_provenance(observation):
     logging.debug('End _update_provenance')
 
 
+def _update_time_bounds(observation, fqn):
+    """Add chunk time bounds to the chunk from the first part, by
+     referencing information from the second header. """
+
+    lower_values = ''
+    upper_values = ''
+    with fits.open(fqn) as fits_data:
+        xtension = fits_data[1].header['XTENSION']
+        extname = fits_data[1].header['EXTNAME']
+        if 'BINTABLE' in xtension and 'PROVENANCE' in extname:
+            for ii in fits_data[1].data[0]['STARTTIME']:
+                lower_values = '{} {}'.format(ii, lower_values)
+            for ii in fits_data[1].data[0]['DURATION']:
+                upper_values = '{} {} '.format(ii, upper_values)
+        else:
+            raise mc.CadcException(
+                'Opened a composite file that does not match the '
+                'expected profile (XTENSION=BINTABLE/EXTNAME=PROVENANCE). '
+                '{} {}'.format(xtension, extname))
+
+    for plane in observation.planes:
+        for artifact in observation.planes[plane].artifacts:
+            parts = observation.planes[plane].artifacts[artifact].parts
+            for p in parts:
+                if p == '0':
+                    lower = lower_values.split()
+                    upper = upper_values.split()
+                    if len(lower) != len(upper):
+                        raise mc.CadcException(
+                            'Cannot make RefCoords with inconsistent values.')
+                    chunk = parts[p].chunks[0]
+                    bounds = CoordBounds1D()
+                    chunk.time.axis.bounds = bounds
+                    for ii in range(len(lower)):
+                        mjd_start, mjd_end = ac.convert_time(
+                            mc.to_float(lower[ii]),
+                            mc.to_float(upper[ii]))
+                        lower_refcoord = RefCoord(0.5, mjd_start)
+                        upper_refcoord = RefCoord(1.5, mjd_end)
+                        r = CoordRange1D(lower_refcoord, upper_refcoord)
+                        bounds.samples.append(r)
+                    # if execution has gotten to this point, remove range if
+                    # it exists, since only one of bounds or range should be
+                    # provided, and bounds is more specific. PD, slack,
+                    # 2018-07-16
+                    if chunk.time.axis.range is not None:
+                        chunk.time.axis.range = None
+
+
+def _update_telescope_location(observation, headers):
+    """Provide geocentric telescope location information, based on
+    geodetic information from the headers."""
+
+    logging.debug('Begin _update_telescope_location')
+    if not isinstance(observation, Observation):
+        raise mc.CadcException('Input type is Observation.')
+
+    telescope = headers[0].get('TELESCOP').upper()
+
+    if telescope is None:
+        logging.warning('No telescope name. Could not set telescope '
+                        'location for {}'.format(observation.observation_id))
+        return
+
+    if 'OMM' in telescope or 'CTIO' in telescope:
+        lat = headers[0].get('OBS_LAT')
+        long = headers[0].get('OBS_LON')
+
+        # make a reliable lookup value
+        if 'OMM' in telescope:
+            telescope = 'OMM'
+        if 'CTIO' in telescope:
+            telescope = 'CTIO'
+
+        if lat is None or long is None:
+            observation.telescope.geo_location_x = \
+                DEFAULT_GEOCENTRIC[telescope]['x']
+            observation.telescope.geo_location_y = \
+                DEFAULT_GEOCENTRIC[telescope]['y']
+            observation.telescope.geo_location_z = \
+                DEFAULT_GEOCENTRIC[telescope]['z']
+        else:
+            observation.telescope.geo_location_x, \
+                observation.telescope.geo_location_y, \
+                observation.telescope.geo_location_z = \
+                ac.get_location(
+                    lat, long, DEFAULT_GEOCENTRIC[telescope]['elevation'])
+    else:
+        raise mc.CadcException(
+            'Unexpected telescope name {}'.format(telescope))
+
+    logging.debug('Done _update_telescope_location')
+
+
 def _build_blueprints(uri):
     """This application relies on the caom2utils fits2caom2 ObsBlueprint
     definition for mapping FITS file values to CAOM model element
@@ -611,7 +612,7 @@ def _get_uri(args):
         obs_id = OmmName.remove_extensions(os.path.basename(args.local[0]))
         result = OmmName(obs_id).get_file_uri()
     else:
-        raise manage_composable.CadcException(
+        raise mc.CadcException(
             'Could not define uri from these ares {}'.format(args))
     return result
 

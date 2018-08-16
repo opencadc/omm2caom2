@@ -71,7 +71,8 @@ import logging
 import os
 
 from caom2 import Observation, CoordPolygon2D, ValueCoord2D, Chunk
-from omm2caom2 import footprintfinder, manage_composable
+from caom2pipe import manage_composable as mc
+from omm2caom2 import footprintfinder
 
 
 __all__ = ['visit']
@@ -88,7 +89,7 @@ def visit(observation, **kwargs):
     if 'science_file' in kwargs:
         science_file = kwargs['science_file']
     else:
-        raise manage_composable.CadcException(
+        raise mc.CadcException(
             'No science_file parameter provided to vistor '
             'for obs {}.'.format(observation.observation_id))
     # TODO - this moves location handling structures to other than the
@@ -103,7 +104,7 @@ def visit(observation, **kwargs):
         if science_fqn.endswith('.gz'):
             science_fqn = science_fqn.replace('.gz', '')
             if not os.path.exists(science_fqn):
-                raise manage_composable.CadcException(
+                raise mc.CadcException(
                     '{} visit file not found'.format(science_fqn))
 
     count = 0
@@ -154,13 +155,13 @@ def _update_position(chunk, science_fqn):
                 coords = fp_results[1].split()
 
         if coords is None:
-            raise manage_composable.CadcException(
+            raise mc.CadcException(
                 'Do not recognize footprint {}'.format(stc))
 
         index = 0
         while index < len(coords):
-            vertex = ValueCoord2D(manage_composable.to_float(coords[index]),
-                                  manage_composable.to_float(coords[index + 1]))
+            vertex = ValueCoord2D(mc.to_float(coords[index]),
+                                  mc.to_float(coords[index + 1]))
             bounds.vertices.append(vertex)
             index += 2
             logging.debug('Adding vertex\n{}'.format(vertex))

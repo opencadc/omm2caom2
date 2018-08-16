@@ -72,7 +72,9 @@ import os
 
 from caom2 import Artifact, ProductType, ReleaseType, ChecksumURI
 from caom2 import Observation
-from omm2caom2 import manage_composable, CaomName, OmmName
+from caom2pipe import execute_composable as ec
+from caom2pipe import manage_composable as mc
+from omm2caom2 import OmmName, COLLECTION
 
 __all__ = ['visit']
 
@@ -85,14 +87,10 @@ def visit(observation, **kwargs):
     working_dir = './'
     if 'working_directory' in kwargs:
         working_dir = kwargs['working_directory']
-    if 'netrc_fqn' in kwargs:
-        netrc_fqn = kwargs['netrc_fqn']
+    if 'cadc_client' in kwargs:
+        cadc_client = kwargs['cadc_client']
     else:
-        raise manage_composable.CadcException(
-            '\'netrc_fqn\' missing from kwargs.'.format())
-    logging_level_param = ''
-    if 'logging_level_param' in kwargs:
-        logging_level_param = kwargs['logging_level_param']
+        raise mc.CadcException('Need a cadc_client parameter.')
 
     count = 0
     for i in observation.planes:
@@ -101,19 +99,19 @@ def visit(observation, **kwargs):
             artifact = plane.artifacts[j]
             if (artifact.uri.endswith('.fits.gz') or
                     artifact.uri.endswith('.fits')):
-                file_id = CaomName(artifact.uri).get_file_id()
-                file_name = CaomName(artifact.uri).get_file_name()
+                file_id = ec.CaomName(artifact.uri).get_file_id()
+                file_name = ec.CaomName(artifact.uri).get_file_name()
                 science_fqn = os.path.join(working_dir, file_name)
                 if not os.path.exists(science_fqn):
-                    file_name = CaomName(artifact.uri).get_uncomp_file_name()
+                    file_name = \
+                        ec.CaomName(artifact.uri).get_uncomp_file_name()
                     science_fqn = os.path.join(working_dir, file_name)
                     if not os.path.exists(science_fqn):
-                        raise manage_composable.CadcException(
+                        raise mc.CadcException(
                             '{} preview visit file not found'.format(
                                 science_fqn))
                 logging.debug('working on file {}'.format(science_fqn))
-                _do_prev(file_id, science_fqn, working_dir, netrc_fqn, plane,
-                         logging_level_param)
+                _do_prev(file_id, science_fqn, working_dir, plane, cadc_client)
                 logging.info(
                     'Completed preview generation for {}.'.format(file_id))
             count += 2
@@ -125,14 +123,13 @@ def _augment(plane, uri, fqn, product_type):
 
 
 def _artifact_metadata(uri, fqn, product_type):
-    local_meta = manage_composable.get_file_meta(fqn)
+    local_meta = mc.get_file_meta(fqn)
     md5uri = ChecksumURI(local_meta['md5sum'])
     return Artifact(uri, product_type, ReleaseType.DATA, local_meta['type'],
                     local_meta['size'], md5uri)
 
 
-def _do_prev(file_id, science_fqn, working_dir, netrc_fqn, plane,
-             logging_level_param):
+def _do_prev(file_id, science_fqn, working_dir, plane, cadc_client):
     preview = OmmName(file_id).get_prev()
     preview_fqn = os.path.join(working_dir, preview)
     thumb = OmmName(file_id).get_thumb()
@@ -142,33 +139,34 @@ def _do_prev(file_id, science_fqn, working_dir, netrc_fqn, plane,
         os.remove(preview_fqn)
     prev_cmd = 'fitscut --all --autoscale=99.5 --asinh-scale --jpg --invert ' \
                '--compass {}'.format(science_fqn)
-    manage_composable.exec_cmd_redirect(prev_cmd, preview_fqn)
+    mc.exec_cmd_redirect(prev_cmd, preview_fqn)
 
     if os.access(thumb_fqn, 0):
         os.remove(thumb_fqn)
     prev_cmd = 'fitscut --all --output-size=256 --autoscale=99.5 ' \
                '--asinh-scale --jpg --invert --compass {}'.format(science_fqn)
-    manage_composable.exec_cmd_redirect(prev_cmd, thumb_fqn)
-
-    _put_omm(working_dir, preview, netrc_fqn, logging_level_param)
-    _put_omm(working_dir, thumb, netrc_fqn, logging_level_param)
+    mc.exec_cmd_redirect(prev_cmd, thumb_fqn)
 
     prev_uri = OmmName(file_id).get_prev_uri()
     thumb_uri = OmmName(file_id).get_thumb_uri()
     _augment(plane, prev_uri, preview_fqn, ProductType.PREVIEW)
     _augment(plane, thumb_uri, thumb_fqn, ProductType.THUMBNAIL)
+    if cadc_client is not None:
+        _store_smalls(cadc_client, working_dir, preview, thumb)
 
-    manage_composable.compare_checksum(netrc_fqn, 'OMM', preview_fqn)
-    manage_composable.compare_checksum(netrc_fqn, 'OMM', thumb_fqn)
 
-
-def _put_omm(working_dir, jpg_name, netrc_fqn, logging_level_param):
+def _store_smalls(cadc_client, working_directory, preview_fname,
+                  thumb_fname):
     cwd = os.getcwd()
     try:
-        os.chdir(working_dir)
-        cmd = 'cadc-data put {} --netrc-file {} OMM {} ' \
-              '--archive-stream raw'.format(logging_level_param, netrc_fqn,
-                                            jpg_name)
-        manage_composable.exec_cmd(cmd)
+        os.chdir(working_directory)
+        cadc_client.put_file(COLLECTION, preview_fname, 'raw')
+        cadc_client.put_file(COLLECTION, thumb_fname, 'raw')
+    except Exception as e:
+        raise mc.CadcException('Failed to store previews with {}'.format(e))
     finally:
         os.chdir(cwd)
+    mc.compare_checksum_client(cadc_client, COLLECTION,
+                               os.path.join(working_directory, preview_fname))
+    mc.compare_checksum_client(cadc_client, COLLECTION,
+                               os.path.join(working_directory, thumb_fname))

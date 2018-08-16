@@ -24,9 +24,9 @@
   </caom2:targetPosition>
   <caom2:telescope>
     <caom2:name>OMM-1.6m</caom2:name>
-    <caom2:geoLocationX>1448027.602</caom2:geoLocationX>
-    <caom2:geoLocationY>-4242089.498</caom2:geoLocationY>
-    <caom2:geoLocationZ>4523791.027</caom2:geoLocationZ>
+    <caom2:geoLocationX>1448028.9616748542</caom2:geoLocationX>
+    <caom2:geoLocationY>-4242093.481212275</caom2:geoLocationY>
+    <caom2:geoLocationZ>4523795.303587095</caom2:geoLocationZ>
   </caom2:telescope>
   <caom2:instrument>
     <caom2:name>CPAPIR</caom2:name>
@@ -146,7 +146,7 @@
                       </caom2:range>
                       <caom2:function>
                         <caom2:naxis>1</caom2:naxis>
-                        <caom2:delta>5.0</caom2:delta>
+                        <caom2:delta>5.412</caom2:delta>
                         <caom2:refCoord>
                           <caom2:pix>0.5</caom2:pix>
                           <caom2:val>57835.80568287037</caom2:val>
@@ -155,7 +155,7 @@
                     </caom2:axis>
                     <caom2:timesys>UTC</caom2:timesys>
                     <caom2:trefpos>TOPOCENTER</caom2:trefpos>
-                    <caom2:exposure>5.0</caom2:exposure>
+                    <caom2:exposure>5.412</caom2:exposure>
                     <caom2:resolution>0.1</caom2:resolution>
                   </caom2:time>
                 </caom2:chunk>

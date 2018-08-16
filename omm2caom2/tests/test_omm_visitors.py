@@ -69,17 +69,15 @@
 import os
 import pytest
 
-from mock import Mock
-
 from omm2caom2 import omm_footprint_augmentation, omm_preview_augmentation
-from omm2caom2 import manage_composable, OmmName
-from caom2 import ObservationReader, ChecksumURI, Artifact, ProductType
-from caom2 import ReleaseType
+from omm2caom2 import OmmName
+from caom2pipe import manage_composable as mc
 
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 TESTDATA_DIR = os.path.join(THIS_DIR, 'data')
 TEST_OBS = 'C170324_0054_SCI'
+TEST_FILE = '{}.fits.gz'.format(TEST_OBS)
 
 
 def test_footprint_aug_visit():
@@ -90,14 +88,17 @@ def test_footprint_aug_visit():
 
 
 def test_footprint_update_position():
-    test_kwargs = {'science_file': OmmName(TEST_OBS).get_file_name()}
-    test_obs = _read_obs_from_file()
+    test_kwargs = {'science_file':
+                   OmmName(TEST_OBS, TEST_FILE).get_file_name()}
+    test_fqn = os.path.join(TESTDATA_DIR,
+                            OmmName(TEST_OBS, TEST_FILE).get_model_file_name())
+    test_obs = mc.read_obs_from_file(test_fqn)
     test_chunk = test_obs.planes[TEST_OBS].artifacts[
-        OmmName(TEST_OBS).get_file_uri()].parts['0'].chunks[0]
+        OmmName(TEST_OBS, TEST_FILE).get_file_uri()].parts['0'].chunks[0]
     assert test_chunk.position.axis.bounds is None
 
     # expected failure due to required kwargs parameter
-    with pytest.raises(manage_composable.CadcException):
+    with pytest.raises(mc.CadcException):
         test_result = omm_footprint_augmentation.visit(test_obs)
 
     test_kwargs['working_directory'] = TESTDATA_DIR
@@ -116,45 +117,24 @@ def test_preview_aug_visit():
 
 
 def test_preview_augment_plane():
-    put_omm_orig = omm_preview_augmentation._put_omm
-    compare_checksum_org = manage_composable.compare_checksum
-    omm_preview_augmentation._put_omm = Mock()
-    manage_composable.compare_checksum = Mock()
-    preview = os.path.join(TESTDATA_DIR, OmmName(TEST_OBS).get_prev())
-    thumb = os.path.join(TESTDATA_DIR, OmmName(TEST_OBS).get_thumb())
+    preview = os.path.join(TESTDATA_DIR,
+                           OmmName(TEST_OBS, TEST_FILE).get_prev())
+    thumb = os.path.join(TESTDATA_DIR,
+                         OmmName(TEST_OBS, TEST_FILE).get_thumb())
     if os.path.exists(preview):
         os.remove(preview)
     if os.path.exists(thumb):
         os.remove(thumb)
-    test_obs = _read_obs_from_file()
+    test_fqn = os.path.join(TESTDATA_DIR,
+                            OmmName(TEST_OBS, TEST_FILE).get_model_file_name())
+    test_obs = mc.read_obs_from_file(test_fqn)
     assert len(test_obs.planes[TEST_OBS].artifacts) == 1
 
-    # expected failure due to unspecified kwargs value for test_netrc
-    with pytest.raises(manage_composable.CadcException):
-        test_result = omm_preview_augmentation.visit(test_obs)
-
-    test_kwargs = {'netrc_fqn': os.path.join(TESTDATA_DIR, 'test_netrc')}
-    # expected failure due to non-existent file
-    with pytest.raises(manage_composable.CadcException):
-        test_result = omm_preview_augmentation.visit(test_obs, **test_kwargs)
-
-    test_kwargs['working_directory'] = TESTDATA_DIR
+    test_kwargs = {'working_directory': TESTDATA_DIR,
+                   'cadc_client': None}
     test_result = omm_preview_augmentation.visit(test_obs, **test_kwargs)
     assert test_result is not None, 'expected a visit return value'
     assert test_result['artifacts'] == 2
     assert len(test_obs.planes[TEST_OBS].artifacts) == 3
     assert os.path.exists(preview)
     assert os.path.exists(thumb)
-    assert omm_preview_augmentation._put_omm.called
-    assert manage_composable.compare_checksum.called
-    omm_preview_augmentation._put_omm = put_omm_orig
-    manage_composable.compare_checksum = compare_checksum_org
-
-
-def _read_obs_from_file():
-    test_fqn = os.path.join(TESTDATA_DIR,
-                            OmmName(TEST_OBS).get_model_file_name())
-    assert os.path.exists(test_fqn), test_fqn
-    reader = ObservationReader(False)
-    test_obs = reader.read(test_fqn)
-    return test_obs
