@@ -67,6 +67,8 @@
 # ***********************************************************************
 #
 
+import tempfile
+
 from caom2pipe import execute_composable as ec
 from caom2pipe import manage_composable as mc
 from omm2caom2 import omm_preview_augmentation, omm_footprint_augmentation
@@ -76,28 +78,22 @@ from omm2caom2 import OmmName, COLLECTION
 data_visitors = [omm_preview_augmentation, omm_footprint_augmentation]
 
 
-def map_todo_to_obs_id(file_name):
-    """:return obs_id, file_name where obs_id is without the extensions,
-    and file_name is with the extensions."""
-    return OmmName.remove_extensions(file_name), file_name
-
-
 def omm_run():
-    ec.run_by_file(OmmName, 'omm2caom2', COLLECTION, map_todo_to_obs_id,
-                   use_client=False, data_visitors=data_visitors)
+    ec.run_by_file(OmmName, 'omm2caom2', COLLECTION,
+                   data_visitors=data_visitors)
 
 
 def omm_run_proxy():
     proxy = '/usr/src/app/cadcproxy.pem'
-    ec.run_by_file(OmmName, 'omm2caom2', COLLECTION, map_todo_to_obs_id,
-                   use_client=True, proxy=proxy, data_visitors=data_visitors)
+    ec.run_by_file(OmmName, 'omm2caom2', COLLECTION,
+                   proxy=proxy, data_visitors=data_visitors)
 
 
 def omm_run_single():
     import sys
     config = mc.Config()
+    config.get_config()
     config.collection = COLLECTION
-    # config.working_directory = '/root/airflow'
     config.working_directory = '/usr/src/app'
     config.use_local_files = False
     config.logging_level = 'INFO'
@@ -105,10 +101,19 @@ def omm_run_single():
     config.task_types = [mc.TaskType.INGEST,
                          mc.TaskType.MODIFY]
     config.resource_id = 'ivo://cadc.nrc.ca/sc2repo'
-    config.proxy = sys.argv[2]
+    if config.features.use_clients:
+        temp = tempfile.NamedTemporaryFile()
+        mc.write_to_file(temp.name, sys.argv[2])
+        config.proxy = temp.name
+    else:
+        config.proxy = sys.argv[2]
     config.stream = 'raw'
-    file_name = sys.argv[1]
-    obs_id = OmmName.remove_extensions(sys.argv[1])
-    result = ec.run_single(config, OmmName, 'omm2caom2', obs_id, file_name,
+    if config.features.use_file_names:
+        file_name = sys.argv[1]
+        storage_name = OmmName(file_name=file_name)
+    else:
+        obs_id = OmmName.remove_extensions()
+        storage_name = OmmName(obs_id=obs_id)
+    result = ec.run_single(config, storage_name, 'omm2caom2',
                            data_visitors=data_visitors)
     sys.exit(result)
