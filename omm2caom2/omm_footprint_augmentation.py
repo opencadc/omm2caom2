@@ -172,7 +172,7 @@ def _update_position(chunk, science_fqn):
 
 
 def _handle_footprint_logs(log_file_directory, log_file):
-    if log_file_directory is not None:
+    if log_file_directory is not None and os.path.exists(log_file_directory):
         orig_log_fqn = os.path.join(os.getcwd(), log_file)
         if os.path.exists(orig_log_fqn):
             log_fqn = os.path.join(log_file_directory, log_file)

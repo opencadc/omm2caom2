@@ -86,9 +86,10 @@ from caom2pipe import manage_composable as mc
 from caom2pipe import execute_composable as ec
 
 
-__all__ = ['main_app', 'update', 'OmmName', 'COLLECTION']
+__all__ = ['main_app', 'update', 'OmmName', 'COLLECTION', 'APPLICATION']
 
 
+APPLICATION = 'omm2caom2'
 COLLECTION = 'OMM'
 
 # map the fits file values to the DataProductType enums
@@ -114,23 +115,27 @@ class OmmName(ec.StorageName):
 
     OMM_NAME_PATTERN = 'C[\w\+\-]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
 
-    def __init__(self, obs_id, fname_on_disk=None, fname_in_ad=None):
-        super(OmmName, self).__init__(obs_id, 'OMM', OmmName.OMM_NAME_PATTERN,
-                                      fname_on_disk)
-        if fname_in_ad is None:
+    def __init__(self, obs_id=None, fname_on_disk=None, file_name=None):
+        if file_name is None:
             self.fname_in_ad = '{}.fits.gz'.format(obs_id)
         else:
-            self.fname_in_ad = fname_in_ad
+            self.fname_in_ad = file_name
+        if obs_id is None:
+            obs_id = ec.StorageName.remove_extensions(file_name)
+
+        super(OmmName, self).__init__(obs_id, 'OMM', OmmName.OMM_NAME_PATTERN,
+                                      fname_on_disk)
 
     def get_file_uri(self):
         return 'ad:{}/{}'.format(self.collection, self.fname_in_ad)
 
-    # @staticmethod
-    # def is_composite(uri):
-    #     return '_SCIRED' in uri or '_CALRED' in uri
     @staticmethod
     def is_composite(uri):
-        return 'Cdemo_ext2_SCIRED' in uri
+        features = mc.Features()
+        if features.supports_composite:
+            return '_SCIRED' in uri or '_CALRED' in uri
+        else:
+            return 'Cdemo_ext2_SCIRED' in uri
 
 
 def accumulate_obs(bp, uri):
@@ -335,10 +340,7 @@ def update(observation, **kwargs):
     :param observation A CAOM Observation model instance.
     :param **kwargs Everything else."""
     logging.debug('Begin update.')
-
-    assert observation, 'non-null observation parameter'
-    assert isinstance(observation, Observation), \
-        'observation parameter of type Observation'
+    mc.check_param(observation, Observation)
 
     headers = None
     if 'headers' in kwargs:
@@ -379,7 +381,8 @@ def _update_energy(chunk, headers):
     the WLEN and BANDPASS keyword values are set to the defaults, there is
     no energy information."""
     logging.debug('Begin _update_energy')
-    assert isinstance(chunk, Chunk), 'Expecting type Chunk'
+    mc.check_param(chunk, Chunk)
+
     wlen = headers[0].get('WLEN')
     bandpass = headers[0].get('BANDPASS')
     if (wlen is None or wlen < 0 or
@@ -405,7 +408,7 @@ def _update_time(chunk, headers):
     """Create TemporalWCS information using FITS header information.
     This information should always be available from the file."""
     logging.debug('Begin _update_time.')
-    assert isinstance(chunk, Chunk), 'Expecting type Chunk'
+    mc.check_param(chunk, Chunk)
 
     mjd_start = headers[0].get('MJD_STAR')
     mjd_end = headers[0].get('MJD_END')
@@ -437,7 +440,8 @@ def _update_position(chunk):
     """Check that position information has been set appropriately.
     Reset to null if there's bad input data."""
     logging.debug('Begin _update_position')
-    assert isinstance(chunk, Chunk), 'Expecting type Chunk'
+    mc.check_param(chunk, Chunk)
+
     if (chunk.position is not None and chunk.position.axis is not None and
             chunk.position.axis.function is None):
         chunk.position = None

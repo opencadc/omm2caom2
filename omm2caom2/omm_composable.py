@@ -72,36 +72,33 @@ import tempfile
 from caom2pipe import execute_composable as ec
 from caom2pipe import manage_composable as mc
 from omm2caom2 import omm_preview_augmentation, omm_footprint_augmentation
-from omm2caom2 import OmmName, COLLECTION
+from omm2caom2 import OmmName, APPLICATION, COLLECTION
 
 
 data_visitors = [omm_preview_augmentation, omm_footprint_augmentation]
 
 
 def omm_run():
-    ec.run_by_file(OmmName, 'omm2caom2', COLLECTION,
+    ec.run_by_file(OmmName, APPLICATION, COLLECTION,
                    data_visitors=data_visitors)
 
 
 def omm_run_proxy():
     proxy = '/usr/src/app/cadcproxy.pem'
-    ec.run_by_file(OmmName, 'omm2caom2', COLLECTION,
+    ec.run_by_file(OmmName, APPLICATION, COLLECTION,
                    proxy=proxy, data_visitors=data_visitors)
 
 
 def omm_run_single():
     import sys
     config = mc.Config()
-    config.get_config()
+    config.get_executors()
     config.collection = COLLECTION
     config.working_directory = '/usr/src/app'
-    config.use_local_files = False
-    config.logging_level = 'INFO'
-    config.log_to_file = False
     config.task_types = [mc.TaskType.INGEST,
                          mc.TaskType.MODIFY]
     config.resource_id = 'ivo://cadc.nrc.ca/sc2repo'
-    if config.features.use_clients:
+    if config.features.run_in_airflow:
         temp = tempfile.NamedTemporaryFile()
         mc.write_to_file(temp.name, sys.argv[2])
         config.proxy = temp.name
@@ -109,11 +106,10 @@ def omm_run_single():
         config.proxy = sys.argv[2]
     config.stream = 'raw'
     if config.features.use_file_names:
-        file_name = sys.argv[1]
-        storage_name = OmmName(file_name=file_name)
+        storage_name = OmmName(file_name=sys.argv[1])
     else:
-        obs_id = OmmName.remove_extensions()
+        obs_id = OmmName.remove_extensions(sys.argv[1])
         storage_name = OmmName(obs_id=obs_id)
-    result = ec.run_single(config, storage_name, 'omm2caom2',
+    result = ec.run_single(config, storage_name, APPLICATION,
                            data_visitors=data_visitors)
     sys.exit(result)
