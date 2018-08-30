@@ -45,3 +45,7 @@ stream: raw
 #
 task_types: 
   - scrape
+features:
+  supports_composite: False
+  use_clients: False
+  use_file_names: False
