@@ -462,9 +462,11 @@ def _update_provenance(observation):
         if DATATYPE_LOOKUP[ii] == observation.type:
             obs_type = ii
             break
-    if obs_type == 'REDUC':
+    if 'REDUC' in obs_type:
         extension = '_SCI'
-    elif obs_type == 'FLAT':
+    elif 'FLAT' in obs_type:
+        extension = '_CAL'
+    elif obs_type == 'CALIB':
         extension = '_CAL'
     else:
         logging.debug(

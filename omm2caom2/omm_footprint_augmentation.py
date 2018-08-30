@@ -107,6 +107,8 @@ def visit(observation, **kwargs):
                 raise mc.CadcException(
                     '{} visit file not found'.format(science_fqn))
 
+    science_fqn = _unzip(science_fqn)
+
     count = 0
     for i in observation.planes:
         plane = observation.planes[i]
@@ -179,3 +181,17 @@ def _handle_footprint_logs(log_file_directory, log_file):
             os.rename(orig_log_fqn, log_fqn)
             logging.debug('Moving footprint log files from {} to {}'.format(
                 orig_log_fqn, log_fqn))
+
+
+def _unzip(science_fqn):
+    if science_fqn.endswith('.gz'):
+        logging.debug('Unzipping {} for footprintfinder.'.format(science_fqn))
+        unzipped_science_fqn = science_fqn.replace('.gz', '')
+        import gzip
+        with open(science_fqn, 'rb') as f_read:
+            gz = gzip.GzipFile(fileobj=f_read)
+            with open(unzipped_science_fqn, 'wb') as f_write:
+                f_write.write(gz.read())
+        return unzipped_science_fqn
+    else:
+        return science_fqn
