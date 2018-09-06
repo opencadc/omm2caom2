@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<caom2:Observation xmlns:caom2="http://www.opencadc.org/caom2/xml/v2.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:CompositeObservation" caom2:id="00000000-0000-0000-9e09-bc714383f234">
+  <caom2:collection>OMM</caom2:collection>
+  <caom2:observationID>C100521_domeflat_K_CALRED</caom2:observationID>
+  <caom2:metaRelease>2010-05-22T00:00:00.000</caom2:metaRelease>
+  <caom2:algorithm>
+    <caom2:name>composite</caom2:name>
+  </caom2:algorithm>
+  <caom2:type>flat</caom2:type>
+  <caom2:intent>calibration</caom2:intent>
+  <caom2:planes>
+    <caom2:plane caom2:id="00000000-0000-0000-914c-7332ae8c425c">
+      <caom2:productID>C100521_domeflat_K_CALRED</caom2:productID>
+      <caom2:metaRelease>2010-05-22T00:00:00.000</caom2:metaRelease>
+      <caom2:dataRelease>2010-05-22T00:00:00.000</caom2:dataRelease>
+      <caom2:dataProductType>image</caom2:dataProductType>
+      <caom2:calibrationLevel>1</caom2:calibrationLevel>
+      <caom2:artifacts>
+        <caom2:artifact caom2:id="00000000-0000-0000-956c-db9cc9cacb5f">
+          <caom2:uri>ad:OMM/C100521_domeflat_K_CALRED.fits.gz</caom2:uri>
+          <caom2:productType>calibration</caom2:productType>
+          <caom2:releaseType>data</caom2:releaseType>
+          <caom2:contentType>application/octet-stream</caom2:contentType>
+          <caom2:contentLength>37</caom2:contentLength>
+          <caom2:contentChecksum>md5:e330482de75d5c4c88ce6f6ef99035ea</caom2:contentChecksum>
+          <caom2:parts>
+            <caom2:part caom2:id="00000000-0000-0000-a2f4-ea9a8e68a37a">
+              <caom2:name>0</caom2:name>
+              <caom2:productType>calibration</caom2:productType>
+              <caom2:chunks>
+                <caom2:chunk caom2:id="00000000-0000-0000-92c8-0f669c083235">
+                  <caom2:naxis>2</caom2:naxis>
+                  <caom2:positionAxis1>1</caom2:positionAxis1>
+                  <caom2:positionAxis2>2</caom2:positionAxis2>
+                  <caom2:position>
+                    <caom2:axis>
+                      <caom2:axis1>
+                        <caom2:ctype>RA---TAN</caom2:ctype>
+                        <caom2:cunit>deg</caom2:cunit>
+                      </caom2:axis1>
+                      <caom2:axis2>
+                        <caom2:ctype>DEC--TAN</caom2:ctype>
+                        <caom2:cunit>deg</caom2:cunit>
+                      </caom2:axis2>
+                    </caom2:axis>
+                    <caom2:coordsys>ICRS</caom2:coordsys>
+                    <caom2:equinox>2000.0</caom2:equinox>
+                  </caom2:position>
+                </caom2:chunk>
+              </caom2:chunks>
+            </caom2:part>
+          </caom2:parts>
+        </caom2:artifact>
+      </caom2:artifacts>
+    </caom2:plane>
+  </caom2:planes>
+</caom2:Observation>

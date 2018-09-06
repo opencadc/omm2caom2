@@ -80,6 +80,7 @@ from caom2 import TargetType, ObservationIntentType, CalibrationLevel
 from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
 from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
 from caom2 import ObservationURI, PlaneURI, TypedSet, CoordBounds1D
+from caom2 import Requirements, Status
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
 from caom2pipe import astro_composable as ac
 from caom2pipe import manage_composable as mc
@@ -206,7 +207,8 @@ def accumulate_plane(bp):
     bp.set('Plane.calibrationLevel', 'get_plane_cal_level(header)')
     bp.add_fits_attribute('Plane.provenance.name', 'INSTRUME')
     bp.add_fits_attribute('Plane.provenance.runID', 'NIGHTID')
-    bp.add_fits_attribute('Plane.metaRelease', 'DATE-OBS')
+    bp.set('Plane.metaRelease', 'get_meta_release_date(header)')
+    bp.set('Plane.dataRelease', 'get_data_release_date(header)')
     bp.set('Plane.provenance.version', '1.0')
     bp.set('Plane.provenance.reference', 'http://genesis.astro.umontreal.ca')
     bp.set('Plane.provenance.project', 'Standard Pipeline')
@@ -350,6 +352,38 @@ def get_position_resolution(header):
     return temp
 
 
+def get_data_release_date(header):
+    """Use the 'DATE' keyword for the release date, if the 'RELEASE' keyword
+    does not exist.
+
+    Called to fill a blueprint value, must have a
+    parameter named header for import_module loading and execution.
+
+    :param header Array of astropy headers"""
+    rel_date = header[0].get('RELEASE')
+    if rel_date is not None:
+        return rel_date
+    else:
+        rel_date = header[0].get('DATE')
+        return rel_date
+
+
+def get_meta_release_date(header):
+    """Use the 'DATE' keyword for the release date, if the 'DATE-OBS' keyword
+    does not exist.
+
+    Called to fill a blueprint value, must have a
+    parameter named header for import_module loading and execution.
+
+    :param header Array of astropy headers"""
+    rel_date = header[0].get('DATE-OBS')
+    if rel_date is not None:
+        return rel_date
+    else:
+        rel_date = header[0].get('DATE')
+        return rel_date
+
+
 def get_start_ref_coord_val(header):
     """Calculate the lower bound of the spectral energy coordinate from
     FITS header values.
@@ -401,6 +435,12 @@ def update(observation, **kwargs):
                     _update_time(chunk, headers)
                     _update_position(chunk)
 
+    if observation.observation_id.endswith('_REJECT'):
+        _update_requirements(observation)
+
+    if observation.target.name is None:
+        _update_instrument_name(observation, headers)
+
     if OmmName.is_composite(observation.observation_id):
         _update_provenance(observation)
         _update_time_bounds(observation, fqn)
@@ -435,6 +475,18 @@ def _update_energy(chunk, headers):
                                    bandpass_name=headers[0].get('FILTER'))
         chunk.energy_axis = 3
         logging.debug('Setting chunk energy range (CoordRange1D).')
+
+
+def _update_instrument_name(observation, headers):
+    if observation.observation_id.startswith('C'):
+        observation.instrument.name = 'CPAPIR'
+    elif observation.observation_id.startswith('P'):
+        observation.instrument.name = 'PESTO'
+    elif observation.observation_id.startswith('S'):
+        observation.instrument.name = 'SPION'
+    else:
+        raise mc.CadcException('Unexpected observation id format: {}'.format(
+            observation.observation_id))
 
 
 def _update_time(chunk, headers):
@@ -526,6 +578,11 @@ def _update_provenance(observation):
     observation.planes[observation.observation_id].provenance.inputs.update(
         new_inputs)
     logging.debug('End _update_provenance')
+
+
+def _update_requirements(observation):
+    observation.requirements = Requirements(Status.FAIL)
+    observation.target.name = 'BAD'
 
 
 def _update_time_bounds(observation, fqn):

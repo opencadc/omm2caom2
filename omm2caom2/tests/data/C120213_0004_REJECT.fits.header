@@ -1,0 +1,248 @@
+SIMPLE  =                    T / Written by IDL:  Fri Jun 29 10:28:13 2018      
+BITPIX  =                  -32 / Bits per pixel                                 
+NAXIS   =                    2 / Number of dimensions                           
+NAXIS1  =                 2048 /                                                
+NAXIS2  =                 2048 /                                                
+COMMENT   ***********************************************************           
+COMMENT   * All paper using CPAPIR data must include the following  *           
+COMMENT   * note in the "Acknowledgement" section :                 *           
+COMMENT   * Based on observations obtained with CPAPIR at the       *           
+COMMENT   * Observatoire du mont Megantic, funded by the Universite *           
+COMMENT   * de Montreal, Universite Laval, the Natural Sciences and *           
+COMMENT   * Engineering Research Council of Canada (NSERC), the     *           
+COMMENT   * Fond quebecois de la recherche sur la Nature et les     *           
+COMMENT   * technologies (FQRNT) and the Canada Economic            *           
+COMMENT   * Development program.                                    *           
+COMMENT   *                                                         *           
+COMMENT   * Please consider contacting the PI before publication    *           
+COMMENT   * of this dataset.                                        *           
+COMMENT   *                                                         *           
+COMMENT   * Please refer to the following paper in any publication  *           
+COMMENT   * making use of CPAPIR dataset :                          *           
+COMMENT   *  Artigau, E., Doyon, R., Vallee, P., Riopel, M.,        *           
+COMMENT   * & Nadeau, D. 2004, Proc. SPIE, 5492, 1479               *           
+COMMENT   *                                                         *           
+COMMENT   * Visit : www.astro.umontreal.ca/cpapir for more details. *           
+COMMENT   ***********************************************************           
+EQUINOX =                 2000 / Reference                                      
+ORIGIN  = 'LAE     '           / Laboratoire d'Astrophysique Experimentale      
+TELESCOP= 'OMM-1.6m'           /Observatoire du Mont-Megantic                   
+OBS_LAT =        45.4555555556 /Latitude of the telescope                       
+OBS_LON =       -71.1527777778 /Longitude of the telescope (Negative=West of Gre
+INSTRUME= 'CPAPIR  '           / Instrument name                                
+OBSERVER= '        '           /Observer name                                   
+OBJECT  = 'BAD     '           /probleme de quadrant electronique...            
+DATATYPE= 'REJECT  '           /Data type, SCIENCE/CALIB/REJECT/FOCUS/TEST      
+FILE_INI= '120213_0004'        /Initial file name                               
+NIGHTID = '120213  '           /YYMMDD of the local start of night date         
+DATE-OBS= '2012-02-13T23:14:28' / Universal date and time                       
+DATE    = '2012-02-13T18:14:28' /Local date and time                            
+FICHIER = '/home/cpapir/120213/120213_0004' /120213/120213_0004' /120213/120213_
+TEXP    =              5.00000 / Exposure time asked for                        
+NLEC    =                    1 / Number of reads per coaddition                 
+NCOA    =                    1 / Number of coadditions per file                 
+NFIC    =                    1 / Number of files to be written                  
+NATOD   =                   32 / Number of A/D converters                       
+T1      =              89.8468 / Detecteur                                      
+T2      =              81.2747 / Lentille #8                                    
+T3      =              76.1272 / Detecteur                                      
+T4      =              76.1272 / non applicable                                 
+F1      = 'J       '           / Wheel 1 (X), position 2                        
+F2      = 'open    '           / Wheel 2 (Y), position 0                        
+F1NOM   = 'Wheel R ='          / Identification F1                              
+F2NOM   = 'Wheel B ='          / Identification F2                              
+HA      =       0.111987000000 /Hour angle, always expressed in HOURS           
+RA      =        57.0547200000 /RA always expressed in DECIMAL DEGREE (0-360)   
+RATXT   = ' 3:48:13.13'        /RA expressed as text                            
+DEC     =        24.1378980000 / Declinaison                                    
+DECTXT  = '+24:08:16.4'        /DEC expressed as text                           
+AIRMASS =        1.07360200000 /masse d air                                     
+ST      =        3.91563600000 / Temps sideral                                  
+UT      =        23.0994280000 / Temps universel                                
+YEAR    =        2012.11768507 /YEAR, same as the EPOCH keyword                 
+FOCUS   =        3575.00000000 / Foyer du telescope                             
+DOME    =        210.572265000 / Position du dome                               
+ROTATOR =        90.0000000000 / Angle du rotateur                              
+NLECMAX =                    2 / Maximum number of reads as a function of TEXP  
+TINT    =              5.41200 /integration time per COADD                      
+TEFF    =              5.41200 /integration time per COADD                      
+T_TOT   =              5.41200 /total integration time for all COADDS           
+T1LEC   =              1.35300 / Read time for the detector                     
+TCOA    =              4.05900 / Time for one coaddition                        
+TLEC    =              2.70600 / Time for two reads                             
+TSEQ    =                    0 / Time for the last sequence                     
+TUS     =             12313586 / Acquisition time in us                         
+TEC     =              5.41200 / Time elapsed                                   
+FEC     =                    1 / File in progress                               
+LEC     = '1f      '           /Read in progress                                
+CEC     =                    1 / Coaddition in progress                         
+PEC     =                  100 / Percentage in progress                         
+DS9FIC  = '/home/cpapir/120213/120213_0004.fits' /120213/120213_0004.fits' /1202
+DECALE1 =                    0 / Flip quadrant 1                                
+DECALE2 =                    1 / Flip quadrant 2                                
+DECALE3 =                    1 / Flip quadrant 3                                
+DECALE4 =                    0 / Flip quadrant 4                                
+MIRPAT  = 'tim10.lod'          /Read pattern filename                           
+MIRMSG1 = 'seq 5 1 1 1  '      /                                                
+MIRMSG2 = '/home/cpapir/120213/120213_0004.fits in 12.314 s, efficiency of 44/1'
+MIRMSG5 = '        '           /                                                
+FILTER  = 'J       '           /                                                
+WLEN    =              1.25000 /central wavelength in micron                    
+BANDPASS=       0.160000000000 /bandpass in micron                              
+SX1     =                  656 / Region used by stat                            
+SX2     =                  706 / Region used by stat                            
+SY1     =                  763 / Region used by stat                            
+SY2     =                  813 / Region used by stat                            
+SMIN    =                 2048 / Minimum computed by stat                       
+SMAX    =                36603 / Maximum computed by stat                       
+SMED    =        1959.00000000 / Median value computed by stat                  
+SMOY    =        2163.61400000 / Average computed by stat                       
+SECATYP =        2169.86640000 / Standard deviation computed by stat            
+SECAMED =        108.000000000 / Median deviation computed by stat              
+SNPIX   =                 2601 / Number of pixels used by stat                  
+SCAN    = '-       '           /                                                
+DITHER  = ' [15    '           /                                                
+CDELT1  =                    1 /                                                
+CDELT2  =                    1 /                                                
+MJDATE  =        55971.4683796 /Julian day - 2 400 000                          
+RELEASE = '2013-08-14'         / End of proprietary period YYYY-MM-DD           
+TEM71323=       -16.3000000000 /Temperature, station WMO71323 (Beauceville)     
+DEW71323=       -23.4000000000 /Point de rosee, station WMO71323 (Beauceville)  
+HUM71323=              55.0000 /Humidite rel., station WMO71323 (Beauceville)   
+TEM71610=       -11.0000000000 /Temperature, station WMO71610 (Sherbrooke)      
+DEW71610=       -14.0000000000 /Point de rosee, station WMO71610 (Sherbrooke)   
+HUM71610=              79.0000 /Humidite rel., station WMO71610 (Sherbrooke)    
+TEM71611=       -9.50000000000 /Temperature, station WMO71611 (Lennoxville)     
+DEW71611=       -14.2000000000 /Point de rosee, station WMO71611 (Lennoxville)  
+HUM71611=              69.0000 /Humidite rel., station WMO71611 (Lennoxville)   
+TEM72616=       -9.50000000000 /Temperature, station WMO72616 (Berlin, NH)      
+DEW72616=       -14.2000000000 /Point de rosee, station WMO72616 (Berlin, NH)   
+HUM72616=              69.0000 /Humidite rel., station WMO72616 (Berlin, NH)    
+TEMP_WMO=       -11.5750000000 /Temperature est., WMO (-999=unav.)              
+DEWP_WMO=       -16.4500000000 /Point de rosee est., WMO (-999=unav.)           
+HUMI_WMO=              68.0000 /Humidite relative est., WMO (-999=unav.)        
+MEDIMAGE=              2248.00 /Image median                                    
+MEDDEVIM=              261.000 /Median absolute deviation                       
+PARSED  =                    1 /if 1, then image has been parsed                
+SHIFTCOR=                    1 /corrected with quadrant_shifteur.pro            
+HISTORY   ______________________________________________________________________
+HISTORY   |                      ORIGINAL IMAGE HEADER                         |
+HISTORY   |                     AS PROVIDED BY TCS AND                         |
+HISTORY   |                 CPAPIR DETECTOR CONTROL COMPUTER                   |
+HISTORY   |____________________________________________________________________|
+HISTORY   | SIMPLE  =                    T  / Standard FITS                    |
+HISTORY   | BITPIX  =                   32  / Bits per pixel                   |
+HISTORY   | NAXIS   =                    2  / Number of dimensions             |
+HISTORY   | NAXIS1  =                 2048                                     |
+HISTORY   | NAXIS2  =                 2048                                     |
+HISTORY   | EQUINOX =                 2000  / Reference                        |
+HISTORY   | ORIGIN  = 'LAE'                 / Laboratoire d'Astrophysique Exp  |
+HISTORY   | TELESCOP= 'OMM'                 / Observatoire du Mont-Megantic    |
+HISTORY   | INSTRUME=               CPAPIR  / Instrument name                  |
+HISTORY   | OBSERVER=                       / Observer name                    |
+HISTORY   | OBJECT  =           FOCUS_SCAN                                     |
+HISTORY   | DATE-OBS= '2012-02-13T23:14:28' / Universal date and time          |
+HISTORY   | DATE    = '2012/02/13 18:14:28' / Local date and time              |
+HISTORY   | FICHIER = /home/cpapir/120213/120213_0004 / Filename               |
+HISTORY   | TEXP    =               5.0000  / Exposure time asked for          |
+HISTORY   | NLEC    =                    1  / Number of reads per coaddition   |
+HISTORY   | NCOA    =                    1  / Number of coadditions per file   |
+HISTORY   | NFIC    =                    1  / Number of files to be written    |
+HISTORY   | OBTU    =                    0  / Obturator = No                   |
+HISTORY   | TEMP    =                    0  / Temperature = No                 |
+HISTORY   | NATOD   =                   32  / Number of A/D converters         |
+HISTORY   | T1      =              89.8468  / Detecteur                        |
+HISTORY   | T2      =              81.2747  / Lentille #8                      |
+HISTORY   | T3      =              76.1272  / Detecteur                        |
+HISTORY   | T4      =              76.1272  / non applicable                   |
+HISTORY   | T1NOM   = 'Lens #8 ='           / Identification T1                |
+HISTORY   | T2NOM   = 'Nitrogen ='          / Identification T2                |
+HISTORY   | T3NOM   = 'Detector ='          / Identification T3                |
+HISTORY   | T4NOM   =                       / Identification T4                |
+HISTORY   | F1      = 'J'                   / Wheel 1 (X), position 2          |
+HISTORY   | F2      = 'open'                / Wheel 2 (Y), position 0          |
+HISTORY   | F3      = ''                    / Wheel 3 (Z), position 0          |
+HISTORY   | F4      = ''                    / Wheel 4 (T), position 0          |
+HISTORY   | F1NOM   = 'Wheel R ='           / Identification F1                |
+HISTORY   | F2NOM   = 'Wheel B ='           / Identification F2                |
+HISTORY   | F3NOM   =                       / Identification F3                |
+HISTORY   | F4NOM   =                       / Identification F4                |
+HISTORY   | RAF     =                       / Filter wheel (X)                 |
+HISTORY   | RAG     =                       / Filter wheel (Y)                 |
+HISTORY   | RAL     =                       / Filter wheel (Z)                 |
+HISTORY   | RAM     =                       / Filter wheel (T)                 |
+HISTORY   | HA      =             0.111987  / Angle horaire                    |
+HISTORY   | RA      =             3.803648  / Ascension droite                 |
+HISTORY   | DEC     =            24.137898  / Declinaison                      |
+HISTORY   | EPOCH   =          2012.120137  / Epoque des coordonnees           |
+HISTORY   | AIRMASS =             1.073602  / Masse d'air                      |
+HISTORY   | ST      =             3.915636  / Temps sideral                    |
+HISTORY   | UT      =            23.099428  / Temps universel                  |
+HISTORY   | YEAR    =          2012.120137  / Annee                            |
+HISTORY   | FOCUS   =          3575.000000  / Foyer du telescope               |
+HISTORY   | DOME    =           210.572265  / Position du dome                 |
+HISTORY   | ROTATOR =            90.000000  / Angle du rotateur                |
+HISTORY   | NLECMAX =                    2  / Maximum number of reads as a fu  |
+HISTORY   | TINT    =               5.4120  / Effective integration time       |
+HISTORY   | TEFF    =               5.4120  / Effective exposure time          |
+HISTORY   | T1LEC   =               1.3530  / Read time for the detector       |
+HISTORY   | TCOA    =               4.0590  / Time for one coaddition          |
+HISTORY   | TLEC    =               2.7060  / Time for two reads               |
+HISTORY   | TSEQ    =                    0  / Time for the last sequence       |
+HISTORY   | TUS     =             12313586  / Acquisition time in us           |
+HISTORY   | TEC     =               5.4120  / Time elapsed                     |
+HISTORY   | FEC     =                    1  / File in progress                 |
+HISTORY   | LEC     =                   1f  / Read in progress                 |
+HISTORY   | CEC     =                    1  / Coaddition in progress           |
+HISTORY   | PEC     =                  100  / Percentage in progress           |
+HISTORY   | DS9AFF  =                    1  / Shared memory block to display   |
+HISTORY   | DS9FIC  = /home/cpapir/120213/120213_0004.fits / Filename to disp  |
+HISTORY   | DS9CMD  =                  -10  / Commande_pour_ds9                |
+HISTORY   | DS9MMM  =                  991  / Image affichee                   |
+HISTORY   | DS9NNN  =                  992                                     |
+HISTORY   | DS9X1   =                  841  / Coordonnee envoyee par DS9       |
+HISTORY   | DS9X2   =                  869  / Coordonnee envoyee par DS9       |
+HISTORY   | DS9Y1   =                  676  / Coordonnee envoyee par DS9       |
+HISTORY   | DS9Y2   =                  628  / Coordonnee envoyee par DS9       |
+HISTORY   | DECALE1 =                    0  / Flip quadrant 1                  |
+HISTORY   | DECALE2 =                    1  / Flip quadrant 2                  |
+HISTORY   | DECALE3 =                    1  / Flip quadrant 3                  |
+HISTORY   | DECALE4 =                    0  / Flip quadrant 4                  |
+HISTORY   | RX1     =                  841  / Region extraite                  |
+HISTORY   | RX2     =                  869  / Region extraite                  |
+HISTORY   | RY1     =                  628  / Region extraite                  |
+HISTORY   | RY2     =                  676  / Region extraite                  |
+HISTORY   | MIRDIR  =        /home/mir/bin  / Directory for the program        |
+HISTORY   | MIRPAT  =            tim10.lod  / Read pattern filename            |
+HISTORY   | MIRRDM  =                    1  / Initialisation-Read-Exposition-  |
+HISTORY   | MIRCMD  =                    0  / Command                          |
+HISTORY   | MIRAFF  =                    1                                     |
+HISTORY   | MIRMSG  =                       / Last message                     |
+HISTORY   | MIRMSG1 = 'seq 5 1 1 1  '                                          |
+HISTORY   | MIRMSG2 = '/home/cpapir/120213/120213_0004.fits in 12.314 s, effi  |
+HISTORY   | MIRMSG3 = 'Statistics for the region [656:706,763:813]'            |
+HISTORY   | MIRMSG4 =                       / Last message red                 |
+HISTORY   | MIRMSG5 = ' '                                                      |
+HISTORY   | MIRMSG10= 'min = 1587    avg = 2163.614   stddev = 2169.866        |
+HISTORY   | MIRMSG11= 'max = 36603   med = 1959.000   meddev = 108.000         |
+HISTORY   | SEXXC   =             852.2660  / Sextractor                       |
+HISTORY   | SEXYC   =             652.5990  / Sextractor                       |
+HISTORY   | SEXPLMH =               7.4640  / Sextractor                       |
+HISTORY   | SEXFLUX =           49310.9000  / Sextractor                       |
+HISTORY   | SEXAMPL =             901.9810  / Sextractor                       |
+HISTORY   | SEXFOND =            4029.0200  / Sextractor                       |
+HISTORY   | FILTER  =                    J                                     |
+HISTORY   | SX1     =                  656  / Region used by stat              |
+HISTORY   | SX2     =                  706  / Region used by stat              |
+HISTORY   | SY1     =                  763  / Region used by stat              |
+HISTORY   | SY2     =                  813  / Region used by stat              |
+HISTORY   | SMIN    =                 2048  / Minimum computed by stat         |
+HISTORY   | SMAX    =                36603  / Maximum computed by stat         |
+HISTORY   | SMED    =            1959.0000  / Median value computed by stat    |
+HISTORY   | SMOY    =            2163.6140  / Average computed by stat         |
+HISTORY   | SECATYP =            2169.8664  / Standard deviation computed by   |
+HISTORY   | SECAMED =             108.0000  / Median deviation computed by st  |
+HISTORY   | SNPIX   =                 2601  / Number of pixels used by stat    |
+HISTORY   | SCAN    =                                                          |
+HISTORY   | DITHER  = '[15/15]'                                                |
+HISTORY   ______________________________________________________________________

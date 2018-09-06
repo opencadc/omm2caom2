@@ -1,0 +1,31 @@
+SIMPLE  =                    T / Written by IDL:  Thu Jun 17 22:30:07 2010      
+BITPIX  =                  -32 / Number of bits per data pixel                  
+NAXIS   =                    2 / Number of data axes                            
+NAXIS1  =                 2048 /                                                
+NAXIS2  =                 2048 /                                                
+DATE    = '2010-05-22'         / Creation UTC (CCCC-MM-DD) date of FITS header  
+COMMENT FITS (Flexible Image Transport System) format is defined in 'Astronomy  
+COMMENT and Astrophysics', volume 376, page 359; bibcode 2001A&A...376..359H    
+F_ON1   = '100521_0235.fits.gz' /nom du fichier de flat ON [1/11]               
+F_ON2   = '100521_0236.fits.gz' /nom du fichier de flat ON [2/11]               
+F_ON3   = '100521_0237.fits.gz' /nom du fichier de flat ON [3/11]               
+F_ON4   = '100521_0238.fits.gz' /nom du fichier de flat ON [4/11]               
+F_ON5   = '100521_0239.fits.gz' /nom du fichier de flat ON [5/11]               
+F_ON6   = '100521_0240.fits.gz' /nom du fichier de flat ON [6/11]               
+F_ON7   = '100521_0241.fits.gz' /nom du fichier de flat ON [7/11]               
+F_ON8   = '100521_0242.fits.gz' /nom du fichier de flat ON [8/11]               
+F_ON9   = '100521_0243.fits.gz' /nom du fichier de flat ON [9/11]               
+F_ON10  = '100521_0244.fits.gz' /nom du fichier de flat ON [10/11]              
+F_ON11  = '100521_0245.fits.gz' /nom du fichier de flat ON [11/11]              
+F_OFF1  = '100521_0290.fits.gz' /nom du fichier de flat OFF [1/11]              
+F_OFF2  = '100521_0291.fits.gz' /nom du fichier de flat OFF [2/11]              
+F_OFF3  = '100521_0292.fits.gz' /nom du fichier de flat OFF [3/11]              
+F_OFF4  = '100521_0293.fits.gz' /nom du fichier de flat OFF [4/11]              
+F_OFF5  = '100521_0294.fits.gz' /nom du fichier de flat OFF [5/11]              
+F_OFF6  = '100521_0295.fits.gz' /nom du fichier de flat OFF [6/11]              
+F_OFF7  = '100521_0296.fits.gz' /nom du fichier de flat OFF [7/11]              
+F_OFF8  = '100521_0297.fits.gz' /nom du fichier de flat OFF [8/11]              
+F_OFF9  = '100521_0298.fits.gz' /nom du fichier de flat OFF [9/11]              
+F_OFF10 = '100521_0299.fits.gz' /nom du fichier de flat OFF [10/11]             
+F_OFF11 = '100521_0300.fits.gz' /nom du fichier de flat OFF [11/11]             
+DATATYPE= 'CALRED  '           /                                                
