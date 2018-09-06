@@ -125,6 +125,8 @@ def visit(observation, **kwargs):
         observation.observation_id)
     _handle_footprint_logs(log_file_directory, return_file)
     _handle_footprint_logs(log_file_directory, return_string_file)
+    logging.info('Completed footprint augmentation for {}'.format(
+        observation.observation_id))
     return {'chunks': count}
 
 

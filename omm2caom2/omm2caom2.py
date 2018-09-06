@@ -110,24 +110,57 @@ DEFAULT_GEOCENTRIC = {
 
 class OmmName(ec.StorageName):
     """OMM naming rules:
-    - support mixed-case file name storage
-    - support gzipped and not zipped file names"""
+    - support mixed-case file name storage, and mixed-case obs id values
+    - support gzipped file names in ad, and gzipped and unzipped file names
+      otherwise.
+    - files are compressed in ad
+    """
 
     OMM_NAME_PATTERN = 'C[\w\+\-]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
 
     def __init__(self, obs_id=None, fname_on_disk=None, file_name=None):
-        if file_name is None:
+        if file_name is None and fname_on_disk is None:
+            if obs_id.endswith('.fits') or obs_id.endswith('fits.gz'):
+                raise mc.CadcException('Bad obs id value {}', obs_id)
             self.fname_in_ad = '{}.fits.gz'.format(obs_id)
+        elif fname_on_disk is None:
+            self.fname_in_ad = OmmName._add_extensions(file_name)
+        elif file_name is None:
+            self.fname_in_ad = OmmName._add_extensions(fname_on_disk)
         else:
-            self.fname_in_ad = file_name
+            self.fname_in_ad = OmmName._add_extensions(fname_on_disk)
         if obs_id is None:
-            obs_id = ec.StorageName.remove_extensions(file_name)
+            obs_id = ec.StorageName.remove_extensions(self.fname_in_ad)
 
         super(OmmName, self).__init__(obs_id, 'OMM', OmmName.OMM_NAME_PATTERN,
                                       fname_on_disk)
 
     def get_file_uri(self):
         return 'ad:{}/{}'.format(self.collection, self.fname_in_ad)
+
+    def is_valid(self):
+        result = False
+        if super(OmmName, self).is_valid():
+            if (self.obs_id.endswith('_SCIRED')
+                    or self.obs_id.endswith('_CALRED')):
+                obs_id_upper = self.obs_id.upper()
+                if '_DOMEFLAT_' in obs_id_upper or '_DARK_' in obs_id_upper:
+                    if '_domeflat_' in self.obs_id or '_dark_' in self.obs_id:
+                        result = True
+                else:
+                    result = True
+            else:
+                result = True
+        return result
+
+    @staticmethod
+    def _add_extensions(fname):
+        if fname.endswith('.gz'):
+            return fname
+        elif fname.endswith('.fits'):
+            return '{}.gz'.format(fname)
+        else:
+            raise mc.CadcException('Unexpected file name {}'.format(fname))
 
     @staticmethod
     def is_composite(uri):
@@ -617,9 +650,11 @@ def _get_uri(args):
     elif args.local:
         obs_id = OmmName.remove_extensions(os.path.basename(args.local[0]))
         result = OmmName(obs_id).get_file_uri()
+    elif args.lineage:
+        result = args.lineage[0].split('/', 1)[1]
     else:
         raise mc.CadcException(
-            'Could not define uri from these ares {}'.format(args))
+            'Could not define uri from these args {}'.format(args))
     return result
 
 

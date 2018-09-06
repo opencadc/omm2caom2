@@ -66,7 +66,9 @@
 #
 # ***********************************************************************
 #
+import pytest
 
+from caom2pipe import manage_composable as mc
 from omm2caom2 import OmmName
 
 
@@ -76,10 +78,28 @@ def test_is_valid():
     assert OmmName('C121212_00001_CAL').is_valid()
     assert not OmmName('c121212_00001_CAL').is_valid()
     assert OmmName('C121212_domeflat_K_CALRED').is_valid()
+    assert not OmmName('C121212_DOMEFLAT_K_CALRED').is_valid()
     assert OmmName('C121212_sh2-132_J_old_SCIRED').is_valid()
     assert OmmName('C121212_J0454+8024_J_SCIRED').is_valid()
     assert OmmName('C121212_00001_TEST').is_valid()
     assert OmmName('C121212_00001_FOCUS').is_valid()
+
+    test_subject = OmmName(file_name='C121212_00001_SCI.fits')
+    assert test_subject.is_valid()
+    assert test_subject.get_obs_id() == 'C121212_00001_SCI'
+    test_subject = OmmName(file_name='C121212_00001_SCI.fits.gz')
+    assert test_subject.is_valid()
+    assert test_subject.get_obs_id() == 'C121212_00001_SCI'
+    test_subject = OmmName(fname_on_disk='C121212_00001_SCI.fits',
+                           file_name='C121212_00001_SCI.fits.gz')
+    assert test_subject.is_valid()
+    assert test_subject.get_obs_id() == 'C121212_00001_SCI'
+
+    with pytest.raises(mc.CadcException):
+        test_subject = OmmName(file_name='C121212_00001_SCI')
+        test_subject = OmmName(fname_on_disk='C121212_00001_FOCUS')
+        test_subject = OmmName('C121212_00001_FOCUS.fits')
+        test_subject = OmmName('C121212_00001_FOCUS.fits.gz')
 
 
 def test_omm_name():

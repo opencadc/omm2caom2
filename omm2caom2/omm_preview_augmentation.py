@@ -112,9 +112,9 @@ def visit(observation, **kwargs):
                                 science_fqn))
                 logging.debug('working on file {}'.format(science_fqn))
                 _do_prev(file_id, science_fqn, working_dir, plane, cadc_client)
-                logging.info(
-                    'Completed preview generation for {}.'.format(file_id))
             count += 2
+    logging.info('Completed preview augmentation for {}.'.format(
+            observation.observation_id))
     return {'artifacts': count}
 
 
