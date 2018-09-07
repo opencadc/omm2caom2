@@ -80,7 +80,7 @@ from caom2 import TargetType, ObservationIntentType, CalibrationLevel
 from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
 from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
 from caom2 import ObservationURI, PlaneURI, TypedSet, CoordBounds1D
-from caom2 import Requirements, Status
+from caom2 import Requirements, Status, Instrument
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
 from caom2pipe import astro_composable as ac
 from caom2pipe import manage_composable as mc
@@ -438,7 +438,8 @@ def update(observation, **kwargs):
     if observation.observation_id.endswith('_REJECT'):
         _update_requirements(observation)
 
-    if observation.target.name is None:
+    if (observation.instrument is None or observation.instrument.name is None
+            or len(observation.instrument.name) == 0):
         _update_instrument_name(observation)
 
     if OmmName.is_composite(observation.observation_id):
@@ -480,14 +481,15 @@ def _update_energy(chunk, headers):
 def _update_instrument_name(observation):
     """Hard-code instrument name, if it's not specified in header keywords."""
     if observation.observation_id.startswith('C'):
-        observation.instrument.name = 'CPAPIR'
+        name = 'CPAPIR'
     elif observation.observation_id.startswith('P'):
-        observation.instrument.name = 'PESTO'
+        name = 'PESTO'
     elif observation.observation_id.startswith('S'):
-        observation.instrument.name = 'SPIOMM'
+        name = 'SPIOMM'
     else:
         raise mc.CadcException('Unexpected observation id format: {}'.format(
             observation.observation_id))
+    observation.instrument = Instrument(name)
 
 
 def _update_time(chunk, headers):
