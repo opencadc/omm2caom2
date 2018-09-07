@@ -439,7 +439,7 @@ def update(observation, **kwargs):
         _update_requirements(observation)
 
     if observation.target.name is None:
-        _update_instrument_name(observation, headers)
+        _update_instrument_name(observation)
 
     if OmmName.is_composite(observation.observation_id):
         _update_provenance(observation)
@@ -477,13 +477,14 @@ def _update_energy(chunk, headers):
         logging.debug('Setting chunk energy range (CoordRange1D).')
 
 
-def _update_instrument_name(observation, headers):
+def _update_instrument_name(observation):
+    """Hard-code instrument name, if it's not specified in header keywords."""
     if observation.observation_id.startswith('C'):
         observation.instrument.name = 'CPAPIR'
     elif observation.observation_id.startswith('P'):
         observation.instrument.name = 'PESTO'
     elif observation.observation_id.startswith('S'):
-        observation.instrument.name = 'SPION'
+        observation.instrument.name = 'SPIOMM'
     else:
         raise mc.CadcException('Unexpected observation id format: {}'.format(
             observation.observation_id))
@@ -581,6 +582,12 @@ def _update_provenance(observation):
 
 
 def _update_requirements(observation):
+    """
+    Add Requirements Status FAIL to observations that are named _REJECT.
+    Hard-code the target name to 'BAD' in this case, as well.
+
+    :param observation: Observation.requirements.status
+    """
     observation.requirements = Requirements(Status.FAIL)
     observation.target.name = 'BAD'
 
@@ -642,13 +649,14 @@ def _update_telescope_location(observation, headers):
     if not isinstance(observation, Observation):
         raise mc.CadcException('Input type is Observation.')
 
-    telescope = headers[0].get('TELESCOP').upper()
+    telescope = headers[0].get('TELESCOP')
 
     if telescope is None:
         logging.warning('No telescope name. Could not set telescope '
                         'location for {}'.format(observation.observation_id))
         return
 
+    telescope = telescope.upper()
     if 'OMM' in telescope or 'CTIO' in telescope:
         lat = headers[0].get('OBS_LAT')
         long = headers[0].get('OBS_LON')

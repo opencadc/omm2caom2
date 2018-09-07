@@ -29,23 +29,8 @@
               <caom2:productType>calibration</caom2:productType>
               <caom2:chunks>
                 <caom2:chunk caom2:id="00000000-0000-0000-92c8-0f669c083235">
-                  <caom2:naxis>2</caom2:naxis>
-                  <caom2:positionAxis1>1</caom2:positionAxis1>
-                  <caom2:positionAxis2>2</caom2:positionAxis2>
-                  <caom2:position>
-                    <caom2:axis>
-                      <caom2:axis1>
-                        <caom2:ctype>RA---TAN</caom2:ctype>
-                        <caom2:cunit>deg</caom2:cunit>
-                      </caom2:axis1>
-                      <caom2:axis2>
-                        <caom2:ctype>DEC--TAN</caom2:ctype>
-                        <caom2:cunit>deg</caom2:cunit>
-                      </caom2:axis2>
-                    </caom2:axis>
-                    <caom2:coordsys>ICRS</caom2:coordsys>
-                    <caom2:equinox>2000.0</caom2:equinox>
-                  </caom2:position>
+                  <caom2:productType>calibration</caom2:productType>
+                  <caom2:naxis>4</caom2:naxis>
                 </caom2:chunk>
               </caom2:chunks>
             </caom2:part>
