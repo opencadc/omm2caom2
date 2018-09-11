@@ -49,7 +49,9 @@ RUN git clone https://github.com/SharonGoliath/caom2tools.git && \
   cd caom2tools && git pull origin master && \
   pip install ./caom2utils && pip install ./caom2 && pip install ./caom2pipe
   
-RUN pip install git+https://github.com/opencadc-metadata-curation/omm2caom2.git
+RUN git clone https://github.com/opencadc-metadata-curation/omm2caom2.git && \
+  cp /usr/local/bin/footprintfinder.py ./omm2caom2/omm2caom2 && \
+  pip install ./omm2caom2
 
 COPY ./docker-entrypoint.sh ./
 
