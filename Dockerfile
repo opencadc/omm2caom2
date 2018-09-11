@@ -51,6 +51,7 @@ RUN git clone https://github.com/SharonGoliath/caom2tools.git && \
   
 RUN git clone https://github.com/opencadc-metadata-curation/omm2caom2.git && \
   cp /usr/local/bin/footprintfinder.py ./omm2caom2/omm2caom2 && \
+  cp ./omm2caom2/omm2caom2/omm_docker_run_cleanup.py /usr/local/bin && \
   pip install ./omm2caom2
 
 COPY ./docker-entrypoint.sh ./
