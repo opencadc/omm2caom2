@@ -1,6 +1,6 @@
-working_directory: /usr/src/app/test_composite
+working_directory: /usr/src/app/
 # the netrc_filename value must be a fully-qualified name
-netrc_filename: /usr/src/app/test_netrc
+netrc_filename: /usr/src/app/netrc
 # operational value is ivo://cadc.nrc.ca/caom2repo
 resource_id: ivo://cadc.nrc.ca/sc2repo
 todo_file_name: todo.txt
@@ -44,7 +44,8 @@ stream: raw
 # ingest, modify => with use_local_files set to False
 #
 task_types: 
-  - scrape
+  - ingest
+  - modify
 features:
   supports_composite: False
   use_clients: False
