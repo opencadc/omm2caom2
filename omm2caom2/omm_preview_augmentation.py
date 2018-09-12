@@ -124,7 +124,7 @@ def _augment(plane, uri, fqn, product_type):
 
 def _artifact_metadata(uri, fqn, product_type):
     local_meta = mc.get_file_meta(fqn)
-    md5uri = ChecksumURI(local_meta['md5sum'])
+    md5uri = ChecksumURI('md5:{}'.format(local_meta['md5sum']))
     return Artifact(uri, product_type, ReleaseType.DATA, local_meta['type'],
                     local_meta['size'], md5uri)
 
