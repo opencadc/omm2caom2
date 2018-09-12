@@ -1,9 +1,10 @@
 FROM python:3.6
 
-
 RUN pip install astropy && pip install numpy && \
         pip install spherical-geometry
-RUN pip install cadcdata
+RUN pip install cadcdata && pip install caom2repo && \
+        pip install PyYAML && pip install vos && \
+        pip install caom2
 RUN pip install matplotlib
 
 RUN oldpath=`pwd` && cd /tmp \
@@ -42,12 +43,11 @@ RUN oldpath=`pwd` && cd /tmp \
 RUN pip install pytest && pip install mock && pip install flake8 && \
         pip install funcsigs && pip install xml-compare && \
         pip install pytest-cov && pip install aenum && pip install future
-RUN pip install caom2repo && pip install PyYAML
 
 WORKDIR /usr/src/app
 RUN git clone https://github.com/SharonGoliath/caom2tools.git && \
   cd caom2tools && git pull origin master && \
-  pip install ./caom2utils && pip install ./caom2 && pip install ./caom2pipe
+  pip install ./caom2utils && pip install ./caom2pipe
   
 RUN git clone https://github.com/opencadc-metadata-curation/omm2caom2.git && \
   cp /usr/local/bin/footprintfinder.py ./omm2caom2/omm2caom2 && \
