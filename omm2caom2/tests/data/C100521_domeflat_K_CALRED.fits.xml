@@ -21,28 +21,28 @@
       <caom2:provenance>
         <caom2:name>CPAPIR</caom2:name>
         <caom2:inputs>
-          <caom2:planeURI>caom:OMM/C100521_0241_CAL.fits.gz/C100521_0241_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0245_CAL.fits.gz/C100521_0245_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0290_CAL.fits.gz/C100521_0290_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0294_CAL.fits.gz/C100521_0294_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0238_CAL.fits.gz/C100521_0238_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0297_CAL.fits.gz/C100521_0297_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0300_CAL.fits.gz/C100521_0300_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0299_CAL.fits.gz/C100521_0299_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0295_CAL.fits.gz/C100521_0295_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0298_CAL.fits.gz/C100521_0298_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0296_CAL.fits.gz/C100521_0296_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0236_CAL.fits.gz/C100521_0236_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0237_CAL.fits.gz/C100521_0237_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0291_CAL.fits.gz/C100521_0291_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0239_CAL.fits.gz/C100521_0239_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0244_CAL.fits.gz/C100521_0244_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0240_CAL.fits.gz/C100521_0240_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0242_CAL.fits.gz/C100521_0242_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0243_CAL.fits.gz/C100521_0243_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0292_CAL.fits.gz/C100521_0292_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0235_CAL.fits.gz/C100521_0235_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C100521_0293_CAL.fits.gz/C100521_0293_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0241_CAL/C100521_0241_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0245_CAL/C100521_0245_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0290_CAL/C100521_0290_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0294_CAL/C100521_0294_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0238_CAL/C100521_0238_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0297_CAL/C100521_0297_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0300_CAL/C100521_0300_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0299_CAL/C100521_0299_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0295_CAL/C100521_0295_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0298_CAL/C100521_0298_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0296_CAL/C100521_0296_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0236_CAL/C100521_0236_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0237_CAL/C100521_0237_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0291_CAL/C100521_0291_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0239_CAL/C100521_0239_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0244_CAL/C100521_0244_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0240_CAL/C100521_0240_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0242_CAL/C100521_0242_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0243_CAL/C100521_0243_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0292_CAL/C100521_0292_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0235_CAL/C100521_0235_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C100521_0293_CAL/C100521_0293_CAL</caom2:planeURI>
         </caom2:inputs>
       </caom2:provenance>
       <caom2:artifacts>
@@ -70,27 +70,27 @@
     </caom2:plane>
   </caom2:planes>
   <caom2:members>
-    <caom2:observationURI>caom:OMM/C100521_0292_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0239_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0295_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0299_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0290_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0238_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0296_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0243_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0298_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0294_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0293_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0240_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0241_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0236_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0291_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0300_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0235_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0237_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0297_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0244_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0245_CAL.fits.gz</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C100521_0242_CAL.fits.gz</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0292_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0239_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0295_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0299_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0290_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0238_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0296_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0243_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0298_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0294_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0293_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0240_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0241_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0236_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0291_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0300_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0235_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0237_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0297_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0244_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0245_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C100521_0242_CAL</caom2:observationURI>
   </caom2:members>
 </caom2:Observation>

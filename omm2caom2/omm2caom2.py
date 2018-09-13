@@ -588,36 +588,43 @@ def _update_science_provenance(observation):
         new_input = PlaneURI.get_plane_uri(new_member, new_obs_id)
         new_inputs.add(new_input)
 
-    # remove the wrongly formatted values
-    while len(observation.members) > 0:
-        observation.members.pop()
-
-    observation.members.update(new_members)
-    observation.planes[observation.observation_id].provenance.inputs.update(
+    _update_typed_set(observation.members, new_members)
+    _update_typed_set(
+        observation.planes[observation.observation_id].provenance.inputs,
         new_inputs)
 
 
 def _update_cal_provenance(observation, headers):
     plane_inputs = TypedSet(PlaneURI,)
+    members_inputs = TypedSet(ObservationURI,)
     for keyword in headers[0]:
         if keyword.startswith('F_ON') or keyword.startswith('F_OFF'):
             value = headers[0].get(keyword)
             base_name = OmmName.remove_extensions(os.path.basename(value))
             file_id = 'C{}_CAL'.format(base_name)
 
-            obs_member_uri_str = ec.CaomName.make_obs_uri_from_file_id(
+            obs_member_uri_str = ec.CaomName.make_obs_uri_from_obs_id(
                 COLLECTION, file_id)
             obs_member_uri = ObservationURI(obs_member_uri_str)
             # the product id is the same as the observation id for OMM
             plane_uri = PlaneURI.get_plane_uri(obs_member_uri, file_id)
             plane_inputs.add(plane_uri)
-            observation.members.add(obs_member_uri)
+            members_inputs.add(obs_member_uri)
 
     for key in observation.planes:
         plane = observation.planes[key]
         if plane.provenance is None:
             plane.provenance = Provenance('CPAPIR')
-        plane.provenance.inputs.update(plane_inputs)
+        _update_typed_set(plane.provenance.inputs, plane_inputs)
+
+    _update_typed_set(observation.members, members_inputs)
+
+
+def _update_typed_set(typed_set, new_set):
+    # remove the previous values
+    while len(typed_set) > 0:
+        typed_set.pop()
+    typed_set.update(new_set)
 
 
 def _update_requirements(observation):
