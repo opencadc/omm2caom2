@@ -70,7 +70,6 @@
 import importlib
 import logging
 import os
-import re
 import sys
 import traceback
 
@@ -80,14 +79,15 @@ from caom2 import TargetType, ObservationIntentType, CalibrationLevel
 from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
 from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
 from caom2 import ObservationURI, PlaneURI, TypedSet, CoordBounds1D
-from caom2 import Requirements, Status, Instrument
+from caom2 import Requirements, Status, Instrument, Provenance
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
 from caom2pipe import astro_composable as ac
 from caom2pipe import manage_composable as mc
 from caom2pipe import execute_composable as ec
 
 
-__all__ = ['main_app', 'update', 'OmmName', 'COLLECTION', 'APPLICATION']
+__all__ = ['main_app', 'update', 'OmmName', 'COLLECTION', 'APPLICATION',
+           '_update_cal_provenance', 'features']
 
 
 APPLICATION = 'omm2caom2'
@@ -108,6 +108,9 @@ DEFAULT_GEOCENTRIC = {
     'CTIO': {'x': 1814303.745, 'y': -5214365.744, 'z': -3187340.566,
              'elevation': 2200.}}
 
+features = mc.Features()
+features.supports_composite = False
+
 
 class OmmName(ec.StorageName):
     """OMM naming rules:
@@ -117,7 +120,7 @@ class OmmName(ec.StorageName):
     - files are compressed in ad
     """
 
-    OMM_NAME_PATTERN = 'C[\w\+\-]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
+    OMM_NAME_PATTERN = 'C[\\w+-]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
 
     def __init__(self, obs_id=None, fname_on_disk=None, file_name=None):
         if file_name is None and fname_on_disk is None:
@@ -133,8 +136,8 @@ class OmmName(ec.StorageName):
         if obs_id is None:
             obs_id = ec.StorageName.remove_extensions(self.fname_in_ad)
 
-        super(OmmName, self).__init__(obs_id, 'OMM', OmmName.OMM_NAME_PATTERN,
-                                      fname_on_disk)
+        super(OmmName, self).__init__(
+            obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, fname_on_disk)
 
     def get_file_uri(self):
         return 'ad:{}/{}'.format(self.collection, self.fname_in_ad)
@@ -165,7 +168,6 @@ class OmmName(ec.StorageName):
 
     @staticmethod
     def is_composite(uri):
-        features = mc.Features()
         if features.supports_composite:
             return '_SCIRED' in uri or '_CALRED' in uri
         else:
@@ -443,7 +445,7 @@ def update(observation, **kwargs):
         _update_instrument_name(observation)
 
     if OmmName.is_composite(observation.observation_id):
-        _update_provenance(observation)
+        _update_provenance(observation, headers)
         _update_time_bounds(observation, fqn)
 
     logging.debug('Done update.')
@@ -539,12 +541,25 @@ def _update_position(chunk):
     logging.debug('End _update_position')
 
 
-def _update_provenance(observation):
+def _update_provenance(observation, headers):
     """The provenance information in the reduced product headers is not
     patterned according to the content of ad. Make the provenance information
-    conform, at the Observation and Plane level."""
+    conform, at the Observation and Plane level.
+
+    In the CALRED files, the provenance information is available via
+    header keywords.
+    """
     logging.debug('Begin _update_provenance')
 
+    if observation.observation_id.endswith('_SCIRED'):
+        _update_science_provenance(observation)
+    else:
+        _update_cal_provenance(observation, headers)
+
+    logging.debug('End _update_provenance')
+
+
+def _update_science_provenance(observation):
     obs_type = None
     for ii in DATATYPE_LOOKUP:
         if DATATYPE_LOOKUP[ii] == observation.type:
@@ -580,7 +595,29 @@ def _update_provenance(observation):
     observation.members.update(new_members)
     observation.planes[observation.observation_id].provenance.inputs.update(
         new_inputs)
-    logging.debug('End _update_provenance')
+
+
+def _update_cal_provenance(observation, headers):
+    plane_inputs = TypedSet(PlaneURI,)
+    for keyword in headers[0]:
+        if keyword.startswith('F_ON') or keyword.startswith('F_OFF'):
+            value = headers[0].get(keyword)
+            base_name = OmmName.remove_extensions(os.path.basename(value))
+            file_id = 'C{}_CAL'.format(base_name)
+
+            obs_member_uri_str = ec.CaomName.make_obs_uri_from_file_id(
+                COLLECTION, file_id)
+            obs_member_uri = ObservationURI(obs_member_uri_str)
+            # the product id is the same as the observation id for OMM
+            plane_uri = PlaneURI.get_plane_uri(obs_member_uri, file_id)
+            plane_inputs.add(plane_uri)
+            observation.members.add(obs_member_uri)
+
+    for key in observation.planes:
+        plane = observation.planes[key]
+        if plane.provenance is None:
+            plane.provenance = Provenance('CPAPIR')
+        plane.provenance.inputs.update(plane_inputs)
 
 
 def _update_requirements(observation):
@@ -659,13 +696,13 @@ def _update_telescope_location(observation, headers):
         return
 
     telescope = telescope.upper()
-    if 'OMM' in telescope or 'CTIO' in telescope:
+    if COLLECTION in telescope or 'CTIO' in telescope:
         lat = headers[0].get('OBS_LAT')
         long = headers[0].get('OBS_LON')
 
         # make a reliable lookup value
-        if 'OMM' in telescope:
-            telescope = 'OMM'
+        if COLLECTION in telescope:
+            telescope = COLLECTION
         if 'CTIO' in telescope:
             telescope = 'CTIO'
 
@@ -732,9 +769,9 @@ def main_app():
         blueprints = _build_blueprints(uri)
         gen_proc(args, blueprints)
     except Exception as e:
-        logging.error('Failed omm2caom2 execution for {}.'.format(args))
+        logging.error('Failed {} execution for {}.'.format(APPLICATION, args))
         tb = traceback.format_exc()
         logging.error(tb)
         sys.exit(-1)
 
-    logging.debug('Done omm2caom2 processing.')
+    logging.debug('Done {} processing.'.format(APPLICATION))
