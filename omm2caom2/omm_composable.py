@@ -75,18 +75,19 @@ from omm2caom2 import omm_preview_augmentation, omm_footprint_augmentation
 from omm2caom2 import OmmName, APPLICATION, COLLECTION
 
 
+meta_visitors = []
 data_visitors = [omm_preview_augmentation, omm_footprint_augmentation]
 
 
 def omm_run():
-    ec.run_by_file(OmmName, APPLICATION, COLLECTION,
-                   data_visitors=data_visitors)
+    ec.run_by_file(OmmName, APPLICATION, COLLECTION, None, meta_visitors,
+                   data_visitors)
 
 
 def omm_run_proxy():
     proxy = '/usr/src/app/cadcproxy.pem'
-    ec.run_by_file(OmmName, APPLICATION, COLLECTION,
-                   proxy=proxy, data_visitors=data_visitors)
+    ec.run_by_file(OmmName, APPLICATION, COLLECTION, proxy, meta_visitors,
+                   data_visitors)
 
 
 def omm_run_single():
@@ -110,6 +111,6 @@ def omm_run_single():
     else:
         obs_id = OmmName.remove_extensions(sys.argv[1])
         storage_name = OmmName(obs_id=obs_id)
-    result = ec.run_single(config, storage_name, APPLICATION,
-                           data_visitors=data_visitors)
+    result = ec.run_single(config, storage_name, APPLICATION, meta_visitors,
+                           data_visitors)
     sys.exit(result)

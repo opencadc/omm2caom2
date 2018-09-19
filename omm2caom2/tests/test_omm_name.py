@@ -86,14 +86,14 @@ def test_is_valid():
 
     test_subject = OmmName(file_name='C121212_00001_SCI.fits')
     assert test_subject.is_valid()
-    assert test_subject.get_obs_id() == 'C121212_00001_SCI'
+    assert test_subject.obs_id == 'C121212_00001_SCI'
     test_subject = OmmName(file_name='C121212_00001_SCI.fits.gz')
     assert test_subject.is_valid()
-    assert test_subject.get_obs_id() == 'C121212_00001_SCI'
+    assert test_subject.obs_id == 'C121212_00001_SCI'
     test_subject = OmmName(fname_on_disk='C121212_00001_SCI.fits',
                            file_name='C121212_00001_SCI.fits.gz')
     assert test_subject.is_valid()
-    assert test_subject.get_obs_id() == 'C121212_00001_SCI'
+    assert test_subject.obs_id == 'C121212_00001_SCI'
 
     with pytest.raises(mc.CadcException):
         test_subject = OmmName(file_name='C121212_00001_SCI')
@@ -105,7 +105,7 @@ def test_is_valid():
 def test_omm_name():
     TEST_NAME = 'C121212_00001_SCI'
     assert 'ad:OMM/{}.fits.gz'.format(TEST_NAME) == OmmName(
-        TEST_NAME, '{}.fits'.format(TEST_NAME)).get_file_uri()
+        TEST_NAME, '{}.fits'.format(TEST_NAME)).file_uri
     TEST_NAME = 'C121212_sh2-132_J_old_SCIRED'
-    assert '{}_prev.jpg'.format(TEST_NAME) == OmmName(TEST_NAME).get_prev()
-    assert '{}_prev_256.jpg'.format(TEST_NAME) == OmmName(TEST_NAME).get_thumb()
+    assert '{}_prev.jpg'.format(TEST_NAME) == OmmName(TEST_NAME).prev
+    assert '{}_prev_256.jpg'.format(TEST_NAME) == OmmName(TEST_NAME).thumb

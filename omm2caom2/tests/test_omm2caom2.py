@@ -68,7 +68,7 @@
 #
 
 
-from omm2caom2 import main_app, features
+from omm2caom2 import main_app, features, APPLICATION
 from caom2.diff import get_differences
 from caom2pipe import manage_composable as mc
 
@@ -84,7 +84,7 @@ TEST_URI = 'ad:OMM/imm_file.fits'
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 TESTDATA_DIR = os.path.join(THIS_DIR, 'data')
-PLUGIN = os.path.join(os.path.dirname(THIS_DIR), 'omm2caom2.py')
+PLUGIN = os.path.join(os.path.dirname(THIS_DIR), '{}.py'.format(APPLICATION))
 
 
 def pytest_generate_tests(metafunc):
@@ -115,10 +115,10 @@ def test_main_app(test_name):
             get_file_info
 
         sys.argv = \
-            ('omm2caom2 --no_validate --local {} '
+            ('{} --no_validate --local {} '
              '--plugin {} --module {} --observation OMM {} -o {} --lineage {}'.
-             format(local, plugin, plugin, product_id, output_file,
-                    lineage)).split()
+             format(APPLICATION, local, plugin, plugin, product_id,
+                    output_file, lineage)).split()
         print(sys.argv)
         main_app()
         obs_path = test_name.replace('header', 'xml')

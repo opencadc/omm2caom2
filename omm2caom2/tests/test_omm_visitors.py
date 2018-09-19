@@ -89,12 +89,12 @@ def test_footprint_aug_visit():
 
 def test_footprint_update_position():
     test_kwargs = {'science_file':
-                   OmmName(TEST_OBS, TEST_FILE).get_file_name()}
+                   OmmName(TEST_OBS, TEST_FILE).file_name}
     test_fqn = os.path.join(TESTDATA_DIR,
-                            OmmName(TEST_OBS, TEST_FILE).get_model_file_name())
+                            OmmName(TEST_OBS, TEST_FILE).model_file_name)
     test_obs = mc.read_obs_from_file(test_fqn)
     test_chunk = test_obs.planes[TEST_OBS].artifacts[
-        OmmName(TEST_OBS, TEST_FILE).get_file_uri()].parts['0'].chunks[0]
+        OmmName(TEST_OBS, TEST_FILE).file_uri].parts['0'].chunks[0]
     assert test_chunk.position.axis.bounds is None
 
     # expected failure due to required kwargs parameter
@@ -118,15 +118,15 @@ def test_preview_aug_visit():
 
 def test_preview_augment_plane():
     preview = os.path.join(TESTDATA_DIR,
-                           OmmName(TEST_OBS, TEST_FILE).get_prev())
+                           OmmName(TEST_OBS, TEST_FILE).prev)
     thumb = os.path.join(TESTDATA_DIR,
-                         OmmName(TEST_OBS, TEST_FILE).get_thumb())
+                         OmmName(TEST_OBS, TEST_FILE).thumb)
     if os.path.exists(preview):
         os.remove(preview)
     if os.path.exists(thumb):
         os.remove(thumb)
     test_fqn = os.path.join(TESTDATA_DIR,
-                            OmmName(TEST_OBS, TEST_FILE).get_model_file_name())
+                            OmmName(TEST_OBS, TEST_FILE).model_file_name)
     test_obs = mc.read_obs_from_file(test_fqn)
     assert len(test_obs.planes[TEST_OBS].artifacts) == 1
 

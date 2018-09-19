@@ -99,12 +99,12 @@ def visit(observation, **kwargs):
             artifact = plane.artifacts[j]
             if (artifact.uri.endswith('.fits.gz') or
                     artifact.uri.endswith('.fits')):
-                file_id = ec.CaomName(artifact.uri).get_file_id()
-                file_name = ec.CaomName(artifact.uri).get_file_name()
+                file_id = ec.CaomName(artifact.uri).file_id
+                file_name = ec.CaomName(artifact.uri).file_name
                 science_fqn = os.path.join(working_dir, file_name)
                 if not os.path.exists(science_fqn):
                     file_name = \
-                        ec.CaomName(artifact.uri).get_uncomp_file_name()
+                        ec.CaomName(artifact.uri).uncomp_file_name
                     science_fqn = os.path.join(working_dir, file_name)
                     if not os.path.exists(science_fqn):
                         raise mc.CadcException(
@@ -130,9 +130,9 @@ def _artifact_metadata(uri, fqn, product_type):
 
 
 def _do_prev(file_id, science_fqn, working_dir, plane, cadc_client):
-    preview = OmmName(file_id).get_prev()
+    preview = OmmName(file_id).prev
     preview_fqn = os.path.join(working_dir, preview)
-    thumb = OmmName(file_id).get_thumb()
+    thumb = OmmName(file_id).thumb
     thumb_fqn = os.path.join(working_dir, thumb)
 
     if os.access(preview_fqn, 0):
@@ -147,8 +147,8 @@ def _do_prev(file_id, science_fqn, working_dir, plane, cadc_client):
                '--asinh-scale --jpg --invert --compass {}'.format(science_fqn)
     mc.exec_cmd_redirect(prev_cmd, thumb_fqn)
 
-    prev_uri = OmmName(file_id).get_prev_uri()
-    thumb_uri = OmmName(file_id).get_thumb_uri()
+    prev_uri = OmmName(file_id).prev_uri
+    thumb_uri = OmmName(file_id).thumb_uri
     _augment(plane, prev_uri, preview_fqn, ProductType.PREVIEW)
     _augment(plane, thumb_uri, thumb_fqn, ProductType.THUMBNAIL)
     if cadc_client is not None:

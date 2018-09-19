@@ -523,7 +523,7 @@ def _update_time(chunk, headers):
         chunk.time.timesys = 'UTC'
         chunk.time.trefpos = 'TOPOCENTER'
         chunk.time_axis = 4
-    logging.error('Done _update_time.')
+    logging.debug('Done _update_time.')
 
 
 def _update_position(chunk):
