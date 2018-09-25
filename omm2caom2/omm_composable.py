@@ -80,7 +80,8 @@ data_visitors = [omm_preview_augmentation, omm_footprint_augmentation]
 
 
 def omm_run():
-    ec.run_by_file(OmmName, APPLICATION, COLLECTION, None, meta_visitors,
+    proxy = '/usr/src/app/cadcproxy.pem'
+    ec.run_by_file(OmmName, APPLICATION, COLLECTION, proxy, meta_visitors,
                    data_visitors)
 
 
@@ -102,9 +103,9 @@ def omm_run_single():
     if config.features.run_in_airflow:
         temp = tempfile.NamedTemporaryFile()
         mc.write_to_file(temp.name, sys.argv[2])
-        config.proxy = temp.name
+        config.proxy_fqn = temp.name
     else:
-        config.proxy = sys.argv[2]
+        config.proxy_fqn = sys.argv[2]
     config.stream = 'raw'
     if config.features.use_file_names:
         storage_name = OmmName(file_name=sys.argv[1])
