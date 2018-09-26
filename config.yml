@@ -25,6 +25,8 @@ failure_log_file_name: failure_log.txt
 #
 # this file is created in the logs directory, default is 'retries.txt'
 retry_file_name: retries.txt
+retry_failures: True
+retry_count: 1
 # ad stream value - sorry
 stream: raw
 # how to control the work that gets done
@@ -49,3 +51,4 @@ task_types:
 features:
   supports_composite: False
   use_file_names: False
+  expects_retry: True
