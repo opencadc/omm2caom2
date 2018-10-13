@@ -80,6 +80,7 @@ from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
 from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
 from caom2 import ObservationURI, PlaneURI, TypedSet, CoordBounds1D
 from caom2 import Requirements, Status, Instrument, Provenance
+from caom2 import SimpleObservation
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
 from caom2pipe import astro_composable as ac
 from caom2pipe import manage_composable as mc
@@ -87,7 +88,7 @@ from caom2pipe import execute_composable as ec
 
 
 __all__ = ['main_app', 'update', 'OmmName', 'COLLECTION', 'APPLICATION',
-           '_update_cal_provenance', 'features']
+           '_update_cal_provenance', 'features', 'OmmChooser']
 
 
 APPLICATION = 'omm2caom2'
@@ -172,6 +173,19 @@ class OmmName(ec.StorageName):
             return '_SCIRED' in uri or '_CALRED' in uri
         else:
             return 'Cdemo_ext2_SCIRED' in uri
+
+
+class OmmChooser(ec.OrganizeChooser):
+    """OMM has the case where there are SimpleObservation instances that
+    will change type to CompositeObservation instances. Tell the
+    execute_composable package about that case."""
+
+    def __init__(self,):
+        super(OmmChooser, self).__init__()
+
+    def needs_delete(self, observation):
+        return (isinstance(observation, SimpleObservation) and
+                OmmName.is_composite(observation.observation_id))
 
 
 def accumulate_obs(bp, uri):

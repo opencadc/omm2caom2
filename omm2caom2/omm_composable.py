@@ -72,7 +72,7 @@ import tempfile
 from caom2pipe import execute_composable as ec
 from caom2pipe import manage_composable as mc
 from omm2caom2 import omm_preview_augmentation, omm_footprint_augmentation
-from omm2caom2 import OmmName, APPLICATION, COLLECTION
+from omm2caom2 import OmmChooser, OmmName, APPLICATION, COLLECTION
 
 
 meta_visitors = []
@@ -82,13 +82,13 @@ data_visitors = [omm_preview_augmentation, omm_footprint_augmentation]
 def omm_run():
     proxy = '/usr/src/app/cadcproxy.pem'
     ec.run_by_file(OmmName, APPLICATION, COLLECTION, proxy, meta_visitors,
-                   data_visitors)
+                   data_visitors, OmmChooser())
 
 
 def omm_run_proxy():
     proxy = '/usr/src/app/cadcproxy.pem'
     ec.run_by_file(OmmName, APPLICATION, COLLECTION, proxy, meta_visitors,
-                   data_visitors)
+                   data_visitors, OmmChooser())
 
 
 def omm_run_single():
@@ -113,5 +113,5 @@ def omm_run_single():
         obs_id = OmmName.remove_extensions(sys.argv[1])
         storage_name = OmmName(obs_id=obs_id)
     result = ec.run_single(config, storage_name, APPLICATION, meta_visitors,
-                           data_visitors)
+                           data_visitors, OmmChooser())
     sys.exit(result)
