@@ -80,7 +80,7 @@ from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
 from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
 from caom2 import ObservationURI, PlaneURI, TypedSet, CoordBounds1D
 from caom2 import Requirements, Status, Instrument, Provenance
-from caom2 import SimpleObservation
+from caom2 import SimpleObservation, CompositeObservation
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
 from caom2pipe import astro_composable as ac
 from caom2pipe import manage_composable as mc
@@ -110,7 +110,7 @@ DEFAULT_GEOCENTRIC = {
              'elevation': 2200.}}
 
 features = mc.Features()
-features.supports_composite = False
+features.supports_composite = True
 
 
 class OmmName(ec.StorageName):
@@ -459,6 +459,8 @@ def update(observation, **kwargs):
         _update_instrument_name(observation)
 
     if OmmName.is_composite(observation.observation_id):
+        if OmmChooser().needs_delete(observation):
+            observation = _update_observation_type(observation)
         _update_provenance(observation, headers)
         _update_time_bounds(observation, fqn)
 
@@ -506,6 +508,25 @@ def _update_instrument_name(observation):
         raise mc.CadcException('Unexpected observation id format: {}'.format(
             observation.observation_id))
     observation.instrument = Instrument(name)
+
+
+def _update_obsrvation_type(observation):
+    """For the case where a SimpleObservation needs to become a
+    CompositeObservation."""
+    return CompositeObservation(observation.collection,
+                                observation.observation_id,
+                                observation.algorithm,
+                                observation.sequence_number,
+                                observation.intent,
+                                observation.type,
+                                observation.proposal,
+                                observation.telescope,
+                                observation.instrument,
+                                observation.target,
+                                observation.meta_release,
+                                observation.planes,
+                                observation.environment,
+                                observation.target_position)
 
 
 def _update_time(chunk, headers):
