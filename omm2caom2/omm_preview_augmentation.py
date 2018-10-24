@@ -80,9 +80,7 @@ __all__ = ['visit']
 
 
 def visit(observation, **kwargs):
-    assert observation is not None, 'Input parameter must have a value.'
-    assert isinstance(observation, Observation), \
-        'Input parameter must be an Observation'
+    mc.check_param(observation, Observation)
 
     working_dir = './'
     if 'working_directory' in kwargs:

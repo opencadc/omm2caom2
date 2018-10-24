@@ -72,10 +72,11 @@ import tempfile
 from caom2pipe import execute_composable as ec
 from caom2pipe import manage_composable as mc
 from omm2caom2 import omm_preview_augmentation, omm_footprint_augmentation
+from omm2caom2 import omm_add_checksum_prefix
 from omm2caom2 import OmmChooser, OmmName, APPLICATION, COLLECTION
 
 
-meta_visitors = []
+meta_visitors = [omm_add_checksum_prefix]
 data_visitors = [omm_preview_augmentation, omm_footprint_augmentation]
 
 

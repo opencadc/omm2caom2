@@ -69,7 +69,9 @@
 import os
 import pytest
 
+from caom2 import ChecksumURI
 from omm2caom2 import omm_footprint_augmentation, omm_preview_augmentation
+from omm2caom2 import omm_add_checksum_prefix
 from omm2caom2 import OmmName
 from caom2pipe import manage_composable as mc
 
@@ -81,10 +83,8 @@ TEST_FILE = '{}.fits.gz'.format(TEST_OBS)
 
 
 def test_footprint_aug_visit():
-    try:
+    with pytest.raises(AssertionError):
         omm_footprint_augmentation.visit(None)
-    except AssertionError as e:
-        return  # expected
 
 
 def test_footprint_update_position():
@@ -110,10 +110,8 @@ def test_footprint_update_position():
 
 
 def test_preview_aug_visit():
-    try:
+    with pytest.raises(mc.CadcException):
         omm_preview_augmentation.visit(None)
-    except AssertionError as e:
-        return  # expected
 
 
 def test_preview_augment_plane():
@@ -129,6 +127,8 @@ def test_preview_augment_plane():
                             OmmName(TEST_OBS, TEST_FILE).model_file_name)
     test_obs = mc.read_obs_from_file(test_fqn)
     assert len(test_obs.planes[TEST_OBS].artifacts) == 1
+    preva = 'ad:OMM/C170324_0054_SCI_prev.jpg'
+    thumba = 'ad:OMM/C170324_0054_SCI_prev_256.jpg'
 
     test_kwargs = {'working_directory': TESTDATA_DIR,
                    'cadc_client': None}
@@ -138,12 +138,42 @@ def test_preview_augment_plane():
     assert len(test_obs.planes[TEST_OBS].artifacts) == 3
     assert os.path.exists(preview)
     assert os.path.exists(thumb)
+    assert test_obs.planes[TEST_OBS].artifacts[preva].content_checksum == \
+        ChecksumURI('md5:f37d21c53055498d1b5cb7753e1c6d6f'), \
+        'prev checksum failure'
+    assert test_obs.planes[TEST_OBS].artifacts[thumba].content_checksum == \
+        ChecksumURI('md5:19661c3c2508ecc22425ee2a05881ed4'), \
+        'thumb checksum failure'
 
     # now do updates
+    test_obs.planes[TEST_OBS].artifacts[preva].content_checksum = \
+           ChecksumURI('f37d21c53055498d1b5cb7753e1c6d6f')
+    test_obs.planes[TEST_OBS].artifacts[thumba].content_checksum = \
+           ChecksumURI('19661c3c2508ecc22425ee2a05881ed4')
+    test_result = omm_add_checksum_prefix.visit(test_obs, **test_kwargs)
+    assert test_result is not None, 'expected add prefix visit return value'
+    assert test_result['artifacts'] == 2
+    assert test_obs.planes[TEST_OBS].artifacts[preva].content_checksum == \
+           ChecksumURI('md5:f37d21c53055498d1b5cb7753e1c6d6f'), \
+        'prefix add failed'
+    assert test_obs.planes[TEST_OBS].artifacts[thumba].content_checksum == \
+           ChecksumURI('md5:19661c3c2508ecc22425ee2a05881ed4'), \
+        'prefix add failed'
+
+    test_obs.planes[TEST_OBS].artifacts[preva].content_checksum = \
+        ChecksumURI('f37d21c53055498d1b5cb7753e1c6d6f')
+    test_obs.planes[TEST_OBS].artifacts[thumba].content_checksum = \
+        ChecksumURI('19661c3c2508ecc22425ee2a05881ed4')
     test_result = omm_preview_augmentation.visit(test_obs, **test_kwargs)
     assert test_result is not None, 'expected update visit return value'
     assert test_result['artifacts'] == 2
+    assert len(test_obs.planes) == 1
     assert len(test_obs.planes[TEST_OBS].artifacts) == 3
     assert os.path.exists(preview)
     assert os.path.exists(thumb)
-
+    assert test_obs.planes[TEST_OBS].artifacts[preva].content_checksum == \
+        ChecksumURI('md5:f37d21c53055498d1b5cb7753e1c6d6f'), \
+        'prev update failed'
+    assert test_obs.planes[TEST_OBS].artifacts[thumba].content_checksum == \
+        ChecksumURI('md5:19661c3c2508ecc22425ee2a05881ed4'), \
+        'prev_256 update failed'
