@@ -111,15 +111,14 @@ def visit(observation, **kwargs):
                             '{} preview visit file not found'.format(
                                 science_fqn))
                 logging.debug('working on file {}'.format(science_fqn))
-                _do_prev(file_id, science_fqn, working_dir, plane, cadc_client)
-            count += 2
+                count += _do_prev(file_id, science_fqn, working_dir, plane, cadc_client)
     logging.info('Completed preview augmentation for {}.'.format(
             observation.observation_id))
     return {'artifacts': count}
 
 
 def _augment(plane, uri, fqn, product_type):
-    plane.artifacts.add(_artifact_metadata(uri, fqn, product_type))
+    plane.artifacts[uri] = _artifact_metadata(uri, fqn, product_type)
 
 
 def _artifact_metadata(uri, fqn, product_type):
@@ -153,6 +152,7 @@ def _do_prev(file_id, science_fqn, working_dir, plane, cadc_client):
     _augment(plane, thumb_uri, thumb_fqn, ProductType.THUMBNAIL)
     if cadc_client is not None:
         _store_smalls(cadc_client, working_dir, preview, thumb)
+    return 2
 
 
 def _store_smalls(cadc_client, working_directory, preview_fname,

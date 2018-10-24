@@ -138,3 +138,12 @@ def test_preview_augment_plane():
     assert len(test_obs.planes[TEST_OBS].artifacts) == 3
     assert os.path.exists(preview)
     assert os.path.exists(thumb)
+
+    # now do updates
+    test_result = omm_preview_augmentation.visit(test_obs, **test_kwargs)
+    assert test_result is not None, 'expected update visit return value'
+    assert test_result['artifacts'] == 2
+    assert len(test_obs.planes[TEST_OBS].artifacts) == 3
+    assert os.path.exists(preview)
+    assert os.path.exists(thumb)
+
