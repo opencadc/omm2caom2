@@ -118,15 +118,24 @@ def visit(observation, **kwargs):
 
 
 def _augment(plane, uri, fqn, product_type):
-    plane.artifacts[uri] = _artifact_metadata(uri, fqn, product_type)
+    temp = None
+    if uri in plane.artifacts:
+        temp = plane.artifacts[uri]
+    plane.artifacts[uri] = _artifact_metadata(uri, fqn, product_type, temp)
 
 
-def _artifact_metadata(uri, fqn, product_type):
+def _artifact_metadata(uri, fqn, product_type, artifact):
     local_meta = mc.get_file_meta(fqn)
     md5uri = ChecksumURI('md5:{}'.format(local_meta['md5sum']))
-    return Artifact(uri, product_type, ReleaseType.DATA, local_meta['type'],
-                    local_meta['size'], md5uri)
-
+    if artifact is None:
+        return Artifact(uri, product_type, ReleaseType.DATA, local_meta['type'],
+                        local_meta['size'], md5uri)
+    else:
+        artifact.product_type = product_type
+        artifact.content_type = local_meta['type']
+        artifact.content_length = local_meta['size']
+        artifact.content_checksum = md5uri
+        return artifact
 
 def _do_prev(file_id, science_fqn, working_dir, plane, cadc_client):
     preview = OmmName(file_id).prev
