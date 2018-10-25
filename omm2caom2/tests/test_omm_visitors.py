@@ -71,7 +71,6 @@ import pytest
 
 from caom2 import ChecksumURI
 from omm2caom2 import omm_footprint_augmentation, omm_preview_augmentation
-from omm2caom2 import omm_add_checksum_prefix
 from omm2caom2 import OmmName
 from caom2pipe import manage_composable as mc
 
@@ -146,20 +145,6 @@ def test_preview_augment_plane():
         'thumb checksum failure'
 
     # now do updates
-    test_obs.planes[TEST_OBS].artifacts[preva].content_checksum = \
-           ChecksumURI('f37d21c53055498d1b5cb7753e1c6d6f')
-    test_obs.planes[TEST_OBS].artifacts[thumba].content_checksum = \
-           ChecksumURI('19661c3c2508ecc22425ee2a05881ed4')
-    test_result = omm_add_checksum_prefix.visit(test_obs, **test_kwargs)
-    assert test_result is not None, 'expected add prefix visit return value'
-    assert test_result['artifacts'] == 2
-    assert test_obs.planes[TEST_OBS].artifacts[preva].content_checksum == \
-           ChecksumURI('md5:f37d21c53055498d1b5cb7753e1c6d6f'), \
-        'prefix add failed'
-    assert test_obs.planes[TEST_OBS].artifacts[thumba].content_checksum == \
-           ChecksumURI('md5:19661c3c2508ecc22425ee2a05881ed4'), \
-        'prefix add failed'
-
     test_obs.planes[TEST_OBS].artifacts[preva].content_checksum = \
         ChecksumURI('f37d21c53055498d1b5cb7753e1c6d6f')
     test_obs.planes[TEST_OBS].artifacts[thumba].content_checksum = \
