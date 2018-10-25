@@ -71,9 +71,6 @@ import os
 from caom2pipe import astro_composable as ac
 from caom2pipe import manage_composable as mc
 from omm2caom2 import _update_cal_provenance, _update_science_provenance
-from omm2caom2 import features
-
-features.supports_composite = True
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 TESTDATA_DIR = os.path.join(THIS_DIR, 'data')

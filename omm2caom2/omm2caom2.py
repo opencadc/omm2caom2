@@ -88,7 +88,7 @@ from caom2pipe import execute_composable as ec
 
 
 __all__ = ['main_app', 'update', 'OmmName', 'COLLECTION', 'APPLICATION',
-           '_update_cal_provenance', '_update_science_provenance', 'features',
+           '_update_cal_provenance', '_update_science_provenance',
            'OmmChooser']
 
 
@@ -110,8 +110,6 @@ DEFAULT_GEOCENTRIC = {
     'CTIO': {'x': 1814303.745, 'y': -5214365.744, 'z': -3187340.566,
              'elevation': 2200.}}
 
-features = mc.Features()
-features.supports_composite = True
 
 
 class OmmName(ec.StorageName):
@@ -170,10 +168,7 @@ class OmmName(ec.StorageName):
 
     @staticmethod
     def is_composite(uri):
-        if features.supports_composite:
-            return '_SCIRED' in uri or '_CALRED' in uri
-        else:
-            return 'Cdemo_ext2_SCIRED' in uri
+        return '_SCIRED' in uri or '_CALRED' in uri
 
 
 class OmmChooser(ec.OrganizeChooser):

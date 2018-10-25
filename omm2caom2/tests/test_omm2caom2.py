@@ -68,7 +68,7 @@
 #
 
 
-from omm2caom2 import main_app, features, APPLICATION
+from omm2caom2 import main_app, APPLICATION
 from caom2.diff import get_differences
 from caom2pipe import manage_composable as mc
 
@@ -77,8 +77,6 @@ import os
 import sys
 
 from mock import patch
-
-features.supports_composite = True
 
 TEST_URI = 'ad:OMM/imm_file.fits'
 
