@@ -80,7 +80,7 @@ from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
 from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
 from caom2 import ObservationURI, PlaneURI, TypedSet, CoordBounds1D
 from caom2 import Requirements, Status, Instrument, Provenance
-from caom2 import SimpleObservation, CompositeObservation
+from caom2 import SimpleObservation, CompositeObservation, Algorithm
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
 from caom2pipe import astro_composable as ac
 from caom2pipe import manage_composable as mc
@@ -88,7 +88,8 @@ from caom2pipe import execute_composable as ec
 
 
 __all__ = ['main_app', 'update', 'OmmName', 'COLLECTION', 'APPLICATION',
-           '_update_cal_provenance', 'features', 'OmmChooser']
+           '_update_cal_provenance', '_update_science_provenance', 'features',
+           'OmmChooser']
 
 
 APPLICATION = 'omm2caom2'
@@ -211,8 +212,7 @@ def accumulate_obs(bp, uri):
     bp.set('Observation.environment.ambientTemp',
            'get_obs_env_ambient_temp(header)')
     if OmmName.is_composite(uri):
-        bp.add_table_attribute('CompositeObservation.members', 'FICS',
-                               extension=1, index=0)
+        bp.set('CompositeObservation.members', {})
 
 
 def accumulate_plane(bp):
@@ -462,7 +462,7 @@ def update(observation, **kwargs):
         if OmmChooser().needs_delete(observation):
             observation = _update_observation_type(observation)
         _update_provenance(observation, headers)
-        _update_time_bounds(observation, fqn)
+        # _update_time_bounds(observation, fqn)
 
     logging.debug('Done update.')
     return True
@@ -510,7 +510,7 @@ def _update_instrument_name(observation):
     observation.instrument = Instrument(name)
 
 
-def _update_obsrvation_type(observation):
+def _update_observation_type(observation):
     """For the case where a SimpleObservation needs to become a
     CompositeObservation."""
     return CompositeObservation(observation.collection,
@@ -518,7 +518,7 @@ def _update_obsrvation_type(observation):
                                 observation.algorithm,
                                 observation.sequence_number,
                                 observation.intent,
-                                observation.type,
+                                Algorithm('composite'),
                                 observation.proposal,
                                 observation.telescope,
                                 observation.instrument,
@@ -587,46 +587,41 @@ def _update_provenance(observation, headers):
     logging.debug('Begin _update_provenance')
 
     if observation.observation_id.endswith('_SCIRED'):
-        _update_science_provenance(observation)
+        _update_science_provenance(observation, headers)
     else:
         _update_cal_provenance(observation, headers)
 
     logging.debug('End _update_provenance')
 
 
-def _update_science_provenance(observation):
-    obs_type = None
-    for ii in DATATYPE_LOOKUP:
-        if DATATYPE_LOOKUP[ii] == observation.type:
-            obs_type = ii
-            break
-    if 'REDUC' in obs_type:
-        extension = '_SCI'
-    elif 'FLAT' in obs_type:
-        extension = '_CAL'
-    elif obs_type == 'CALIB':
-        extension = '_CAL'
-    else:
-        logging.debug(
-            'Observation.type is {}. No naming addition.'.format(obs_type))
-        return
+def _update_science_provenance(observation, headers):
+    members_inputs = TypedSet(ObservationURI,)
+    plane_inputs = TypedSet(PlaneURI,)
+    for keyword in headers[0]:
+        if keyword.startswith('IN_'):
+            value = headers[0].get(keyword)
+            base_name = OmmName.remove_extensions(os.path.basename(value))
+            if base_name.startswith('S'):
+                # starting 'S' means a science input, 'C' will mean cal
+                file_id = '{}_SCI'.format(base_name.replace('S', 'C', 1))
+            elif base_name.startswith('C'):
+                file_id = '{}_CAL'.format(base_name)
+            else:
+                raise mc.CadcException(
+                    'Unknown file naming pattern {}'.format(base_name))
 
-    new_members = TypedSet(ObservationURI,)
-    new_inputs = TypedSet(PlaneURI,)
-    for member in observation.members:
-        new_obs_id = 'C{}'.format(
-            member.observation_id.replace('.fits.gz', extension))
-        new_member = ObservationURI('caom:OMM/{}'.format(new_obs_id))
-        new_members.add(new_member)
+            obs_member_uri_str = ec.CaomName.make_obs_uri_from_obs_id(
+                COLLECTION, file_id)
+            obs_member_uri = ObservationURI(obs_member_uri_str)
+            # the product id is the same as the observation id for OMM
+            plane_uri = PlaneURI.get_plane_uri(obs_member_uri, file_id)
+            plane_inputs.add(plane_uri)
+            members_inputs.add(obs_member_uri)
 
-        # the product id is the same as the observation id for OMM
-        new_input = PlaneURI.get_plane_uri(new_member, new_obs_id)
-        new_inputs.add(new_input)
-
-    _update_typed_set(observation.members, new_members)
-    _update_typed_set(
+    mc.update_typed_set(observation.members, members_inputs)
+    mc.update_typed_set(
         observation.planes[observation.observation_id].provenance.inputs,
-        new_inputs)
+        plane_inputs)
 
 
 def _update_cal_provenance(observation, headers):
@@ -650,16 +645,9 @@ def _update_cal_provenance(observation, headers):
         plane = observation.planes[key]
         if plane.provenance is None:
             plane.provenance = Provenance('CPAPIR')
-        _update_typed_set(plane.provenance.inputs, plane_inputs)
+        mc.update_typed_set(plane.provenance.inputs, plane_inputs)
 
-    _update_typed_set(observation.members, members_inputs)
-
-
-def _update_typed_set(typed_set, new_set):
-    # remove the previous values
-    while len(typed_set) > 0:
-        typed_set.pop()
-    typed_set.update(new_set)
+    mc.update_typed_set(observation.members, members_inputs)
 
 
 def _update_requirements(observation):

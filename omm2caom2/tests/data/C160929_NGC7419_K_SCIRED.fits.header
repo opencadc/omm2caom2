@@ -1,0 +1,283 @@
+SIMPLE  =                    T / Written by IDL:  Fri Oct 19 14:17:20 2018      
+BITPIX  =                  -32 / Bits per pixel                                 
+NAXIS   =                    2 / Number of dimensions                           
+NAXIS1  =                 2307 / Dimension for the X axis                       
+NAXIS2  =                 2316 / Dimension for the Y axis                       
+COMMENT   ***********************************************************           
+COMMENT   * All paper using CPAPIR data must include the following  *           
+COMMENT   * note in the "Acknowledgement" section :                 *           
+COMMENT   * Based on observations obtained with CPAPIR at the       *           
+COMMENT   * Observatoire du mont Megantic, funded by the Universite *           
+COMMENT   * de Montreal, Universite Laval, the Natural Sciences and *           
+COMMENT   * Engineering Research Council of Canada (NSERC), the     *           
+COMMENT   * Fond quebecois de la recherche sur la Nature et les     *           
+COMMENT   * technologies (FQRNT) and the Canada Economic            *           
+COMMENT   * Development program.                                    *           
+COMMENT   *                                                         *           
+COMMENT   * Please consider contacting the PI before publication    *           
+COMMENT   * of this dataset.                                        *           
+COMMENT   *                                                         *           
+COMMENT   * Please refer to the following paper in any publication  *           
+COMMENT   * making use of CPAPIR dataset :                          *           
+COMMENT   *  Artigau, E., Doyon, R., Vallee, P., Riopel, M.,        *           
+COMMENT   * & Nadeau, D. 2004, Proc. SPIE, 5492, 1479               *           
+COMMENT   *                                                         *           
+COMMENT   * Visit : www.astro.umontreal.ca/cpapir for more details. *           
+COMMENT   ***********************************************************           
+EQUINOX =        2000.00000000 / Reference                                      
+ORIGIN  = 'LAE     '           / Laboratoire d'Astrophysique Experimentale      
+TELESCOP= 'OMM-1.6m'           /Observatoire du Mont-Megantic                   
+OBS_LAT =        45.4555555556 /Latitude of the telescope                       
+OBS_LON =       -71.1527777778 /Longitude of the telescope (Negative=West of Gre
+INSTRUME= 'CPAPIR  '           / Instrument name                                
+OBSERVER= '        '           /Observer name                                   
+OBJECT  = 'NGC7419 '           / Nom de l'objet                                 
+DATATYPE= 'REDUC   '           /Data type, SCIENCE/CALIB/REJECT/FOCUS/TEST      
+FILE_INI= '160929_0416'        /Initial file name                               
+NIGHTID = '160929  '           /YYMMDD of the local start of night date         
+DATE-OBS= '2016-09-30T04:08:22' / Universal date and time                       
+DATE    = '2016-09-30T00:08:22' /Local date and time                            
+FICHIER = '/home/cpapir/160929/160929_0416' /0929_0416                          
+TEXP    =              10.0000 / Exposure time asked for                        
+NLEC    =                    1 / Number of reads per coaddition                 
+NCOA    =                    2 / Number of coadditions per file                 
+NFIC    =                    3 / Number of files to be written                  
+NATOD   =                   32 / Number of A/D converters                       
+T1      =              91.1701 / Detecteur                                      
+T2      =        540.420000000 / Lentille #8                                    
+T3      =              76.5367 / Detecteur                                      
+T4      =              76.5367 / non applicable                                 
+F1      = 'K       '           / Wheel 1 (X), position 4                        
+F2      = 'open    '           / Wheel 2 (Y), position 0                        
+F1NOM   = 'Wheel R ='          / Identification F1                              
+F2NOM   = 'Wheel B ='          / Identification F2                              
+HA      =       0.170765000000 /Hour angle, always expressed in HOURS           
+RA      =        343.643920133 /RA always expressed in DECIMAL DEGREE (0-360)   
+RATXT   = '22:54:34.54'        /RA expressed as text                            
+DEC     =        60.9199764994 / Declinaison                                    
+DECTXT  = '+60:55:11.9'        /DEC expressed as text                           
+AIRMASS =              1.03770 /mean airmass                                    
+ST      =        23.0896260000 / Temps sideral                                  
+UT      =        3.21294200000 / Temps universel                                
+YEAR    =        2016.74530796 /YEAR, same as the EPOCH keyword                 
+FOCUS   =        4447.00000000 / Foyer du telescope                             
+DOME    =        323.623896000 / Position du dome                               
+ROTATOR =        91.4755500000 / Angle du rotateur                              
+NLECMAX =                    4 / Maximum number of reads as a function of TEXP  
+TINT    =              9.47100 /integration time per COADD                      
+TEFF    =              2519.28 /total exposure time in seconds                  
+N_IND   =              133.000 /number of individual exposures                  
+TEFF_IND=              18.9420 /mean individual exposure time                   
+T_TOT   =              18.9420 /total integration time for all COADDS           
+T1LEC   =              1.35300 / Read time for the detector                     
+TCOA    =              4.05900 / Time for one coaddition                        
+TLEC    =              2.70600 / Time for two reads                             
+TSEQ    =                    0 / Time for the last sequence                     
+TUS     =             32555625 / Acquisition time in us                         
+TEC     =              9.47100 / Time elapsed                                   
+FEC     =                    3 / File in progress                               
+LEC     = '1f      '           /Read in progress                                
+CEC     =                    2 / Coaddition in progress                         
+PEC     =                  100 / Percentage in progress                         
+DS9FIC  = '/home/cpapir/160929/160929_0416.fits' /0929_0416.fits / Filename to d
+DECALE1 =                    0 / Flip quadrant 1                                
+DECALE2 =                    1 / Flip quadrant 2                                
+DECALE3 =                    1 / Flip quadrant 3                                
+DECALE4 =                    0 / Flip quadrant 4                                
+MIRPAT  = 'tim10.lod'          /Read pattern filename                           
+MIRMSG1 = 'seq 10 1 2 3 '      /                                                
+MIRMSG2 = '/home/cpapir/160929/160929_0416.fits (3 of 3) in 32.556 s, efficienc'
+MIRMSG5 = '        '           /                                                
+AIRM_MIN=              1.03714 /minimum airmass                                 
+AIRM_MAX=              1.03928 /maximum airmass                                 
+FILTER  = 'K       '           /                                                
+WLEN    =              2.15000 /central wavelength in micron                    
+BANDPASS=       0.300000000000 /bandpass in micron                              
+SCAN    = '-       '           /                                                
+DITHER  = ' [45    '           /                                                
+SHIFTCOR=                    1 /corrected with quadrant_shifteur.pro            
+CDELT1  =                    1 /                                                
+CDELT2  =                    1 /                                                
+CD1_1   =   -0.000247481511906 /                                                
+CD1_2   =   -1.04339505924E-07 /                                                
+CD2_1   =   -1.98753546954E-08 /                                                
+CD2_2   =    0.000247346441029 /                                                
+MJDATE  =        57661.6405049 /mean MJDATE                                     
+MJD_END =        57661.6724769 /MJDATE of last exposure                         
+MJD_STAR=        57661.6111227 /MJDATE of first exposure                        
+RELEASE = '2018-03-31'         / End of proprietary period YYYY-MM-DD           
+TEM71323=              6.10000 /Temperature, station WMO71323 (Beauceville)     
+DEW71323=              4.30000 /Point de rosee, station WMO71323 (Beauceville)  
+HUM71323=              88.0000 /Humidite rel., station WMO71323 (Beauceville)   
+TEM71610=              6.00000 /Temperature, station WMO71610 (Sherbrooke)      
+DEW71610=              5.00000 /Point de rosee, station WMO71610 (Sherbrooke)   
+HUM71610=              93.0000 /Humidite rel., station WMO71610 (Sherbrooke)    
+TEM71611=              6.80000 /Temperature, station WMO71611 (Lennoxville)     
+DEW71611=              4.80000 /Point de rosee, station WMO71611 (Lennoxville)  
+HUM71611=              87.0000 /Humidite rel., station WMO71611 (Lennoxville)   
+TEM72616=              6.80000 /Temperature, station WMO72616 (Berlin, NH)      
+DEW72616=              4.80000 /Point de rosee, station WMO72616 (Berlin, NH)   
+HUM72616=              87.0000 /Humidite rel., station WMO72616 (Berlin, NH)    
+TEMP_WMO=              6.42500 /Temperature estimee, stations WMO               
+DEWP_WMO=              4.72500 /Point de rosee estime, stations WMO             
+HUMI_WMO=              88.7500 /Humidite relative estimee, stations WMO         
+MEDIMAGE=              42415.0 /Image median                                    
+MEDDEVIM=              3447.00 /Median absolute deviation                       
+PARSED  =                    1 /if 1, then image has been parsed                
+CTYPE1  = 'RA---TAN'           / Coordinate Type                                
+CTYPE2  = 'DEC--TAN'           / Coordinate Type                                
+CRPIX1  =        1163.00000000 / Reference Pixel in X                           
+CRPIX2  =        1154.00000000 / Reference Pixel in Y                           
+CRVAL1  =        343.610015869 / R.A. (degrees) of reference pixel              
+CRVAL2  =        60.9042663574 / Declination of reference pixel                 
+RMSASTR =       0.384746849377 /                                                
+ASTRGAIA=                    1 /astrometry anchored to GAIA catalog             
+PIXSCALE=       0.890690297188 /Pixel scale in arcsec                           
+THETA   =        89.6474285887 /Rotation of WCS relative to NS (deg)            
+PIXFWHM =              2.59805 /FWHM in pixels                                  
+FWHM    =        2.31406164133 /FWHM in arcsec                                  
+MJD-OBS =        57661.1724769 / Modified Julian day of observations            
+RADESYS = 'FK5     '           / Reference frame                                
+RED_DATE= 'Fri Oct 19 18:17:00 2018' /DATE AND TIME FILE WAS REDUCED            
+HISTORY HEXTRACT: Fri Oct 19 14:17:00 2018                                      
+HISTORY Original image size was 2402 by 2424                                    
+HISTORY Extracted Image: [38:2344,58:2373]                                      
+IN_00001= 'S160929_0282.fits.gz' /raw input file (1/133)                        
+IN_00002= 'S160929_0283.fits.gz' /raw input file (2/133)                        
+IN_00003= 'S160929_0284.fits.gz' /raw input file (3/133)                        
+IN_00004= 'S160929_0285.fits.gz' /raw input file (4/133)                        
+IN_00005= 'S160929_0286.fits.gz' /raw input file (5/133)                        
+IN_00006= 'S160929_0287.fits.gz' /raw input file (6/133)                        
+IN_00007= 'S160929_0288.fits.gz' /raw input file (7/133)                        
+IN_00008= 'S160929_0289.fits.gz' /raw input file (8/133)                        
+IN_00009= 'S160929_0290.fits.gz' /raw input file (9/133)                        
+IN_00010= 'S160929_0291.fits.gz' /raw input file (10/133)                       
+IN_00011= 'S160929_0292.fits.gz' /raw input file (11/133)                       
+IN_00012= 'S160929_0293.fits.gz' /raw input file (12/133)                       
+IN_00013= 'S160929_0294.fits.gz' /raw input file (13/133)                       
+IN_00014= 'S160929_0295.fits.gz' /raw input file (14/133)                       
+IN_00015= 'S160929_0296.fits.gz' /raw input file (15/133)                       
+IN_00016= 'S160929_0297.fits.gz' /raw input file (16/133)                       
+IN_00017= 'S160929_0298.fits.gz' /raw input file (17/133)                       
+IN_00018= 'S160929_0299.fits.gz' /raw input file (18/133)                       
+IN_00019= 'S160929_0300.fits.gz' /raw input file (19/133)                       
+IN_00020= 'S160929_0301.fits.gz' /raw input file (20/133)                       
+IN_00021= 'S160929_0302.fits.gz' /raw input file (21/133)                       
+IN_00022= 'S160929_0303.fits.gz' /raw input file (22/133)                       
+IN_00023= 'S160929_0304.fits.gz' /raw input file (23/133)                       
+IN_00024= 'S160929_0305.fits.gz' /raw input file (24/133)                       
+IN_00025= 'S160929_0306.fits.gz' /raw input file (25/133)                       
+IN_00026= 'S160929_0307.fits.gz' /raw input file (26/133)                       
+IN_00027= 'S160929_0308.fits.gz' /raw input file (27/133)                       
+IN_00028= 'S160929_0309.fits.gz' /raw input file (28/133)                       
+IN_00029= 'S160929_0310.fits.gz' /raw input file (29/133)                       
+IN_00030= 'S160929_0311.fits.gz' /raw input file (30/133)                       
+IN_00031= 'S160929_0312.fits.gz' /raw input file (31/133)                       
+IN_00032= 'S160929_0313.fits.gz' /raw input file (32/133)                       
+IN_00033= 'S160929_0314.fits.gz' /raw input file (33/133)                       
+IN_00034= 'S160929_0315.fits.gz' /raw input file (34/133)                       
+IN_00035= 'S160929_0316.fits.gz' /raw input file (35/133)                       
+IN_00036= 'S160929_0317.fits.gz' /raw input file (36/133)                       
+IN_00037= 'S160929_0318.fits.gz' /raw input file (37/133)                       
+IN_00038= 'S160929_0319.fits.gz' /raw input file (38/133)                       
+IN_00039= 'S160929_0320.fits.gz' /raw input file (39/133)                       
+IN_00040= 'S160929_0321.fits.gz' /raw input file (40/133)                       
+IN_00041= 'S160929_0322.fits.gz' /raw input file (41/133)                       
+IN_00042= 'S160929_0323.fits.gz' /raw input file (42/133)                       
+IN_00043= 'S160929_0324.fits.gz' /raw input file (43/133)                       
+IN_00044= 'S160929_0325.fits.gz' /raw input file (44/133)                       
+IN_00045= 'S160929_0326.fits.gz' /raw input file (45/133)                       
+IN_00046= 'S160929_0327.fits.gz' /raw input file (46/133)                       
+IN_00047= 'S160929_0328.fits.gz' /raw input file (47/133)                       
+IN_00048= 'S160929_0329.fits.gz' /raw input file (48/133)                       
+IN_00049= 'S160929_0330.fits.gz' /raw input file (49/133)                       
+IN_00050= 'S160929_0331.fits.gz' /raw input file (50/133)                       
+IN_00051= 'S160929_0332.fits.gz' /raw input file (51/133)                       
+IN_00052= 'S160929_0333.fits.gz' /raw input file (52/133)                       
+IN_00053= 'S160929_0334.fits.gz' /raw input file (53/133)                       
+IN_00054= 'S160929_0335.fits.gz' /raw input file (54/133)                       
+IN_00055= 'S160929_0336.fits.gz' /raw input file (55/133)                       
+IN_00056= 'S160929_0337.fits.gz' /raw input file (56/133)                       
+IN_00057= 'S160929_0338.fits.gz' /raw input file (57/133)                       
+IN_00058= 'S160929_0339.fits.gz' /raw input file (58/133)                       
+IN_00059= 'S160929_0340.fits.gz' /raw input file (59/133)                       
+IN_00060= 'S160929_0341.fits.gz' /raw input file (60/133)                       
+IN_00061= 'S160929_0342.fits.gz' /raw input file (61/133)                       
+IN_00062= 'S160929_0343.fits.gz' /raw input file (62/133)                       
+IN_00063= 'S160929_0344.fits.gz' /raw input file (63/133)                       
+IN_00064= 'S160929_0345.fits.gz' /raw input file (64/133)                       
+IN_00065= 'S160929_0346.fits.gz' /raw input file (65/133)                       
+IN_00066= 'S160929_0347.fits.gz' /raw input file (66/133)                       
+IN_00067= 'S160929_0348.fits.gz' /raw input file (67/133)                       
+IN_00068= 'S160929_0349.fits.gz' /raw input file (68/133)                       
+IN_00069= 'S160929_0350.fits.gz' /raw input file (69/133)                       
+IN_00070= 'S160929_0351.fits.gz' /raw input file (70/133)                       
+IN_00071= 'S160929_0352.fits.gz' /raw input file (71/133)                       
+IN_00072= 'S160929_0353.fits.gz' /raw input file (72/133)                       
+IN_00073= 'S160929_0354.fits.gz' /raw input file (73/133)                       
+IN_00074= 'S160929_0355.fits.gz' /raw input file (74/133)                       
+IN_00075= 'S160929_0356.fits.gz' /raw input file (75/133)                       
+IN_00076= 'S160929_0357.fits.gz' /raw input file (76/133)                       
+IN_00077= 'S160929_0358.fits.gz' /raw input file (77/133)                       
+IN_00078= 'S160929_0359.fits.gz' /raw input file (78/133)                       
+IN_00079= 'S160929_0360.fits.gz' /raw input file (79/133)                       
+IN_00080= 'S160929_0361.fits.gz' /raw input file (80/133)                       
+IN_00081= 'S160929_0362.fits.gz' /raw input file (81/133)                       
+IN_00082= 'S160929_0363.fits.gz' /raw input file (82/133)                       
+IN_00083= 'S160929_0364.fits.gz' /raw input file (83/133)                       
+IN_00084= 'S160929_0365.fits.gz' /raw input file (84/133)                       
+IN_00085= 'S160929_0366.fits.gz' /raw input file (85/133)                       
+IN_00086= 'S160929_0367.fits.gz' /raw input file (86/133)                       
+IN_00087= 'S160929_0368.fits.gz' /raw input file (87/133)                       
+IN_00088= 'S160929_0369.fits.gz' /raw input file (88/133)                       
+IN_00089= 'S160929_0370.fits.gz' /raw input file (89/133)                       
+IN_00090= 'S160929_0371.fits.gz' /raw input file (90/133)                       
+IN_00091= 'S160929_0372.fits.gz' /raw input file (91/133)                       
+IN_00092= 'S160929_0373.fits.gz' /raw input file (92/133)                       
+IN_00093= 'S160929_0374.fits.gz' /raw input file (93/133)                       
+IN_00094= 'S160929_0375.fits.gz' /raw input file (94/133)                       
+IN_00095= 'S160929_0376.fits.gz' /raw input file (95/133)                       
+IN_00096= 'S160929_0377.fits.gz' /raw input file (96/133)                       
+IN_00097= 'S160929_0378.fits.gz' /raw input file (97/133)                       
+IN_00098= 'S160929_0379.fits.gz' /raw input file (98/133)                       
+IN_00099= 'S160929_0380.fits.gz' /raw input file (99/133)                       
+IN_00100= 'S160929_0381.fits.gz' /raw input file (100/133)                      
+IN_00101= 'S160929_0382.fits.gz' /raw input file (101/133)                      
+IN_00102= 'S160929_0383.fits.gz' /raw input file (102/133)                      
+IN_00103= 'S160929_0384.fits.gz' /raw input file (103/133)                      
+IN_00104= 'S160929_0385.fits.gz' /raw input file (104/133)                      
+IN_00105= 'S160929_0386.fits.gz' /raw input file (105/133)                      
+IN_00106= 'S160929_0387.fits.gz' /raw input file (106/133)                      
+IN_00107= 'S160929_0388.fits.gz' /raw input file (107/133)                      
+IN_00108= 'S160929_0389.fits.gz' /raw input file (108/133)                      
+IN_00109= 'S160929_0390.fits.gz' /raw input file (109/133)                      
+IN_00110= 'S160929_0391.fits.gz' /raw input file (110/133)                      
+IN_00111= 'S160929_0392.fits.gz' /raw input file (111/133)                      
+IN_00112= 'S160929_0393.fits.gz' /raw input file (112/133)                      
+IN_00113= 'S160929_0394.fits.gz' /raw input file (113/133)                      
+IN_00114= 'S160929_0395.fits.gz' /raw input file (114/133)                      
+IN_00115= 'S160929_0396.fits.gz' /raw input file (115/133)                      
+IN_00116= 'S160929_0397.fits.gz' /raw input file (116/133)                      
+IN_00117= 'S160929_0398.fits.gz' /raw input file (117/133)                      
+IN_00118= 'S160929_0399.fits.gz' /raw input file (118/133)                      
+IN_00119= 'S160929_0400.fits.gz' /raw input file (119/133)                      
+IN_00120= 'S160929_0401.fits.gz' /raw input file (120/133)                      
+IN_00121= 'S160929_0402.fits.gz' /raw input file (121/133)                      
+IN_00122= 'S160929_0403.fits.gz' /raw input file (122/133)                      
+IN_00123= 'S160929_0405.fits.gz' /raw input file (123/133)                      
+IN_00124= 'S160929_0406.fits.gz' /raw input file (124/133)                      
+IN_00125= 'S160929_0407.fits.gz' /raw input file (125/133)                      
+IN_00126= 'S160929_0408.fits.gz' /raw input file (126/133)                      
+IN_00127= 'S160929_0409.fits.gz' /raw input file (127/133)                      
+IN_00128= 'S160929_0411.fits.gz' /raw input file (128/133)                      
+IN_00129= 'S160929_0412.fits.gz' /raw input file (129/133)                      
+IN_00130= 'S160929_0413.fits.gz' /raw input file (130/133)                      
+IN_00131= 'S160929_0414.fits.gz' /raw input file (131/133)                      
+IN_00132= 'S160929_0415.fits.gz' /raw input file (132/133)                      
+IN_00133= 'S160929_0416.fits.gz' /raw input file (133/133)                      
+PZERO   =              24.6466 /zero point, raper=1*FWHM, rsky=[2-3]FHWM,mag=K2m
+PZ3FW   =              25.0193 /zero point, raper=3*FWHM, rsky=[3-5]FHWM,mag=K2m
+SKYMAG  =        16.3926999834 /sky background in mag/arcsec                    
+MAG5SIG =              16.0457 /mag 5 sigma, raper=1*FWHM, rsky=[2-3]FHWM,mag=K2
+RMSPIXEL=              100.829 /rms pixel-to-pixel image                        
+END

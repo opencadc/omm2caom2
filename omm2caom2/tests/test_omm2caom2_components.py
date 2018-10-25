@@ -70,7 +70,8 @@ import os
 
 from caom2pipe import astro_composable as ac
 from caom2pipe import manage_composable as mc
-from omm2caom2 import _update_cal_provenance, features
+from omm2caom2 import _update_cal_provenance, _update_science_provenance
+from omm2caom2 import features
 
 features.supports_composite = True
 
@@ -98,8 +99,35 @@ def test_update_cal_provenance():
         assert plane.provenance is not None, 'no provenance'
         assert plane.provenance.inputs is not None, 'no provenance inputs'
         assert len(plane.provenance.inputs) == 22, \
-            'wrong provenancei inputs length'
+            'wrong provenance inputs length'
         test_plane_input = plane.provenance.inputs.pop()
         assert test_plane_input.uri.find(
             'caom:OMM/C170323') == 0, 'wrong input value'
         assert test_plane_input.uri.endswith('_CAL'), 'wrong input value'
+
+
+def test_update_sci_provenance():
+    test_obs = 'C160929_NGC7419_K_SCIRED'
+    test_obs_file = os.path.join(TESTDATA_DIR, '{}.fits.xml'.format(test_obs))
+    test_header_file = os.path.join(TESTDATA_DIR,
+                                    '{}.fits.header'.format(test_obs))
+    test_obs = mc.read_obs_from_file(test_obs_file)
+    fits_header = open(test_header_file).read()
+    headers = ac.make_headers_from_string(fits_header)
+    _update_science_provenance(test_obs, headers)
+    assert test_obs is not None, 'no test_obs'
+    assert test_obs.members is not None, 'no members'
+    assert len(test_obs.members) == 133, 'wrong obs members length'
+    test_member = test_obs.members.pop()
+    assert test_member.uri.find('caom:OMM/C160929') == 0, 'wrong member value'
+    assert test_member.uri.endswith('_SCI'), 'wrong member value'
+    for ii in test_obs.planes:
+        plane = test_obs.planes[ii]
+        assert plane.provenance is not None, 'no provenance'
+        assert plane.provenance.inputs is not None, 'no provenance inputs'
+        assert len(plane.provenance.inputs) == 133, \
+            'wrong provenance inputs length'
+        test_plane_input = plane.provenance.inputs.pop()
+        assert test_plane_input.uri.find(
+            'caom:OMM/C160929') == 0, 'wrong input value'
+        assert test_plane_input.uri.endswith('_SCI'), 'wrong input value'
