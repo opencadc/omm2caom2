@@ -135,6 +135,7 @@ def _artifact_metadata(uri, fqn, product_type, artifact):
         artifact.content_checksum = md5uri
         return artifact
 
+
 def _do_prev(file_id, science_fqn, working_dir, plane, cadc_client):
     preview = OmmName(file_id).prev
     preview_fqn = os.path.join(working_dir, preview)
