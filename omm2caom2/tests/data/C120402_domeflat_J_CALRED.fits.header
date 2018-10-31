@@ -1,0 +1,138 @@
+SIMPLE  =                    T / Written by IDL:  Thu Oct 31 10:27:16 2013      
+BITPIX  =                  -32 / Bits per pixel                                 
+NAXIS   =                    2 / Number of dimensions                           
+NAXIS1  =                 2048 / Dimension for the X axis                       
+NAXIS2  =                 2048 / Dimension for the Y axis                       
+COMMENT  **********************************************                         
+COMMENT  *                                            *                         
+COMMENT  * CPAPIR Domeflat created from               *                         
+COMMENT  * the subtraction of ON and OFF              *                         
+COMMENT  * images of the illuminated dome.            *                         
+COMMENT  * The list below gives the name of           *                         
+COMMENT  * on and off images. NaN values flag         *                         
+COMMENT  * bad pixels. Bad pixels are defined as      *                         
+COMMENT  * deviations of more than 40% from the       *                         
+COMMENT  * flat median.                               *                         
+COMMENT  *                                            *                         
+COMMENT  * Please visit www.astro.umontreal.ca/cpapir *                         
+COMMENT  * for more details on the instrument.        *                         
+COMMENT  *                                            *                         
+COMMENT  **********************************************                         
+EQUINOX =                 2000 / Reference                                      
+ORIGIN  = 'LAE     '           / Laboratoire d'Astrophysique Experimentale      
+TELESCOP= 'OMM-1.6m'           /Observatoire du Mont-Megantic                   
+OBS_LAT =        45.4555555556 /Latitude of the telescope                       
+OBS_LON =       -71.1527777778 /Longitude of the telescope (Negative=West of Gre
+INSTRUME= 'CPAPIR  '           / Instrument name                                
+OBSERVER= '        '           /Observer name                                   
+OBJECT  = 'domeflat'           /                                                
+DATATYPE= 'CALRED  '           /Data type, SCIENCE/CALIB/REJECT/FOCUS/TEST      
+FILE_INI= '120402_0715'        /Initial file name                               
+NIGHTID = '120402  '           /YYMMDD of the local start of night date         
+DATE-OBS= '2012-04-03T10:02:31' / Universal date and time                       
+DATE    = '2012-04-03T06:02:31' /Local date and time                            
+FICHIER = '/home/cpapir/120402/120402_0715' /120402/120402_0715' /0402_0715 / Fi
+TEXP    =              16.0000 / Exposure time asked for                        
+NLEC    =                    1 / Number of reads per coaddition                 
+NCOA    =                    1 / Number of coadditions per file                 
+NFIC    =                   11 / Number of files to be written                  
+NATOD   =                   32 / Number of A/D converters                       
+T1      = '/       '           / Temperature 1 = Detector                       
+T2      = '/       '           / Temperature 2 = Lens #8                        
+T3      = '/       '           / Temperature 3 = Nitrogen                       
+T4      = '/       '           / Temperature 4 =                                
+F1      = 'J       '           / Wheel 1 (X), position 2                        
+F2      = 'open    '           / Wheel 2 (Y), position 0                        
+F1NOM   = 'Wheel R ='          / Identification F1                              
+F2NOM   = 'Wheel B ='          / Identification F2                              
+HA      =        4.03177800000 / Angle horaire                                  
+RA      =        205.586865000 /RA always expressed in DECIMAL DEGREE (0-360)   
+RATXT   = '13:42:20.85'        /RA expressed as text                            
+DEC     =        28.4263190000 / Declinaison                                    
+DECTXT  = '+28:25:34.7'        /DEC expressed as text                           
+AIRMASS =        1.55163700000 /mean airmass                                    
+ST      =        17.7375690000 / Temps sideral                                  
+UT      =        9.67266100000 / Temps universel                                
+YEAR    =        2012.25307470 /YEAR, same as the EPOCH keyword                 
+FOCUS   =        3557.00000000 / Foyer du telescope                             
+DOME    =        279.441449000 / Position du dome                               
+ROTATOR =        89.9016300000 / Angle du rotateur                              
+NLECMAX =                    6 / Maximum number of reads as a function of TEXP  
+TINT    =              16.2360 / Effective integration time                     
+TEFF    =        178.607000351 /total exposure time in seconds                  
+N_IND   =                   11 /number of individual exposures                  
+TEFF_IND=        16.2370000319 /mean individual exposure time                   
+T1LEC   =              1.35300 / Read time for the detector                     
+TCOA    =              4.05900 / Time for one coaddition                        
+TLEC    =              2.70600 / Time for two reads                             
+TSEQ    =                    0 / Time for the last sequence                     
+TUS     =             23631196 / Acquisition time in us                         
+TEC     =              1.00000 / Time elapsed                                   
+FEC     =                    2 / File in progress                               
+LEC     = '1f      '           /Read in progress                                
+CEC     =                    1 / Coaddition in progress                         
+PEC     =                    5 / Percentage in progress                         
+DS9FIC  = '/home/cpapir/120402/120402_0715.fits' /120402/120402_0715.fits' /0402
+DECALE1 =                    0 / Flip quadrant 1                                
+DECALE2 =                    1 / Flip quadrant 2                                
+DECALE3 =                    1 / Flip quadrant 3                                
+DECALE4 =                    0 / Flip quadrant 4                                
+MIRPAT  = 'tim10.lod'          /Read pattern filename                           
+MIRMSG1 = 'seq 16 1 1 11 '     /                                                
+MIRMSG2 = '/home/cpapir/120402/120402_0715.fits (1 of 11) in 23.631 s, efficien'
+MIRMSG5 = ' TEFF = 16247 ms instead of 16236 ms in ' /home/cpapir/120402/120402_
+SCAN    = '-       '           /                                                
+AIRM_MIN=        1.55163700000 /minimum airmass                                 
+AIRM_MAX=        1.55163700000 /maximum airmass                                 
+FILTER  = 'J       '           /                                                
+WLEN    =              1.25000 /central wavelength in micron                    
+BANDPASS=       0.160000000000 /bandpass in micron                              
+DITHER  = ' [9     '           /                                                
+CDELT1  =        1.00000000000 /                                                
+CDELT2  =        1.00000000000 /                                                
+MJDATE  =        56020.9197212 /mean MJDATE                                     
+MJD_END =        56020.9208102 /MJDATE of last exposure                         
+MJD_STAR=        56020.9184144 /MJDATE of first exposure                        
+RELEASE = '2013-10-02'         / End of proprietary period YYYY-MM-DD           
+TEMP_WMO=                 -999 /Temperature est., WMO (-999=unav.)              
+DEWP_WMO=                 -999 /Point de rosee est., WMO (-999=unav.)           
+HUMI_WMO=                 -999 /Humidite relative est., WMO (-999=unav.)        
+MEDIMAGE=              18967.0 /Image median                                    
+MEDDEVIM=              1648.00 /Median absolute deviation                       
+PARSED  =                    1 /if 1, then image has been parsed                
+CTYPE1  = 'RA---TAN'           / Coordinate Type                                
+CTYPE2  = 'DEC--TAN'           / Coordinate Type                                
+CROTA2  =              0.00000 / Rotation Angle (Degrees)                       
+CRPIX1  =        1023.50000000 / Reference Pixel in X                           
+CRPIX2  =        1023.50000000 / Reference Pixel in Y                           
+CRVAL1  =        0.00000000000 / R.A. (degrees) of reference pixel              
+CRVAL2  =        0.00000000000 / Declination of reference pixel                 
+LONPOLE =        180.000000000 / Native longitude of Celestial pole             
+LATPOLE =        0.00000000000 / Celestial latitude of native pole              
+PV2_1   =        0.00000000000 /Projection parameter 1                          
+HISTORY PUTAST: Apr 11 15:46:25 2012 World Coordinate System parameters written 
+F_ON1   = '120402_0715.fits.gz' /nom du fichier de flat ON [1/11]               
+F_ON2   = '120402_0716.fits.gz' /nom du fichier de flat ON [2/11]               
+F_ON3   = '120402_0717.fits.gz' /nom du fichier de flat ON [3/11]               
+F_ON4   = '120402_0718.fits.gz' /nom du fichier de flat ON [4/11]               
+F_ON5   = '120402_0719.fits.gz' /nom du fichier de flat ON [5/11]               
+F_ON6   = '120402_0720.fits.gz' /nom du fichier de flat ON [6/11]               
+F_ON7   = '120402_0721.fits.gz' /nom du fichier de flat ON [7/11]               
+F_ON8   = '120402_0722.fits.gz' /nom du fichier de flat ON [8/11]               
+F_ON9   = '120402_0723.fits.gz' /nom du fichier de flat ON [9/11]               
+F_ON10  = '120402_0724.fits.gz' /nom du fichier de flat ON [10/11]              
+F_ON11  = '120402_0725.fits.gz' /nom du fichier de flat ON [11/11]              
+F_OFF1  = '120402_0726.fits.gz' /nom du fichier de flat OFF [1/11]              
+F_OFF2  = '120402_0727.fits.gz' /nom du fichier de flat OFF [2/11]              
+F_OFF3  = '120402_0728.fits.gz' /nom du fichier de flat OFF [3/11]              
+F_OFF4  = '120402_0729.fits.gz' /nom du fichier de flat OFF [4/11]              
+F_OFF5  = '120402_0730.fits.gz' /nom du fichier de flat OFF [5/11]              
+F_OFF6  = '120402_0731.fits.gz' /nom du fichier de flat OFF [6/11]              
+F_OFF7  = '120402_0732.fits.gz' /nom du fichier de flat OFF [7/11]              
+F_OFF8  = '120402_0733.fits.gz' /nom du fichier de flat OFF [8/11]              
+F_OFF9  = '120402_0734.fits.gz' /nom du fichier de flat OFF [9/11]              
+F_OFF10 = '120402_0735.fits.gz' /nom du fichier de flat OFF [10/11]             
+F_OFF11 = '120402_0736.fits.gz' /nom du fichier de flat OFF [11/11]             
+ILLUM   =                    1 /0/1 flag. The illumination correction has been p
+T_TOT   =        16.2370000319 // integration for all COADDS within 1 frame     
+END

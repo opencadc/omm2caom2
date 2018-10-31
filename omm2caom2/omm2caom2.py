@@ -69,11 +69,13 @@
 
 import importlib
 import logging
+import numpy
 import os
 import sys
 import traceback
 
 from astropy.io import fits
+import astropy.wcs as wcs
 
 from caom2 import TargetType, ObservationIntentType, CalibrationLevel
 from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
@@ -444,7 +446,7 @@ def update(observation, **kwargs):
                     chunk.product_type = get_product_type(headers)
                     _update_energy(chunk, headers)
                     _update_time(chunk, headers)
-                    _update_position(chunk)
+                    _update_position(chunk, headers)
 
     if observation.observation_id.endswith('_REJECT'):
         _update_requirements(observation)
@@ -556,14 +558,18 @@ def _update_time(chunk, headers):
     logging.debug('Done _update_time.')
 
 
-def _update_position(chunk):
+def _update_position(chunk, headers):
     """Check that position information has been set appropriately.
     Reset to null if there's bad input data."""
     logging.debug('Begin _update_position')
     mc.check_param(chunk, Chunk)
 
-    if (chunk.position is not None and chunk.position.axis is not None and
-            chunk.position.axis.function is None):
+    w = wcs.WCS(headers[0])
+
+    if ((chunk.position is not None and chunk.position.axis is not None and
+         chunk.position.axis.function is None) or
+            (numpy.allclose(w.wcs.crval[0], 0.) and
+             numpy.allclose(w.wcs.crval[1], 0))):
         chunk.position = None
         chunk.position_axis_1 = None
         chunk.position_axis_2 = None
