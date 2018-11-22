@@ -47,7 +47,7 @@ RUN pip install pytest && pip install mock && pip install flake8 && \
 WORKDIR /usr/src/app
 RUN git clone https://github.com/opencadc-metadata-curation/caom2tools.git && \
   cd caom2tools && git pull origin master && \
-  pip install ./caom2utils && pip install ./caom2pipe
+  pip install ./caom2utils && pip install ./caom2pipe && cd ..
   
 RUN git clone https://github.com/opencadc-metadata-curation/omm2caom2.git && \
   cp /usr/local/bin/footprintfinder.py ./omm2caom2/omm2caom2 && \
