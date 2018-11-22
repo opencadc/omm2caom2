@@ -70,7 +70,7 @@
 import logging
 import os
 
-from caom2 import Artifact, ProductType, ReleaseType, ChecksumURI
+from caom2 import ProductType, ReleaseType
 from caom2 import Observation
 from caom2pipe import execute_composable as ec
 from caom2pipe import manage_composable as mc
@@ -109,7 +109,8 @@ def visit(observation, **kwargs):
                             '{} preview visit file not found'.format(
                                 science_fqn))
                 logging.debug('working on file {}'.format(science_fqn))
-                count += _do_prev(file_id, science_fqn, working_dir, plane, cadc_client)
+                count += _do_prev(file_id, science_fqn, working_dir, plane,
+                                  cadc_client)
     logging.info('Completed preview augmentation for {}.'.format(
             observation.observation_id))
     return {'artifacts': count}
@@ -119,21 +120,9 @@ def _augment(plane, uri, fqn, product_type):
     temp = None
     if uri in plane.artifacts:
         temp = plane.artifacts[uri]
-    plane.artifacts[uri] = _artifact_metadata(uri, fqn, product_type, temp)
-
-
-def _artifact_metadata(uri, fqn, product_type, artifact):
-    local_meta = mc.get_file_meta(fqn)
-    md5uri = ChecksumURI('md5:{}'.format(local_meta['md5sum']))
-    if artifact is None:
-        return Artifact(uri, product_type, ReleaseType.DATA, local_meta['type'],
-                        local_meta['size'], md5uri)
-    else:
-        artifact.product_type = product_type
-        artifact.content_type = local_meta['type']
-        artifact.content_length = local_meta['size']
-        artifact.content_checksum = md5uri
-        return artifact
+    plane.artifacts[uri] = mc.get_artifact_metadata(fqn, product_type,
+                                                    ReleaseType.DATA, uri,
+                                                    temp)
 
 
 def _do_prev(file_id, science_fqn, working_dir, plane, cadc_client):
@@ -165,16 +154,5 @@ def _do_prev(file_id, science_fqn, working_dir, plane, cadc_client):
 
 def _store_smalls(cadc_client, working_directory, preview_fname,
                   thumb_fname):
-    cwd = os.getcwd()
-    try:
-        os.chdir(working_directory)
-        cadc_client.put_file(COLLECTION, preview_fname, 'raw')
-        cadc_client.put_file(COLLECTION, thumb_fname, 'raw')
-    except Exception as e:
-        raise mc.CadcException('Failed to store previews with {}'.format(e))
-    finally:
-        os.chdir(cwd)
-    mc.compare_checksum_client(cadc_client, COLLECTION,
-                               os.path.join(working_directory, preview_fname))
-    mc.compare_checksum_client(cadc_client, COLLECTION,
-                               os.path.join(working_directory, thumb_fname))
+    mc.data_put(cadc_client, working_directory, preview_fname, COLLECTION)
+    mc.data_put(cadc_client, working_directory, thumb_fname, COLLECTION)
