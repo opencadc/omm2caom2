@@ -113,7 +113,6 @@ DEFAULT_GEOCENTRIC = {
              'elevation': 2200.}}
 
 
-
 class OmmName(ec.StorageName):
     """OMM naming rules:
     - support mixed-case file name storage, and mixed-case obs id values
@@ -184,6 +183,9 @@ class OmmChooser(ec.OrganizeChooser):
     def needs_delete(self, observation):
         return (isinstance(observation, SimpleObservation) and
                 OmmName.is_composite(observation.observation_id))
+
+    def use_compressed(self):
+        return True
 
 
 def accumulate_obs(bp, uri):
@@ -267,8 +269,8 @@ def get_end_ref_coord_val(header):
     parameter named header for import_module loading and execution.
 
     :param header Array of astropy headers"""
-    wlen = header[0].get('WLEN')
-    bandpass = header[0].get('BANDPASS')
+    wlen = header.get('WLEN')
+    bandpass = header.get('BANDPASS')
     if wlen is not None and bandpass is not None:
         return wlen + bandpass / 2.
     else:
@@ -283,7 +285,7 @@ def get_obs_type(header):
 
     :param header Array of astropy headers"""
     obs_type = None
-    datatype = header[0].get('DATATYPE')
+    datatype = header.get('DATATYPE')
     if datatype in DATATYPE_LOOKUP:
         obs_type = DATATYPE_LOOKUP[datatype]
     return obs_type
@@ -297,7 +299,7 @@ def get_obs_intent(header):
 
     :param header Array of astropy headers"""
     lookup = ObservationIntentType.CALIBRATION
-    datatype = header[0].get('DATATYPE')
+    datatype = header.get('DATATYPE')
     if 'SCIENCE' in datatype or 'REDUC' in datatype:
         lookup = ObservationIntentType.SCIENCE
     return lookup
@@ -311,7 +313,7 @@ def get_obs_env_ambient_temp(header):
     parameter named header for import_module loading and execution.
 
     :param header Array of astropy headers"""
-    lookup = header[0].get('TEMP_WMO')
+    lookup = header.get('TEMP_WMO')
     if ((isinstance(lookup, float) or isinstance(lookup,
                                                  int)) and lookup < -99.):
         lookup = None
@@ -326,7 +328,7 @@ def get_plane_cal_level(header):
 
     :param header Array of astropy headers"""
     lookup = CalibrationLevel.RAW_STANDARD
-    datatype = header[0].get('DATATYPE')
+    datatype = header.get('DATATYPE')
     if 'REDUC' in datatype:
         lookup = CalibrationLevel.CALIBRATED
     return lookup
@@ -341,7 +343,7 @@ def get_product_type(header):
 
     :param header Array of astropy headers"""
     lookup = ProductType.CALIBRATION
-    datatype = header[0].get('DATATYPE')
+    datatype = header.get('DATATYPE')
     if 'SCIENCE' in datatype or 'REDUC' in datatype:
         lookup = ProductType.SCIENCE
     return lookup
@@ -356,10 +358,10 @@ def get_position_resolution(header):
 
     :param header Array of astropy headers"""
     temp = None
-    temp_astr = mc.to_float(header[0].get('RMSASTR'))
+    temp_astr = mc.to_float(header.get('RMSASTR'))
     if temp_astr != -1.0:
         temp = temp_astr
-    temp_mass = mc.to_float(header[0].get('RMS2MASS'))
+    temp_mass = mc.to_float(header.get('RMS2MASS'))
     if temp_mass != -1.0:
         temp = temp_mass
     return temp
@@ -373,11 +375,11 @@ def get_data_release_date(header):
     parameter named header for import_module loading and execution.
 
     :param header Array of astropy headers"""
-    rel_date = header[0].get('RELEASE')
+    rel_date = header.get('RELEASE')
     if rel_date is not None:
         return rel_date
     else:
-        rel_date = header[0].get('DATE')
+        rel_date = header.get('DATE')
         return rel_date
 
 
@@ -389,11 +391,11 @@ def get_meta_release_date(header):
     parameter named header for import_module loading and execution.
 
     :param header Array of astropy headers"""
-    rel_date = header[0].get('DATE-OBS')
+    rel_date = header.get('DATE-OBS')
     if rel_date is not None:
         return rel_date
     else:
-        rel_date = header[0].get('DATE')
+        rel_date = header.get('DATE')
         return rel_date
 
 
@@ -405,8 +407,8 @@ def get_start_ref_coord_val(header):
     parameter named header for import_module loading and execution.
 
     :param header Array of astropy headers"""
-    wlen = header[0].get('WLEN')
-    bandpass = header[0].get('BANDPASS')
+    wlen = header.get('WLEN')
+    bandpass = header.get('BANDPASS')
     if wlen is not None and bandpass is not None:
         return wlen - bandpass / 2.
     else:
@@ -429,6 +431,9 @@ def update(observation, **kwargs):
     if 'fqn' in kwargs:
         fqn = kwargs['fqn']
 
+    logging.error(type(headers))
+    logging.error(type(headers[0]))
+
     _update_telescope_location(observation, headers)
 
     for plane in observation.planes:
@@ -443,7 +448,7 @@ def update(observation, **kwargs):
 
                 for chunk in p.chunks:
                     chunk.naxis = 4
-                    chunk.product_type = get_product_type(headers)
+                    chunk.product_type = get_product_type(headers[0])
                     _update_energy(chunk, headers)
                     _update_time(chunk, headers)
                     _update_position(chunk, headers)
@@ -483,8 +488,8 @@ def _update_energy(chunk, headers):
             'BANDPASS {}'.format(wlen, bandpass))
     else:
         naxis = CoordAxis1D(Axis('WAVE', 'um'))
-        start_ref_coord = RefCoord(0.5, get_start_ref_coord_val(headers))
-        end_ref_coord = RefCoord(1.5, get_end_ref_coord_val(headers))
+        start_ref_coord = RefCoord(0.5, get_start_ref_coord_val(headers[0]))
+        end_ref_coord = RefCoord(1.5, get_end_ref_coord_val(headers[0]))
         naxis.range = CoordRange1D(start_ref_coord, end_ref_coord)
         chunk.energy = SpectralWCS(naxis, specsys='TOPCENT',
                                    ssysobs='TOPCENT', ssyssrc='TOPCENT',

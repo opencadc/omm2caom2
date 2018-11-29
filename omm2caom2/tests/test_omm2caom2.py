@@ -88,6 +88,7 @@ PLUGIN = os.path.join(os.path.dirname(THIS_DIR), '{}.py'.format(APPLICATION))
 def pytest_generate_tests(metafunc):
     files = [os.path.join(TESTDATA_DIR, name) for name in
              os.listdir(TESTDATA_DIR) if name.endswith('header')]
+    # files = [os.path.join(TESTDATA_DIR, 'C071112_0001_CAL.fits.header')]
     metafunc.parametrize('test_name', files)
 
 
