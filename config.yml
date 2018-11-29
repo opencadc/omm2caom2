@@ -2,7 +2,7 @@ working_directory: /usr/src/app/
 # the netrc_filename value must be a fully-qualified name
 netrc_filename: /usr/src/app/netrc
 # test value is ivo://cadc.nrc.ca/sc2repo
-resource_id: ivo://cadc.nrc.ca/caom2repo
+resource_id: ivo://cadc.nrc.ca/ams
 todo_file_name: todo.txt
 # values True False
 use_local_files: True
