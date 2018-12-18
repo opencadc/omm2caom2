@@ -29,6 +29,8 @@ retry_failures: True
 retry_count: 1
 # ad stream value - sorry
 stream: raw
+archive: OMM
+collection: OMM
 # how to control the work that gets done
 # possible values are:
 # - scrape - read the headers, write out the xml - kind of a test mode
