@@ -83,6 +83,7 @@ def test_is_valid():
     assert OmmName('C121212_J0454+8024_J_SCIRED').is_valid()
     assert OmmName('C121212_00001_TEST').is_valid()
     assert OmmName('C121212_00001_FOCUS').is_valid()
+    assert OmmName('C121121_J024345.57-021326.4_K_SCIRED').is_valid()
 
     test_subject = OmmName(file_name='C121212_00001_SCI.fits')
     assert test_subject.is_valid()

@@ -121,7 +121,7 @@ class OmmName(ec.StorageName):
     - files are compressed in ad
     """
 
-    OMM_NAME_PATTERN = 'C[\\w+-]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
+    OMM_NAME_PATTERN = 'C[\\w+-.]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
 
     def __init__(self, obs_id=None, fname_on_disk=None, file_name=None):
         if file_name is None and fname_on_disk is None:
@@ -431,9 +431,6 @@ def update(observation, **kwargs):
     if 'fqn' in kwargs:
         fqn = kwargs['fqn']
 
-    logging.error(type(headers))
-    logging.error(type(headers[0]))
-
     _update_telescope_location(observation, headers)
 
     for plane in observation.planes:
@@ -463,11 +460,13 @@ def update(observation, **kwargs):
     if OmmName.is_composite(observation.observation_id):
         if OmmChooser().needs_delete(observation):
             observation = _update_observation_type(observation)
+            logging.info('Changing from Simple to Composite for {}'.format(
+                observation.observation_id))
         _update_provenance(observation, headers)
         # _update_time_bounds(observation, fqn)
 
     logging.debug('Done update.')
-    return True
+    return observation
 
 
 def _update_energy(chunk, headers):
@@ -517,10 +516,10 @@ def _update_observation_type(observation):
     CompositeObservation."""
     return CompositeObservation(observation.collection,
                                 observation.observation_id,
-                                observation.algorithm,
+                                Algorithm('composite'),
                                 observation.sequence_number,
                                 observation.intent,
-                                Algorithm('composite'),
+                                observation.type,
                                 observation.proposal,
                                 observation.telescope,
                                 observation.instrument,
