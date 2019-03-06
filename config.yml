@@ -49,6 +49,5 @@ task_types:
   - ingest
   - modify
 features:
-  supports_composite: False
   use_file_names: False
   expects_retry: True
