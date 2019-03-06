@@ -154,5 +154,7 @@ def _do_prev(file_id, science_fqn, working_dir, plane, cadc_client):
 
 def _store_smalls(cadc_client, working_directory, preview_fname,
                   thumb_fname):
-    mc.data_put(cadc_client, working_directory, preview_fname, COLLECTION)
-    mc.data_put(cadc_client, working_directory, thumb_fname, COLLECTION)
+    mc.data_put(cadc_client, working_directory, preview_fname, COLLECTION,
+                mime_type='image/jpeg')
+    mc.data_put(cadc_client, working_directory, thumb_fname, COLLECTION,
+                mime_type='image/jpeg')
