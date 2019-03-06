@@ -121,7 +121,7 @@ class OmmName(ec.StorageName):
     - files are compressed in ad
     """
 
-    OMM_NAME_PATTERN = 'C[\\w+-]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
+    OMM_NAME_PATTERN = 'C[\\w+-.]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
 
     def __init__(self, obs_id=None, fname_on_disk=None, file_name=None):
         if file_name is None and fname_on_disk is None:
@@ -430,41 +430,51 @@ def update(observation, **kwargs):
     fqn = None
     if 'fqn' in kwargs:
         fqn = kwargs['fqn']
+    try:
+        _update_telescope_location(observation, headers)
 
-    _update_telescope_location(observation, headers)
+        for plane in observation.planes:
+            for artifact in observation.planes[plane].artifacts:
+                parts = observation.planes[plane].artifacts[artifact].parts
+                for part in parts:
+                    p = parts[part]
+                    if len(p.chunks) == 0 and part == '0':
+                        # always have a time axis, and usually an energy
+                        # axis as well, so create a chunk for the zero-th part
+                        p.chunks.append(Chunk())
 
-    for plane in observation.planes:
-        for artifact in observation.planes[plane].artifacts:
-            parts = observation.planes[plane].artifacts[artifact].parts
-            for part in parts:
-                p = parts[part]
-                if len(p.chunks) == 0 and part == '0':
-                    # always have a time axis, and usually an energy
-                    # axis as well, so create a chunk for the zero-th part
-                    p.chunks.append(Chunk())
+                    for chunk in p.chunks:
+                        chunk.naxis = 4
+                        chunk.product_type = get_product_type(headers[0])
+                        _update_energy(chunk, headers)
+                        _update_time(
+                            chunk, headers, observation.observation_id)
+                        _update_position(chunk, headers)
 
-                for chunk in p.chunks:
-                    chunk.naxis = 4
-                    chunk.product_type = get_product_type(headers[0])
-                    _update_energy(chunk, headers)
-                    _update_time(chunk, headers)
-                    _update_position(chunk, headers)
+        if observation.observation_id.endswith('_REJECT'):
+            _update_requirements(observation)
 
-    if observation.observation_id.endswith('_REJECT'):
-        _update_requirements(observation)
+        if (observation.instrument is None or observation.instrument.name is None
+                or len(observation.instrument.name) == 0):
+            _update_instrument_name(observation)
 
-    if (observation.instrument is None or observation.instrument.name is None
-            or len(observation.instrument.name) == 0):
-        _update_instrument_name(observation)
+        if OmmName.is_composite(observation.observation_id):
+            if OmmChooser().needs_delete(observation):
+                observation = _update_observation_type(observation)
+                logging.info('Changing from Simple to Composite for {}'.format(
+                    observation.observation_id))
+            _update_provenance(observation, headers)
+            # _update_time_bounds(observation, fqn)
 
-    if OmmName.is_composite(observation.observation_id):
-        if OmmChooser().needs_delete(observation):
-            observation = _update_observation_type(observation)
-        _update_provenance(observation, headers)
-        # _update_time_bounds(observation, fqn)
-
-    logging.debug('Done update.')
-    return observation
+        logging.debug('Done update.')
+        return observation
+    except mc.CadcException as e:
+        tb = traceback.format_exc()
+        logging.debug(tb)
+        logging.error(e)
+        logging.error(
+            'Terminating ingestion for {}'.format(observation.observation_id))
+        return None
 
 
 def _update_energy(chunk, headers):
@@ -528,7 +538,7 @@ def _update_observation_type(observation):
                                 observation.target_position)
 
 
-def _update_time(chunk, headers):
+def _update_time(chunk, headers, obs_id):
     """Create TemporalWCS information using FITS header information.
     This information should always be available from the file."""
     logging.debug('Begin _update_time.')
@@ -542,6 +552,10 @@ def _update_time(chunk, headers):
         chunk.time = None
         logging.debug('Cannot calculate mjd_start {} or mjd_end {}'.format(
             mjd_start, mjd_end))
+    elif mjd_start == 'NaN' or mjd_end == 'NaN':
+        raise mc.CadcException(
+            'Invalid time values MJD_STAR {} or MJD_END {} for {}, '
+            'stopping ingestion.'.format(mjd_start, mjd_end, obs_id))
     else:
         logging.debug(
             'Calculating range with start {} and end {}.'.format(
@@ -781,7 +795,6 @@ def _build_blueprints(uri):
 
 
 def _get_uri(args):
-    result = None
     if args.observation:
         result = OmmName(args.observation[1]).get_file_uri()
     elif args.local:
@@ -802,9 +815,10 @@ def main_app():
         blueprints = _build_blueprints(uri)
         gen_proc(args, blueprints)
     except Exception as e:
-        logging.error('Failed {} execution for {}.'.format(APPLICATION, args))
+        logging.error('Failed {} execution for {} with {}.'.format(
+            APPLICATION, args, e))
         tb = traceback.format_exc()
-        logging.error(tb)
+        logging.debug(tb)
         sys.exit(-1)
 
     logging.debug('Done {} processing.'.format(APPLICATION))

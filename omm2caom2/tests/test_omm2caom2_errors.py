@@ -66,47 +66,24 @@
 #
 # ***********************************************************************
 #
-import pytest
 
+import os
+
+from caom2utils import fits2caom2
 from caom2pipe import manage_composable as mc
-from omm2caom2 import OmmName
+
+import omm2caom2
+
+THIS_DIR = os.path.dirname(os.path.realpath(__file__))
+TESTDATA_DIR = os.path.join(THIS_DIR, 'error_data')
 
 
-def test_is_valid():
-    assert OmmName('C121212_00001_SCI').is_valid()
-    assert not OmmName('c121212_00001_SCI').is_valid()
-    assert OmmName('C121212_00001_CAL').is_valid()
-    assert not OmmName('c121212_00001_CAL').is_valid()
-    assert OmmName('C121212_domeflat_K_CALRED').is_valid()
-    assert not OmmName('C121212_DOMEFLAT_K_CALRED').is_valid()
-    assert OmmName('C121212_sh2-132_J_old_SCIRED').is_valid()
-    assert OmmName('C121212_J0454+8024_J_SCIRED').is_valid()
-    assert OmmName('C121212_00001_TEST').is_valid()
-    assert OmmName('C121212_00001_FOCUS').is_valid()
-    assert OmmName('C121121_J024345.57-021326.4_K_SCIRED').is_valid()
-
-    test_subject = OmmName(file_name='C121212_00001_SCI.fits')
-    assert test_subject.is_valid()
-    assert test_subject.obs_id == 'C121212_00001_SCI'
-    test_subject = OmmName(file_name='C121212_00001_SCI.fits.gz')
-    assert test_subject.is_valid()
-    assert test_subject.obs_id == 'C121212_00001_SCI'
-    test_subject = OmmName(fname_on_disk='C121212_00001_SCI.fits',
-                           file_name='C121212_00001_SCI.fits.gz')
-    assert test_subject.is_valid()
-    assert test_subject.obs_id == 'C121212_00001_SCI'
-
-    with pytest.raises(mc.CadcException):
-        test_subject = OmmName(file_name='C121212_00001_SCI')
-        test_subject = OmmName(fname_on_disk='C121212_00001_FOCUS')
-        test_subject = OmmName('C121212_00001_FOCUS.fits')
-        test_subject = OmmName('C121212_00001_FOCUS.fits.gz')
-
-
-def test_omm_name():
-    TEST_NAME = 'C121212_00001_SCI'
-    assert 'ad:OMM/{}.fits.gz'.format(TEST_NAME) == OmmName(
-        TEST_NAME, '{}.fits'.format(TEST_NAME)).file_uri
-    TEST_NAME = 'C121212_sh2-132_J_old_SCIRED'
-    assert '{}_prev.jpg'.format(TEST_NAME) == OmmName(TEST_NAME).prev
-    assert '{}_prev_256.jpg'.format(TEST_NAME) == OmmName(TEST_NAME).thumb
+def test_time_nan():
+    test_obs = 'C120712_NGC7790_H_SCIRED'
+    test_file = 'file://{}/{}.fits.header'.format(TESTDATA_DIR, test_obs)
+    test_xml = '{}/{}.xml'.format(TESTDATA_DIR, test_obs)
+    obs = mc.read_obs_from_file(test_xml)
+    headers = fits2caom2.get_cadc_headers(test_file)
+    kwargs = {'headers': headers}
+    result = omm2caom2.update(obs, **kwargs)
+    assert result is None, 'should have returned nothing'
