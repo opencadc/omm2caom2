@@ -100,14 +100,17 @@ def visit(observation, **kwargs):
                 file_id = ec.CaomName(artifact.uri).file_id
                 file_name = ec.CaomName(artifact.uri).file_name
                 science_fqn = os.path.join(working_dir, file_name)
+                logging.error('first {}'.format(science_fqn))
                 if not os.path.exists(science_fqn):
-                    file_name = \
-                        ec.CaomName(artifact.uri).uncomp_file_name
-                    science_fqn = os.path.join(working_dir, file_name)
+                    if science_fqn.endswith('.gz'):
+                        science_fqn = science_fqn.replace('.gz', '')
+                    else:
+                        science_fqn = '{}.gz'.format(science_fqn)
+                    logging.error('second {}'.format(science_fqn))
                     if not os.path.exists(science_fqn):
                         raise mc.CadcException(
-                            '{} preview visit file not found'.format(
-                                science_fqn))
+                            '{} visit file not found'.format(science_fqn))
+                science_fqn = _unzip(science_fqn)
                 logging.debug('working on file {}'.format(science_fqn))
                 count += _do_prev(file_id, science_fqn, working_dir, plane,
                                   cadc_client)
@@ -158,3 +161,17 @@ def _store_smalls(cadc_client, working_directory, preview_fname,
                 mime_type='image/jpeg')
     mc.data_put(cadc_client, working_directory, thumb_fname, COLLECTION,
                 mime_type='image/jpeg')
+
+
+def _unzip(science_fqn):
+    if science_fqn.endswith('.gz'):
+        logging.debug('Unzipping {}.'.format(science_fqn))
+        unzipped_science_fqn = science_fqn.replace('.gz', '')
+        import gzip
+        with open(science_fqn, 'rb') as f_read:
+            gz = gzip.GzipFile(fileobj=f_read)
+            with open(unzipped_science_fqn, 'wb') as f_write:
+                f_write.write(gz.read())
+        return unzipped_science_fqn
+    else:
+        return science_fqn
