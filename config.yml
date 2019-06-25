@@ -52,3 +52,4 @@ task_types:
   - modify
 features:
   use_file_names: False
+  use_urls: False

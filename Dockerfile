@@ -10,7 +10,7 @@ RUN pip install matplotlib
 RUN oldpath=`pwd` && cd /tmp \
 && wget ftp://heasarc.gsfc.nasa.gov/software/fitsio/c/cfitsio_latest.tar.gz \
 && tar zxvf cfitsio_latest.tar.gz \
-&& cd cfitsio \
+&& cd cfitsio-3.47 \
 && ./configure --prefix=/usr \
 && make -j 2 \
 && make shared \
@@ -43,6 +43,8 @@ RUN oldpath=`pwd` && cd /tmp \
 RUN pip install pytest && pip install mock && pip install flake8 && \
         pip install funcsigs && pip install xml-compare && \
         pip install pytest-cov && pip install aenum && pip install future
+
+RUN pip install cadctap
 
 WORKDIR /usr/src/app
 RUN git clone https://github.com/opencadc-metadata-curation/caom2tools.git && \
