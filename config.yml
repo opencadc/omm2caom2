@@ -31,6 +31,8 @@ retry_count: 1
 stream: raw
 archive: OMM
 collection: OMM
+observe_execution: True
+observable_directory: /usr/src/app/metrics
 # how to control the work that gets done
 # possible values are:
 # - scrape - read the headers, write out the xml - kind of a test mode

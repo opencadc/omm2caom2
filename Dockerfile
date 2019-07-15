@@ -1,23 +1,48 @@
-FROM python:3.6
+FROM python:3.6-alpine
+  
+RUN apk --no-cache add \
+        bash \
+        coreutils \
+        gcc \
+        git \
+        g++ \
+        libffi-dev \
+        libmagic \
+        libxml2-dev \
+        libxslt-dev \
+        make \
+        musl-dev \
+        openssl-dev
 
-RUN pip install astropy && pip install numpy && \
-        pip install spherical-geometry
-RUN pip install cadcdata && pip install caom2repo && \
-        pip install PyYAML && pip install vos && \
-        pip install caom2
+RUN apk --no-cache add \
+    freetype-dev \
+    libpng-dev \
+    gfortran \
+    openblas-dev \
+    py-numpy \
+    py-pip \
+    python \
+    python-dev \
+    wget
+
 RUN pip install matplotlib
 
-RUN oldpath=`pwd` && cd /tmp \
-&& wget ftp://heasarc.gsfc.nasa.gov/software/fitsio/c/cfitsio_latest.tar.gz \
-&& tar zxvf cfitsio_latest.tar.gz \
-&& cd cfitsio-3.47 \
-&& ./configure --prefix=/usr \
-&& make -j 2 \
-&& make shared \
-&& make install \
-&& make clean \
-&& cd $oldpath \
-&& rm -Rf /tmp/cfitsio*
+RUN oldpath=`pwd` && cd /tmp && \
+    wget http://www.eso.org/~fstoehr/footprintfinder.py && \
+    cp footprintfinder.py /usr/local/lib/python3.6/site-packages/footprintfinder.py && \
+    chmod 755 /usr/local/lib/python3.6/site-packages/footprintfinder.py && \
+    cd $oldpath
+
+RUN git clone https://github.com/HEASARC/cfitsio && \
+  cd cfitsio && \
+  ./configure --prefix=/usr && \
+  make -j 2 && \
+  make shared && \
+  make install && \
+  make clean
+
+RUN apk --no-cache add libjpeg-turbo-dev
+
 RUN oldpath=`pwd` && cd /tmp \
 && git clone https://github.com/spacetelescope/fitscut \
 && cd fitscut \
@@ -34,17 +59,6 @@ RUN oldpath=`pwd` && cd /tmp \
 && make clean \
 && cd $oldpath \
 && rm -Rf /tmp/fitscut*
-
-RUN oldpath=`pwd` && cd /tmp \
-&& wget http://www.eso.org/~fstoehr/footprintfinder.py \
-&& cp footprintfinder.py /usr/local/bin/footprintfinder.py \
-&& cd $oldpath
-
-RUN pip install pytest && pip install mock && pip install flake8 && \
-        pip install funcsigs && pip install xml-compare && \
-        pip install pytest-cov && pip install aenum && pip install future
-
-RUN pip install cadctap
 
 WORKDIR /usr/src/app
 RUN git clone https://github.com/opencadc-metadata-curation/caom2tools.git && \

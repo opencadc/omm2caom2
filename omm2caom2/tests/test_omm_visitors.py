@@ -70,7 +70,7 @@ import os
 import pytest
 
 from caom2 import ChecksumURI
-from omm2caom2 import omm_footprint_augmentation, omm_preview_augmentation
+from omm2caom2 import footprint_augmentation, preview_augmentation
 from omm2caom2 import OmmName
 from caom2pipe import manage_composable as mc
 
@@ -83,7 +83,7 @@ TEST_FILE = '{}.fits.gz'.format(TEST_OBS)
 
 def test_footprint_aug_visit():
     with pytest.raises(AssertionError):
-        omm_footprint_augmentation.visit(None)
+        footprint_augmentation.visit(None)
 
 
 def test_footprint_update_position():
@@ -98,10 +98,10 @@ def test_footprint_update_position():
 
     # expected failure due to required kwargs parameter
     with pytest.raises(mc.CadcException):
-        test_result = omm_footprint_augmentation.visit(test_obs)
+        test_result = footprint_augmentation.visit(test_obs)
 
     test_kwargs['working_directory'] = TESTDATA_DIR
-    test_result = omm_footprint_augmentation.visit(test_obs, **test_kwargs)
+    test_result = footprint_augmentation.visit(test_obs, **test_kwargs)
     assert test_result is not None, 'expected a visit return value'
     assert test_result['chunks'] == 1
     assert test_chunk.position.axis.bounds is not None, \
@@ -110,7 +110,7 @@ def test_footprint_update_position():
 
 def test_preview_aug_visit():
     with pytest.raises(mc.CadcException):
-        omm_preview_augmentation.visit(None)
+        preview_augmentation.visit(None)
 
 
 def test_preview_augment_plane():
@@ -129,9 +129,16 @@ def test_preview_augment_plane():
     preva = 'ad:OMM/C170324_0054_SCI_prev.jpg'
     thumba = 'ad:OMM/C170324_0054_SCI_prev_256.jpg'
 
+    test_config = mc.Config()
+    test_config.observe_execution = True
+    test_metrics = mc.Metrics(test_config)
+    test_observable = mc.Observable(rejected=None,
+                                    metrics=test_metrics)
+
     test_kwargs = {'working_directory': TESTDATA_DIR,
-                   'cadc_client': None}
-    test_result = omm_preview_augmentation.visit(test_obs, **test_kwargs)
+                   'cadc_client': None,
+                   'observable': test_observable}
+    test_result = preview_augmentation.visit(test_obs, **test_kwargs)
     assert test_result is not None, 'expected a visit return value'
     assert test_result['artifacts'] == 2
     assert len(test_obs.planes[TEST_OBS].artifacts) == 3
@@ -149,7 +156,7 @@ def test_preview_augment_plane():
         ChecksumURI('f37d21c53055498d1b5cb7753e1c6d6f')
     test_obs.planes[TEST_OBS].artifacts[thumba].content_checksum = \
         ChecksumURI('19661c3c2508ecc22425ee2a05881ed4')
-    test_result = omm_preview_augmentation.visit(test_obs, **test_kwargs)
+    test_result = preview_augmentation.visit(test_obs, **test_kwargs)
     assert test_result is not None, 'expected update visit return value'
     assert test_result['artifacts'] == 2
     assert len(test_obs.planes) == 1
@@ -162,3 +169,5 @@ def test_preview_augment_plane():
     assert test_obs.planes[TEST_OBS].artifacts[thumba].content_checksum == \
         ChecksumURI('md5:19661c3c2508ecc22425ee2a05881ed4'), \
         'prev_256 update failed'
+
+    assert len(test_metrics.history) == 0, 'wrong history, client is not None'

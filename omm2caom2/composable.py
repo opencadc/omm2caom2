@@ -68,110 +68,105 @@
 #
 
 import logging
-import os
+import sys
+import tempfile
+import traceback
 
-from caom2 import ProductType, ReleaseType
-from caom2 import Observation
 from caom2pipe import execute_composable as ec
 from caom2pipe import manage_composable as mc
-from omm2caom2 import OmmName, COLLECTION
+from omm2caom2 import preview_augmentation, footprint_augmentation
+from omm2caom2 import OmmChooser, OmmName, APPLICATION, COLLECTION
 
-__all__ = ['visit']
+
+meta_visitors = []
+data_visitors = [preview_augmentation, footprint_augmentation]
 
 
-def visit(observation, **kwargs):
-    mc.check_param(observation, Observation)
+def _run():
+    """Run the processing for multiple files.
 
-    working_dir = './'
-    if 'working_directory' in kwargs:
-        working_dir = kwargs['working_directory']
-    if 'cadc_client' in kwargs:
-        cadc_client = kwargs['cadc_client']
+    :return 0 if successful, -1 if there's any sort of failure. Return status
+        is used by airflow for task instance management and reporting.
+    """
+    config = mc.Config()
+    config.get_executors()
+    return ec.run_by_file(config, OmmName, APPLICATION,
+                          meta_visitors, data_visitors, OmmChooser())
+
+
+def run():
+    """Wraps _run in exception handling, with sys.exit calls."""
+    try:
+        result = _run()
+        sys.exit(result)
+    except Exception as e:
+        logging.error(e)
+        tb = traceback.format_exc()
+        logging.debug(tb)
+        sys.exit(-1)
+
+
+def _run_proxy():
+    """Run the processing for multiple files, using a well-known proxy.
+
+    :return 0 if successful, -1 if there's any sort of failure. Return status
+        is used by airflow for task instance management and reporting.
+    """
+    config = mc.Config()
+    config.get_executors()
+    return ec.run_by_file(config, OmmName, APPLICATION,
+                          meta_visitors, data_visitors, OmmChooser())
+
+
+def run_proxy():
+    """Wraps _omm_run_proxy in exception handling, with sys.exit calls."""
+    try:
+        result = _run_proxy()
+        sys.exit(result)
+    except Exception as e:
+        logging.error(e)
+        tb = traceback.format_exc()
+        logging.debug(tb)
+        sys.exit(-1)
+
+
+def _run_single():
+    """Run the processing for a single file.
+
+    :return 0 if successful, -1 if there's any sort of failure. Return status
+        is used by airflow for task instance management and reporting.
+    """
+    logging.error(sys.argv)
+    config = mc.Config()
+    config.get_executors()
+    config.collection = COLLECTION
+    config.working_directory = '/usr/src/app'
+    config.task_types = [mc.TaskType.INGEST,
+                         mc.TaskType.MODIFY]
+    config.resource_id = 'ivo://cadc.nrc.ca/sc2repo'
+    if config.features.run_in_airflow:
+        temp = tempfile.NamedTemporaryFile()
+        mc.write_to_file(temp.name, sys.argv[2])
+        config.proxy_fqn = temp.name
     else:
-        raise mc.CadcException('Need a cadc_client parameter.')
-
-    count = 0
-    for i in observation.planes:
-        plane = observation.planes[i]
-        for j in plane.artifacts:
-            artifact = plane.artifacts[j]
-            if (artifact.uri.endswith('.fits.gz') or
-                    artifact.uri.endswith('.fits')):
-                file_id = ec.CaomName(artifact.uri).file_id
-                file_name = ec.CaomName(artifact.uri).file_name
-                science_fqn = os.path.join(working_dir, file_name)
-                logging.error('first {}'.format(science_fqn))
-                if not os.path.exists(science_fqn):
-                    if science_fqn.endswith('.gz'):
-                        science_fqn = science_fqn.replace('.gz', '')
-                    else:
-                        science_fqn = '{}.gz'.format(science_fqn)
-                    logging.error('second {}'.format(science_fqn))
-                    if not os.path.exists(science_fqn):
-                        raise mc.CadcException(
-                            '{} visit file not found'.format(science_fqn))
-                science_fqn = _unzip(science_fqn)
-                logging.debug('working on file {}'.format(science_fqn))
-                count += _do_prev(file_id, science_fqn, working_dir, plane,
-                                  cadc_client)
-    logging.info('Completed preview augmentation for {}.'.format(
-            observation.observation_id))
-    return {'artifacts': count}
-
-
-def _augment(plane, uri, fqn, product_type):
-    temp = None
-    if uri in plane.artifacts:
-        temp = plane.artifacts[uri]
-    plane.artifacts[uri] = mc.get_artifact_metadata(fqn, product_type,
-                                                    ReleaseType.DATA, uri,
-                                                    temp)
-
-
-def _do_prev(file_id, science_fqn, working_dir, plane, cadc_client):
-    preview = OmmName(file_id).prev
-    preview_fqn = os.path.join(working_dir, preview)
-    thumb = OmmName(file_id).thumb
-    thumb_fqn = os.path.join(working_dir, thumb)
-
-    if os.access(preview_fqn, 0):
-        os.remove(preview_fqn)
-    prev_cmd = 'fitscut --all --autoscale=99.5 --asinh-scale --jpg --invert ' \
-               '--compass {}'.format(science_fqn)
-    mc.exec_cmd_redirect(prev_cmd, preview_fqn)
-
-    if os.access(thumb_fqn, 0):
-        os.remove(thumb_fqn)
-    prev_cmd = 'fitscut --all --output-size=256 --autoscale=99.5 ' \
-               '--asinh-scale --jpg --invert --compass {}'.format(science_fqn)
-    mc.exec_cmd_redirect(prev_cmd, thumb_fqn)
-
-    prev_uri = OmmName(file_id).prev_uri
-    thumb_uri = OmmName(file_id).thumb_uri
-    _augment(plane, prev_uri, preview_fqn, ProductType.PREVIEW)
-    _augment(plane, thumb_uri, thumb_fqn, ProductType.THUMBNAIL)
-    if cadc_client is not None:
-        _store_smalls(cadc_client, working_dir, preview, thumb)
-    return 2
-
-
-def _store_smalls(cadc_client, working_directory, preview_fname,
-                  thumb_fname):
-    mc.data_put(cadc_client, working_directory, preview_fname, COLLECTION,
-                mime_type='image/jpeg')
-    mc.data_put(cadc_client, working_directory, thumb_fname, COLLECTION,
-                mime_type='image/jpeg')
-
-
-def _unzip(science_fqn):
-    if science_fqn.endswith('.gz'):
-        logging.debug('Unzipping {}.'.format(science_fqn))
-        unzipped_science_fqn = science_fqn.replace('.gz', '')
-        import gzip
-        with open(science_fqn, 'rb') as f_read:
-            gz = gzip.GzipFile(fileobj=f_read)
-            with open(unzipped_science_fqn, 'wb') as f_write:
-                f_write.write(gz.read())
-        return unzipped_science_fqn
+        config.proxy_fqn = sys.argv[2]
+    config.stream = 'raw'
+    if config.features.use_file_names:
+        storage_name = OmmName(file_name=sys.argv[1])
     else:
-        return science_fqn
+        obs_id = OmmName.remove_extensions(sys.argv[1])
+        storage_name = OmmName(obs_id=obs_id)
+    return ec.run_single(config, storage_name, APPLICATION, meta_visitors,
+                         data_visitors, OmmChooser())
+
+
+def run_single():
+    """Wraps _omm_run_single in exception handling, with sys.exit calls."""
+    try:
+        result = _run_single()
+        sys.exit(result)
+    except Exception as e:
+        logging.error(e)
+        tb = traceback.format_exc()
+        logging.debug(tb)
+        sys.exit(-1)
