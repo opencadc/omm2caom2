@@ -33,6 +33,19 @@ RUN oldpath=`pwd` && cd /tmp && \
     chmod 755 /usr/local/lib/python3.6/site-packages/footprintfinder.py && \
     cd $oldpath
 
+RUN pip install aenum && \
+        pip install astropy && \
+        pip install cadcdata && \
+        pip install cadctap && \
+        pip install caom2repo && \
+        pip install funcsigs && \
+        pip install future && \
+        pip install numpy && \
+        pip install PyYAML && \
+        pip install spherical-geometry && \
+        pip install vos && \
+        pip install xml-compare
+
 RUN git clone https://github.com/HEASARC/cfitsio && \
   cd cfitsio && \
   ./configure --prefix=/usr && \
@@ -66,7 +79,6 @@ RUN git clone https://github.com/opencadc-metadata-curation/caom2tools.git && \
   pip install ./caom2utils && pip install ./caom2pipe && cd ..
   
 RUN git clone https://github.com/opencadc-metadata-curation/omm2caom2.git && \
-  cp /usr/local/bin/footprintfinder.py ./omm2caom2/omm2caom2 && \
   cp ./omm2caom2/omm2caom2/omm_docker_run_cleanup.py /usr/local/bin && \
   pip install ./omm2caom2
 
