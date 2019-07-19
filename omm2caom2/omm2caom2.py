@@ -207,7 +207,7 @@ def accumulate_obs(bp, uri):
     bp.add_fits_attribute('Observation.target_position.equinox', 'EQUINOX')
     bp.set_default('Observation.target_position.equinox', '2000.0')
     bp.add_fits_attribute('Observation.telescope.name', 'TELESCOP')
-    bp.add_fits_attribute('Observation.telescope.keywords', 'OBSERVER')
+    bp.set('Observation.telescope.keywords', 'get_telescope_keywords(header)')
     bp.set('Observation.environment.ambientTemp',
            'get_obs_env_ambient_temp(header)')
     if OmmName.is_composite(uri):
@@ -364,6 +364,20 @@ def get_position_resolution(header):
     temp_mass = mc.to_float(header.get('RMS2MASS'))
     if temp_mass != -1.0:
         temp = temp_mass
+    return temp
+
+
+def get_telescope_keywords(header):
+    """For Observation.telescope.keywords, ignore values used by the
+    telescope as defaults.
+
+    Called to fill a blueprint value, must have a
+    parameter named header for import_module loading and execution.
+
+    :param header Array of astropy headers"""
+    temp = header.get('OBSERVER')
+    if temp is not None and 'none' in temp:
+        temp = None
     return temp
 
 
