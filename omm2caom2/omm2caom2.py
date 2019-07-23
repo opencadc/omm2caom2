@@ -140,6 +140,10 @@ class OmmName(ec.StorageName):
         super(OmmName, self).__init__(
             obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, fname_on_disk)
 
+    @property
+    def mime_encoding(self):
+        return 'gzip'
+
     def get_file_uri(self):
         return 'ad:{}/{}'.format(self.collection, self.fname_in_ad)
 
