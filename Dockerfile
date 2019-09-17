@@ -1,5 +1,7 @@
 FROM python:3.6-alpine
-  
+
+# these layers are the common layers for footprintfinder construction
+
 RUN apk --no-cache add \
         bash \
         coreutils \

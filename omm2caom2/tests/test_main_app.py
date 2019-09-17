@@ -68,7 +68,7 @@
 #
 
 
-from omm2caom2 import main_app, APPLICATION
+from omm2caom2 import omm_main_app, APPLICATION
 from caom2.diff import get_differences
 from caom2pipe import manage_composable as mc
 
@@ -118,7 +118,7 @@ def test_main_app(test_name):
              format(APPLICATION, local, plugin, plugin, product_id,
                     output_file, lineage)).split()
         print(sys.argv)
-        main_app()
+        omm_main_app()
         obs_path = test_name.replace('header', 'xml')
         expected = mc.read_obs_from_file(obs_path)
         actual = mc.read_obs_from_file(output_file)

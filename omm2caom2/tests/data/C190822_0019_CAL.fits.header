@@ -1,0 +1,96 @@
+# HDU 0 in C190822_0019_CAL.fits.gz:
+SIMPLE  =                    T / conforms to FITS standard                      
+BITPIX  =                   32 / array data type                                
+NAXIS   =                    2 / number of array dimensions                     
+NAXIS1  =                 2048                                                  
+NAXIS2  =                 2048                                                  
+EQUINOX =                 2000 / Reference                                      
+ORIGIN  = 'LAE'                 / Laboratoire d'Astrophysique Experimentale     
+TELESCOP= 'OMM-1.6m'           / Observatoire du Mont-Megantic                  
+INSTRUME= 'CPAPIR  '           / Instrument name                                
+OBSERVER= 'none    '           / Observer name                                  
+OBJECT  = 'domeflat_J_OFF'                                                      
+DATE-OBS= '2019-08-23T04:33:07' / Universal date and time                       
+DATE    = '2019-08-23T00:33:07' / Local date and time                           
+TEXP    =              30.0000  / Exposure time asked for                       
+NLEC    =                    1  / Number of reads per coaddition                
+NCOA    =                    1  / Number of coadditions per file                
+NFIC    =                   11  / Number of files to be written                 
+NATOD   =                   32  / Number of A/D converters                      
+T1      =              91.0378  / Detecteur                                     
+T2      =             540.4200  / Lentille #8                                   
+T3      =              76.6732  / Detecteur                                     
+T4      =              76.6732  / non applicable                                
+F1      = 'J'                   / Wheel 1 (X), position 2                       
+F2      = 'open    '           / Wheel 2 (Y), position 0                        
+F1NOM   = 'Wheel R ='           / Identification F1                             
+F2NOM   = 'Wheel B ='           / Identification F2                             
+HA      =                    0  / Angle horaire                                 
+RA      =                  0.0 / RA always expressed in DECIMAL DEGREE (0-360)  
+DEC     =                    0  / Declinaison                                   
+EPOCH   =                    0  / Epoq                                          
+AIRMASS =                    0  / Airmass                                       
+ST      =                    0  / Sideral time                                  
+UT      =                    0  / Universal time                                
+YEAR    =                    0  / Year                                          
+FOCUS   =                    0  / Telescope focus                               
+DOME    =                    0  / Dome position                                 
+ROTATOR =                    0  / Instrument rotator                            
+NLECMAX =                   11  / Maximum number of reads as a function of TEXP 
+TINT    =              29.7660  / Effective integration time                    
+TEFF    =              29.7660  / Effective exposure time                       
+T1LEC   =               1.3530  / Read time for the detector                    
+TCOA    =               4.0590  / Time for one coaddition                       
+TLEC    =               2.7060  / Time for two reads                            
+TSEQ    =                    0  / Time for the last sequence                    
+TUS     =             37845336  / Acquisition time in us                        
+TEC     =               1.0000  / Time elapsed                                  
+FEC     =                    9  / File in progress                              
+LEC     = '1f      '           / Read in progress                               
+CEC     =                    1  / Coaddition in progress                        
+PEC     =                   70  / Percentage in progress                        
+DS9FIC  = 'none    '           / home/cpapir/190822/190822_0019.fits / Filename 
+DECALE1 =                    0  / Flip quadrant 1                               
+DECALE2 =                    0  / Ne decale pas le quadrant 2                   
+DECALE3 =                    0  / Ne decale pas le quadrant 3                   
+DECALE4 =                    0  / Flip quadrant 4                               
+MIRPAT  = 'tim10.lod'          / Read pattern filename                          
+MIRMSG1 = 'seq 30 1 1 11 '                                                      
+MIRMSG2 = '''      '           / home/cpapir/190822/190822_0019.fits (8 of 11) i
+MIRMSG5 = '''TEFF = 29787 ms instead of 29766 ms in' / home/cpapir/190822/190822
+FILTER  = 'J       '                                                            
+PARSED  =                    1                                                  
+MJDATE  =    58718.18966435185 / Modified julian day                            
+MEDIMAGE=                305.0 / Image median                                   
+MEDDEVIM=                 80.0 / Median absolute deviation                      
+NIGHTID = '190822  '                                                            
+FILE_INI= '/data/cpapir/data/190822/190822_0019.fits'                           
+VERSION = '1.000   '           / Reduction release version                      
+OBS_LAT =            45.455556 / Latitude of the telescope                      
+OBS_LON =           -71.152778 / Longitude of the telescope (Negative=West of Gr
+DATATYPE= 'CALIB   '                                                            
+RATXT   = '-00:00:00'          / RA expressed as text                           
+DECTXT  = '-00:00:00'          / DEC expressed as text                          
+BANDPASS=                 0.16 / bandpass in micron                             
+WLEN    =                 1.25 / wavelength in micron                           
+COMMENT ***********************************************************             
+COMMENT * All paper using CPAPIR data must include the following  *             
+COMMENT * note in the "Acknowledgement" section :                 *             
+COMMENT * Based on observations obtained with CPAPIR at the       *             
+COMMENT * Observatoire du mont Megantic, funded by the Universite *             
+COMMENT * de Montreal, Universite Laval, the Natural Sciences and *             
+COMMENT * Engineering Research Council of Canada (NSERC), the     *             
+COMMENT * Fond quebecois de la recherche sur la Nature et les     *             
+COMMENT * technologies (FQRNT) and the Canada Economic            *             
+COMMENT * Development program.                                    *             
+COMMENT *                                                         *             
+COMMENT * Please consider contacting the PI before publication    *             
+COMMENT * of this dataset.                                        *             
+COMMENT *                                                         *             
+COMMENT * Please refer to the following paper in any publication  *             
+COMMENT * making use of CPAPIR dataset :                          *             
+COMMENT *  Artigau, E., Doyon, R., Vallee, P., Riopel, M.,        *             
+COMMENT * & Nadeau, D. 2004, Proc. SPIE, 5492, 1479               *             
+COMMENT *                                                         *             
+COMMENT * Visit : www.astro.umontreal.ca/cpapir for more details. *             
+COMMENT ***********************************************************             

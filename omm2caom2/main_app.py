@@ -89,7 +89,7 @@ from caom2pipe import manage_composable as mc
 from caom2pipe import execute_composable as ec
 
 
-__all__ = ['main_app', 'update', 'OmmName', 'COLLECTION', 'APPLICATION',
+__all__ = ['omm_main_app', 'update', 'OmmName', 'COLLECTION', 'APPLICATION',
            '_update_cal_provenance', '_update_science_provenance',
            'OmmChooser']
 
@@ -263,6 +263,8 @@ def accumulate_position(bp):
     bp.set('Chunk.position.axis.axis2.ctype', 'DEC--TAN')
     bp.set('Chunk.position.axis.axis1.cunit', 'deg')
     bp.set('Chunk.position.axis.axis2.cunit', 'deg')
+    bp.clear('Chunk.position.equinox')
+    bp.add_fits_attribute('Chunk.position.equinox', 'EQUINOX')
 
 
 def get_end_ref_coord_val(header):
@@ -826,7 +828,7 @@ def _get_uri(args):
     return result
 
 
-def main_app():
+def omm_main_app():
     args = get_gen_proc_arg_parser().parse_args()
     try:
         uri = _get_uri(args)
