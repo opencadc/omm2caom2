@@ -81,13 +81,13 @@ from mock import patch
 TEST_URI = 'ad:OMM/imm_file.fits'
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
-TESTDATA_DIR = os.path.join(THIS_DIR, 'data')
+TEST_DATA_DIR = os.path.join(THIS_DIR, 'data')
 PLUGIN = os.path.join(os.path.dirname(THIS_DIR), '{}.py'.format(APPLICATION))
 
 
 def pytest_generate_tests(metafunc):
-    files = [os.path.join(TESTDATA_DIR, name) for name in
-             os.listdir(TESTDATA_DIR) if name.endswith('header')]
+    files = [os.path.join(TEST_DATA_DIR, name) for name in
+             os.listdir(TEST_DATA_DIR) if name.endswith('header')]
     metafunc.parametrize('test_name', files)
 
 
@@ -98,7 +98,11 @@ def test_main_app(test_name):
     output_file = '{}.actual.xml'.format(test_name)
     local = _get_local(test_name)
     plugin = PLUGIN
-
+    input_file = '{}/in.{}.fits.xml'.format(TEST_DATA_DIR, product_id)
+    if os.path.exists(input_file):
+        input_param = '--in {}'.format(input_file)
+    else:
+        input_param = '--observation OMM {}'.format(product_id)
     with patch('caom2utils.fits2caom2.CadcDataClient') as data_client_mock:
         def get_file_info(archive, file_id):
             if '_prev' in file_id:
@@ -114,21 +118,21 @@ def test_main_app(test_name):
 
         sys.argv = \
             ('{} --no_validate --local {} '
-             '--plugin {} --module {} --observation OMM {} -o {} --lineage {}'.
-             format(APPLICATION, local, plugin, plugin, product_id,
+             '--plugin {} --module {} {} -o {} --lineage {}'.
+             format(APPLICATION, local, plugin, plugin, input_param,
                     output_file, lineage)).split()
         print(sys.argv)
         omm_main_app()
-        obs_path = test_name.replace('header', 'xml')
-        expected = mc.read_obs_from_file(obs_path)
-        actual = mc.read_obs_from_file(output_file)
-        result = get_differences(expected, actual, 'Observation')
-        if result:
-            msg = 'Differences found in observation {}\n{}'. \
-                format(expected.observation_id, '\n'.join(
-                [r for r in result]))
-            raise AssertionError(msg)
-        # assert False  # cause I want to see logging messages
+    obs_path = test_name.replace('header', 'xml')
+    expected = mc.read_obs_from_file(obs_path)
+    actual = mc.read_obs_from_file(output_file)
+    result = get_differences(expected, actual, 'Observation')
+    if result:
+        msg = 'Differences found in observation {}\n{}'. \
+            format(expected.observation_id, '\n'.join(
+            [r for r in result]))
+        raise AssertionError(msg)
+    # assert False  # cause I want to see logging messages
 
 
 def _get_local(test_name):
