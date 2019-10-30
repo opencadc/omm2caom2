@@ -17,7 +17,7 @@ the files named and described here. For a complete description of its
 content, see 
 https://github.com/opencadc-metadata-curation/collection2caom2/wiki/config.yml.
 
-1. In this directory, create a file name test_netrc. This is the expected 
+1. In this directory, create a file name netrc. This is the expected 
 .netrc file that will have the credentials required for the caom2repo and 
 data services. These credentials allow the user to read, write, and delete 
 CAOM2 observations using caom2repo, and read file header metadata and files 
@@ -25,10 +25,9 @@ from data. This file should have content that looks like the following:
 
    ```
    machine sc2.canfar.net login canfarusername password canfarpassword
+   machine www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca login canfarusername password canfarpassword
+   machine www.canfar.net login canfarusername password canfarpassword
    ```
-   1. Replace sc2.canfar.net with the hostname for the service that requires 
-   credentials.
-   
    1. Replace canfarusername and canfarpassword with your CADC username and 
    password values.
 
