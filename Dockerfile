@@ -1,21 +1,14 @@
-FROM python:3.6-alpine
+FROM opencadc/matplotlib
 
 # these layers are the common layers for footprintfinder construction
 
 RUN apk --no-cache add \
         bash \
         coreutils \
-        gcc \
         git \
-        g++ \
-        libffi-dev \
         libmagic \
-        libxml2-dev \
-        libxslt-dev \
-        make \
-        musl-dev \
-        openssl-dev
-
+        make
+        
 RUN apk --no-cache add \
     freetype-dev \
     libpng-dev \
@@ -27,28 +20,20 @@ RUN apk --no-cache add \
     python-dev \
     wget
 
-RUN pip install matplotlib
-
 RUN oldpath=`pwd` && cd /tmp && \
     wget http://www.eso.org/~fstoehr/footprintfinder.py && \
-    cp footprintfinder.py /usr/local/lib/python3.6/site-packages/footprintfinder.py && \
-    chmod 755 /usr/local/lib/python3.6/site-packages/footprintfinder.py && \
+    cp footprintfinder.py /usr/local/lib/python3.7/site-packages/footprintfinder.py && \
+    chmod 755 /usr/local/lib/python3.7/site-packages/footprintfinder.py && \
     cd $oldpath
 
-RUN pip install aenum && \
-        pip install astropy && \
-        pip install cadcdata && \
+RUN pip install cadcdata && \
         pip install cadctap && \
         pip install caom2 && \
         pip install caom2repo && \
         pip install caom2utils && \
-        pip install funcsigs && \
-        pip install future && \
-        pip install numpy && \
         pip install PyYAML && \
         pip install spherical-geometry && \
-        pip install vos && \
-        pip install xml-compare
+        pip install vos
 
 RUN git clone https://github.com/HEASARC/cfitsio && \
   cd cfitsio && \
@@ -79,7 +64,7 @@ RUN oldpath=`pwd` && cd /tmp \
 
 WORKDIR /usr/src/app
 RUN git clone https://github.com/opencadc-metadata-curation/caom2pipe.git && \
-  git pull origin master && pip install ./caom2pipe
+  pip install ./caom2pipe
   
 RUN git clone https://github.com/opencadc-metadata-curation/omm2caom2.git && \
   cp ./omm2caom2/omm2caom2/omm_docker_run_cleanup.py /usr/local/bin && \
