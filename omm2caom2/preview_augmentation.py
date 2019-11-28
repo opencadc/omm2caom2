@@ -72,7 +72,6 @@ import os
 
 from caom2 import ProductType, ReleaseType
 from caom2 import Observation
-from caom2pipe import execute_composable as ec
 from caom2pipe import manage_composable as mc
 from omm2caom2 import OmmName, COLLECTION
 
@@ -99,8 +98,8 @@ def visit(observation, **kwargs):
         for artifact in plane.artifacts.values():
             if (artifact.uri.endswith('.fits.gz') or
                     artifact.uri.endswith('.fits')):
-                file_id = ec.CaomName(artifact.uri).file_id
-                file_name = ec.CaomName(artifact.uri).file_name
+                file_id = mc.CaomName(artifact.uri).file_id
+                file_name = mc.CaomName(artifact.uri).file_name
                 science_fqn = os.path.join(working_dir, file_name)
                 logging.error('first {}'.format(science_fqn))
                 if not os.path.exists(science_fqn):

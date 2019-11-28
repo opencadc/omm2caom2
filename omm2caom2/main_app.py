@@ -113,7 +113,7 @@ DEFAULT_GEOCENTRIC = {
              'elevation': 2200.}}
 
 
-class OmmName(ec.StorageName):
+class OmmName(mc.StorageName):
     """OMM naming rules:
     - support mixed-case file name storage, and mixed-case obs id values
     - support gzipped file names in ad, and gzipped and unzipped file names
@@ -135,7 +135,7 @@ class OmmName(ec.StorageName):
         else:
             self.fname_in_ad = OmmName._add_extensions(fname_on_disk)
         if obs_id is None:
-            obs_id = ec.StorageName.remove_extensions(self.fname_in_ad)
+            obs_id = mc.StorageName.remove_extensions(self.fname_in_ad)
 
         super(OmmName, self).__init__(
             obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, fname_on_disk)
@@ -647,7 +647,7 @@ def _update_science_provenance(observation, headers):
                 raise mc.CadcException(
                     'Unknown file naming pattern {}'.format(base_name))
 
-            obs_member_uri_str = ec.CaomName.make_obs_uri_from_obs_id(
+            obs_member_uri_str = mc.CaomName.make_obs_uri_from_obs_id(
                 COLLECTION, file_id)
             obs_member_uri = ObservationURI(obs_member_uri_str)
             # the product id is the same as the observation id for OMM
@@ -670,7 +670,7 @@ def _update_cal_provenance(observation, headers):
             base_name = OmmName.remove_extensions(os.path.basename(value))
             file_id = 'C{}_CAL'.format(base_name)
 
-            obs_member_uri_str = ec.CaomName.make_obs_uri_from_obs_id(
+            obs_member_uri_str = mc.CaomName.make_obs_uri_from_obs_id(
                 COLLECTION, file_id)
             obs_member_uri = ObservationURI(obs_member_uri_str)
             # the product id is the same as the observation id for OMM
