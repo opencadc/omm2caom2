@@ -833,7 +833,8 @@ def omm_main_app():
     try:
         uri = _get_uri(args)
         blueprints = _build_blueprints(uri)
-        gen_proc(args, blueprints)
+        result = gen_proc(args, blueprints)
+        sys.exit(result)
     except Exception as e:
         logging.error('Failed {} execution for {} with {}.'.format(
             APPLICATION, args, e))
