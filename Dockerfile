@@ -31,6 +31,7 @@ RUN pip install cadcdata && \
         pip install caom2 && \
         pip install caom2repo && \
         pip install caom2utils && \
+        pip install ftputil && \
         pip install PyYAML && \
         pip install spherical-geometry && \
         pip install vos

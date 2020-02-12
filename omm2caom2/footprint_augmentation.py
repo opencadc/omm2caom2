@@ -90,8 +90,8 @@ def visit(observation, **kwargs):
         science_file = kwargs['science_file']
     else:
         raise mc.CadcException(
-            'No science_file parameter provided to vistor '
-            'for obs {}.'.format(observation.observation_id))
+            f'No science_file parameter provided to vistor '
+            f'for obs {observation.observation_id}.')
     # TODO - this moves location handling structures to other than the
     # main composable code - this could be MUCH better handled, just not
     # sure how right now
@@ -104,8 +104,7 @@ def visit(observation, **kwargs):
         if science_fqn.endswith('.gz'):
             science_fqn = science_fqn.replace('.gz', '')
             if not os.path.exists(science_fqn):
-                raise mc.CadcException(
-                    '{} visit file not found'.format(science_fqn))
+                raise mc.CadcException(f'{science_fqn} visit file not found')
 
     science_fqn = _unzip(science_fqn)
 
@@ -119,14 +118,14 @@ def visit(observation, **kwargs):
                         observation.observation_id)
                     count += 1
 
-    logging.info('Completed footprint augmentation for {}'.format(
-        observation.observation_id))
+    logging.info(f'Completed footprint augmentation for '
+                 f'{observation.observation_id}')
     return {'chunks': count}
 
 
 def _unzip(science_fqn):
     if science_fqn.endswith('.gz'):
-        logging.debug('Unzipping {} for footprintfinder.'.format(science_fqn))
+        logging.debug(f'Unzipping {science_fqn} for footprintfinder.')
         unzipped_science_fqn = science_fqn.replace('.gz', '')
         import gzip
         with open(science_fqn, 'rb') as f_read:

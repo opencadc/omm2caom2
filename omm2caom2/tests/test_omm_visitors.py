@@ -91,7 +91,7 @@ def test_footprint_update_position():
                    OmmName(TEST_OBS, TEST_FILE).file_name}
     test_fqn = os.path.join(TESTDATA_DIR,
                             OmmName(TEST_OBS, TEST_FILE).model_file_name)
-    test_obs = mc.read_obs_from_file(test_fqn)
+    test_obs = mc.read_obs_from_file(test_fqn.replace('fits', 'expected'))
     test_chunk = test_obs.planes[TEST_OBS].artifacts[
         OmmName(TEST_OBS, TEST_FILE).file_uri].parts['0'].chunks[0]
     assert test_chunk.position.axis.bounds is None
@@ -124,7 +124,7 @@ def test_preview_augment_plane():
         os.remove(thumb)
     test_fqn = os.path.join(TESTDATA_DIR,
                             OmmName(TEST_OBS, TEST_FILE).model_file_name)
-    test_obs = mc.read_obs_from_file(test_fqn)
+    test_obs = mc.read_obs_from_file(test_fqn.replace('fits', 'expected'))
     assert len(test_obs.planes[TEST_OBS].artifacts) == 1
     preva = 'ad:OMM/C170324_0054_SCI_prev.jpg'
     thumba = 'ad:OMM/C170324_0054_SCI_prev_256.jpg'

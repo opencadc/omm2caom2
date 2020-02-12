@@ -49,8 +49,7 @@
           <caom2:uri>ad:OMM/C071112_0001_CAL.fits.gz</caom2:uri>
           <caom2:productType>calibration</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
-          <caom2:contentType>application/octet-stream</caom2:contentType>
-          <caom2:contentLength>37</caom2:contentLength>
+          <caom2:contentType>application/fits</caom2:contentType>
           <caom2:contentChecksum>md5:e330482de75d5c4c88ce6f6ef99035ea</caom2:contentChecksum>
           <caom2:parts>
             <caom2:part caom2:id="00000000-0000-0000-8de6-ee7e8d8ba9bf">
@@ -59,8 +58,6 @@
               <caom2:chunks>
                 <caom2:chunk caom2:id="00000000-0000-0000-9e15-a4c69c509d2b">
                   <caom2:productType>calibration</caom2:productType>
-                  <caom2:naxis>4</caom2:naxis>
-                  <caom2:timeAxis>4</caom2:timeAxis>
                   <caom2:time>
                     <caom2:axis>
                       <caom2:axis>

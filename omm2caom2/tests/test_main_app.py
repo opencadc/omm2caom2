@@ -68,7 +68,7 @@
 #
 
 
-from omm2caom2 import omm_main_app, APPLICATION
+from omm2caom2 import main_app, APPLICATION
 from caom2.diff import get_differences
 from caom2pipe import manage_composable as mc
 
@@ -82,7 +82,7 @@ TEST_URI = 'ad:OMM/imm_file.fits'
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 TEST_DATA_DIR = os.path.join(THIS_DIR, 'data')
-PLUGIN = os.path.join(os.path.dirname(THIS_DIR), '{}.py'.format(APPLICATION))
+PLUGIN = os.path.join(os.path.dirname(THIS_DIR), f'{APPLICATION}.py')
 
 
 def pytest_generate_tests(metafunc):
@@ -95,42 +95,32 @@ def test_main_app(test_name):
     basename = os.path.basename(test_name)
     product_id = basename.split('.fits')[0]
     lineage = _get_lineage(product_id, basename)
-    output_file = '{}.actual.xml'.format(test_name)
+    output_file = f'{test_name}.actual.xml'
     local = _get_local(test_name)
     plugin = PLUGIN
-    input_file = '{}/in.{}.fits.xml'.format(TEST_DATA_DIR, product_id)
+    input_file = f'{TEST_DATA_DIR}/in.{product_id}.fits.xml'
     if os.path.exists(input_file):
-        input_param = '--in {}'.format(input_file)
+        input_param = f'--in {input_file}'
     else:
-        input_param = '--observation OMM {}'.format(product_id)
+        input_param = f'--observation OMM {product_id}'
     with patch('caom2utils.fits2caom2.CadcDataClient') as data_client_mock:
-        def get_file_info(archive, file_id):
-            if '_prev' in file_id:
-                return {'size': 10290,
-                        'md5sum': md5('-37'.encode()).hexdigest(),
-                        'type': 'image/jpeg'}
-            else:
-                return {'size': 37,
-                        'md5sum': md5('-37'.encode()).hexdigest(),
-                        'type': 'application/octet-stream'}
         data_client_mock.return_value.get_file_info.side_effect = \
-            get_file_info
+            _mock_get_file_info
 
         sys.argv = \
-            ('{} --no_validate --local {} '
-             '--plugin {} --module {} {} -o {} --lineage {}'.
-             format(APPLICATION, local, plugin, plugin, input_param,
-                    output_file, lineage)).split()
+            (f'{APPLICATION} --no_validate --local {local}  --plugin {plugin} '
+             f'--module {plugin} {input_param} -o {output_file} --lineage '
+             f'{lineage}').split()
         print(sys.argv)
-        omm_main_app()
-    obs_path = test_name.replace('header', 'xml')
+        main_app.to_caom2()
+    obs_path = test_name.replace('.fits.header', '.expected.xml')
     expected = mc.read_obs_from_file(obs_path)
     actual = mc.read_obs_from_file(output_file)
     result = get_differences(expected, actual, 'Observation')
     if result:
-        msg = 'Differences found in observation {}\n{}'. \
-            format(expected.observation_id, '\n'.join(
-            [r for r in result]))
+        text = '\n'.join([r for r in result])
+        msg = f'Differences found in observation {expected.observation_id}' \
+              f'\n{text}'
         raise AssertionError(msg)
     # assert False  # cause I want to see logging messages
 
@@ -138,8 +128,17 @@ def test_main_app(test_name):
 def _get_local(test_name):
     prev_name = test_name.replace('.fits.header', '_prev.jpg')
     prev_256_name = test_name.replace('.fits.header', '_prev_256.jpg')
-    return '{} {} {}'.format(test_name, prev_name, prev_256_name)
+    return f'{test_name} {prev_name} {prev_256_name}'
 
 
 def _get_lineage(product_id, basename):
-    return '{}/ad:OMM/{}.fits.gz'.format(product_id, product_id)
+    return f'{product_id}/ad:OMM/{product_id}.fits.gz'
+
+
+def _mock_get_file_info(archive, file_id):
+    if '_prev' in file_id:
+        return {'type': 'image/jpeg',
+                'name': file_id}
+    else:
+        return {'type': 'application/fits',
+                'name': file_id}

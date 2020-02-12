@@ -78,9 +78,8 @@ TESTDATA_DIR = os.path.join(THIS_DIR, 'data')
 
 def test_update_cal_provenance():
     test_obs = 'C170323_domeflat_K_CALRED'
-    test_obs_file = os.path.join(TESTDATA_DIR, '{}.fits.xml'.format(test_obs))
-    test_header_file = os.path.join(TESTDATA_DIR,
-                                    '{}.fits.header'.format(test_obs))
+    test_obs_file = os.path.join(TESTDATA_DIR, f'{test_obs}.expected.xml')
+    test_header_file = os.path.join(TESTDATA_DIR, f'{test_obs}.fits.header')
     test_obs = mc.read_obs_from_file(test_obs_file)
     fits_header = open(test_header_file).read()
     headers = ac.make_headers_from_string(fits_header)
@@ -105,9 +104,8 @@ def test_update_cal_provenance():
 
 def test_update_sci_provenance():
     test_obs = 'C160929_NGC7419_K_SCIRED'
-    test_obs_file = os.path.join(TESTDATA_DIR, '{}.fits.xml'.format(test_obs))
-    test_header_file = os.path.join(TESTDATA_DIR,
-                                    '{}.fits.header'.format(test_obs))
+    test_obs_file = os.path.join(TESTDATA_DIR, f'{test_obs}.expected.xml')
+    test_header_file = os.path.join(TESTDATA_DIR, f'{test_obs}.fits.header')
     test_obs = mc.read_obs_from_file(test_obs_file)
     fits_header = open(test_header_file).read()
     headers = ac.make_headers_from_string(fits_header)

@@ -70,15 +70,17 @@
 import os
 import sys
 
+from caom2 import SimpleObservation, Algorithm
+from caom2pipe import manage_composable as mc
+
 from mock import patch, Mock
 
 from omm2caom2 import composable, OmmName, APPLICATION
+import test_main_app
 
 
-THIS_DIR = os.path.dirname(os.path.realpath(__file__))
-TEST_DATA_DIR = os.path.join(THIS_DIR, 'data')
 STATE_FILE = '/usr/src/app/state.yml'
-TODO_FILE = '{}/todo.txt'.format(TEST_DATA_DIR)
+TODO_FILE = '{}/todo.txt'.format(test_main_app.TEST_DATA_DIR)
 PROGRESS_FILE = '/usr/src/app/logs/progress.txt'
 
 
@@ -92,7 +94,7 @@ def test_run():
     test_f = '{}.fits'.format(test_obs_id)
     _write_todo(test_f)
     getcwd_orig = os.getcwd
-    os.getcwd = Mock(return_value=TEST_DATA_DIR)
+    os.getcwd = Mock(return_value=test_main_app.TEST_DATA_DIR)
     try:
         # execution
         with patch('caom2pipe.execute_composable._do_one') \
@@ -121,7 +123,7 @@ def test_run_errors():
     test_f = '{}.fits'.format(test_obs_id)
     _write_todo(test_f)
     getcwd_orig = os.getcwd
-    os.getcwd = Mock(return_value=TEST_DATA_DIR)
+    os.getcwd = Mock(return_value=test_main_app.TEST_DATA_DIR)
     try:
         # execution
         with patch('caom2pipe.execute_composable._do_one') \
@@ -149,8 +151,8 @@ def test_run_single():
     test_obs_id = 'C121121_J024345.57-021326.4_K_SCIRED'
     test_f = '{}.fits'.format(test_obs_id)
     getcwd_orig = os.getcwd
-    os.getcwd = Mock(return_value=TEST_DATA_DIR)
-    test_proxy = '{}/cadcproxy.pem'.format(TEST_DATA_DIR)
+    os.getcwd = Mock(return_value=test_main_app.TEST_DATA_DIR)
+    test_proxy = '{}/cadcproxy.pem'.format(test_main_app.TEST_DATA_DIR)
     try:
         # execution
         with patch('caom2pipe.execute_composable._do_one') as run_mock:
@@ -173,6 +175,47 @@ def test_run_single():
         os.getcwd = getcwd_orig
 
 
+@patch('caom2pipe.execute_composable.CaomExecute._fits2caom2_cmd_direct')
+@patch('caom2pipe.execute_composable.CAOM2RepoClient')
+@patch('caom2pipe.execute_composable.CadcDataClient')
+def test_run_rc_todo(data_client_mock, repo_mock, exec_mock):
+    repo_mock.return_value.read.side_effect = _mock_repo_read
+    repo_mock.return_value.create.side_effect = Mock()
+    repo_mock.return_value.update.side_effect = _mock_repo_update
+    data_client_mock.return_value.get_file_info.side_effect = \
+        test_main_app._mock_get_file_info
+    exec_mock.side_effect = _mock_exec
+    getcwd_orig = os.getcwd
+    os.getcwd = Mock(return_value=test_main_app.TEST_DATA_DIR)
+    try:
+        # execution
+        test_result = composable._run_todo()
+        assert test_result == 0, 'wrong result'
+    finally:
+        os.getcwd = getcwd_orig
+
+    assert repo_mock.return_value.read.called, 'repo read not called'
+    assert repo_mock.return_value.create.called, 'repo create not called'
+    assert exec_mock.called, 'expect to be called'
+
+
 def _write_todo(test_obs_id):
     with open(TODO_FILE, 'w') as f:
         f.write('{}\n'.format(test_obs_id))
+
+
+def _mock_repo_read(arg1, arg2):
+    return None
+
+
+def _mock_repo_update(ignore1):
+    return None
+
+
+def _mock_exec():
+    obs = SimpleObservation(collection='TEST',
+                            observation_id='C121212_domeflat_K_CALRED',
+                            algorithm=Algorithm(name='test'))
+    mc.write_obs_to_file(obs, f'{test_main_app.TEST_DATA_DIR}/'
+                         f'C121212_domeflat_K_CALRED/'
+                         f'C121212_domeflat_K_CALRED.fits.xml')

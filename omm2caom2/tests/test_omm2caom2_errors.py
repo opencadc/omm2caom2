@@ -80,8 +80,8 @@ TESTDATA_DIR = os.path.join(THIS_DIR, 'error_data')
 
 def test_time_nan():
     test_obs = 'C120712_NGC7790_H_SCIRED'
-    test_file = 'file://{}/{}.fits.header'.format(TESTDATA_DIR, test_obs)
-    test_xml = '{}/{}.xml'.format(TESTDATA_DIR, test_obs)
+    test_file = f'file://{TESTDATA_DIR}/{test_obs}.fits.header'
+    test_xml = f'{TESTDATA_DIR}/{test_obs}.xml'
     obs = mc.read_obs_from_file(test_xml)
     headers = fits2caom2.get_cadc_headers(test_file)
     kwargs = {'headers': headers}

@@ -74,6 +74,7 @@ import traceback
 
 from caom2pipe import execute_composable as ec
 from caom2pipe import manage_composable as mc
+from caom2pipe import run_composable as rc
 from omm2caom2 import preview_augmentation, footprint_augmentation
 from omm2caom2 import OmmChooser, OmmName, APPLICATION, COLLECTION
 
@@ -164,6 +165,25 @@ def run_single():
     """Wraps _omm_run_single in exception handling, with sys.exit calls."""
     try:
         result = _run_single()
+        sys.exit(result)
+    except Exception as e:
+        logging.error(e)
+        tb = traceback.format_exc()
+        logging.debug(tb)
+        sys.exit(-1)
+
+
+def _run_todo():
+    return rc.run_by_todo(config=None, name_builder=None, chooser=OmmChooser(),
+                          command_name=APPLICATION,
+                          meta_visitors=meta_visitors,
+                          data_visitors=data_visitors)
+
+
+def run_todo():
+    """Wraps _run_todo in exception handling, with sys.exit calls."""
+    try:
+        result = _run_todo()
         sys.exit(result)
     except Exception as e:
         logging.error(e)

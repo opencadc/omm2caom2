@@ -105,8 +105,8 @@ def test_is_valid():
 
 def test_omm_name():
     TEST_NAME = 'C121212_00001_SCI'
-    assert 'ad:OMM/{}.fits.gz'.format(TEST_NAME) == OmmName(
-        TEST_NAME, '{}.fits'.format(TEST_NAME)).file_uri
+    assert f'ad:OMM/{TEST_NAME}.fits.gz' == OmmName(
+        TEST_NAME, f'{TEST_NAME}.fits').file_uri
     TEST_NAME = 'C121212_sh2-132_J_old_SCIRED'
-    assert '{}_prev.jpg'.format(TEST_NAME) == OmmName(TEST_NAME).prev
-    assert '{}_prev_256.jpg'.format(TEST_NAME) == OmmName(TEST_NAME).thumb
+    assert f'{TEST_NAME}_prev.jpg' == OmmName(TEST_NAME).prev
+    assert f'{TEST_NAME}_prev_256.jpg' == OmmName(TEST_NAME).thumb

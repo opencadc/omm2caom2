@@ -1,15 +1,15 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<caom2:Observation xmlns:caom2="http://www.opencadc.org/caom2/xml/v2.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:SimpleObservation" caom2:id="4e2505a3-ee49-4802-a8f7-7b7405e422d4">
+<caom2:Observation xmlns:caom2="http://www.opencadc.org/caom2/xml/v2.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:SimpleObservation" caom2:id="6a13cc16-7a25-4a6c-b3ff-8fa0649c3024">
   <caom2:collection>OMM</caom2:collection>
-  <caom2:observationID>C190618_0336_SCI</caom2:observationID>
-  <caom2:metaRelease>2019-06-19T03:50:24.000</caom2:metaRelease>
+  <caom2:observationID>C190715_0582_SCI</caom2:observationID>
+  <caom2:metaRelease>2019-07-16T03:15:46.000</caom2:metaRelease>
   <caom2:algorithm>
     <caom2:name>exposure</caom2:name>
   </caom2:algorithm>
   <caom2:type>object</caom2:type>
   <caom2:intent>science</caom2:intent>
   <caom2:target>
-    <caom2:name>BYW2132+2931</caom2:name>
+    <caom2:name>BYW2251-0740</caom2:name>
     <caom2:type>object</caom2:type>
     <caom2:standard>false</caom2:standard>
     <caom2:moving>false</caom2:moving>
@@ -18,8 +18,8 @@
     <caom2:coordsys>ICRS</caom2:coordsys>
     <caom2:equinox>2000.0</caom2:equinox>
     <caom2:coordinates>
-      <caom2:cval1>323.145285</caom2:cval1>
-      <caom2:cval2>29.531895</caom2:cval2>
+      <caom2:cval1>342.79329</caom2:cval1>
+      <caom2:cval2>-7.693582</caom2:cval2>
     </caom2:coordinates>
   </caom2:targetPosition>
   <caom2:telescope>
@@ -35,10 +35,10 @@
     </caom2:keywords>
   </caom2:instrument>
   <caom2:planes>
-    <caom2:plane caom2:id="3f49d4ec-7a66-4270-84bb-3a604a62348d">
-      <caom2:productID>C190618_0336_SCI</caom2:productID>
-      <caom2:metaRelease>2019-06-19T07:50:24.000</caom2:metaRelease>
-      <caom2:dataRelease>2019-06-19T03:50:24.000</caom2:dataRelease>
+    <caom2:plane caom2:id="e76efcaf-df72-4ed8-b538-fd47e99633d7">
+      <caom2:productID>C190715_0582_SCI</caom2:productID>
+      <caom2:metaRelease>2019-07-16T07:15:46.000</caom2:metaRelease>
+      <caom2:dataRelease>2019-07-16T03:15:46.000</caom2:dataRelease>
       <caom2:dataProductType>image</caom2:dataProductType>
       <caom2:calibrationLevel>1</caom2:calibrationLevel>
       <caom2:provenance>
@@ -46,23 +46,22 @@
         <caom2:version>1.0</caom2:version>
         <caom2:project>Standard Pipeline</caom2:project>
         <caom2:producer>LAE</caom2:producer>
-        <caom2:runID>190618</caom2:runID>
+        <caom2:runID>190715</caom2:runID>
         <caom2:reference>http://genesis.astro.umontreal.ca</caom2:reference>
       </caom2:provenance>
       <caom2:artifacts>
-        <caom2:artifact caom2:id="edf99f08-1071-40f3-a4d5-53816ba16783">
-          <caom2:uri>ad:OMM/C190618_0336_SCI.fits.gz</caom2:uri>
+        <caom2:artifact caom2:id="baba6a51-ea0f-4619-8fc2-04c9012ed1d2">
+          <caom2:uri>ad:OMM/C190715_0582_SCI.fits.gz</caom2:uri>
           <caom2:productType>science</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
-          <caom2:contentType>application/octet-stream</caom2:contentType>
-          <caom2:contentLength>37</caom2:contentLength>
+          <caom2:contentType>application/fits</caom2:contentType>
           <caom2:contentChecksum>md5:e330482de75d5c4c88ce6f6ef99035ea</caom2:contentChecksum>
           <caom2:parts>
-            <caom2:part caom2:id="a44d80cf-e318-4dc5-80f5-53e6bb9cf310">
+            <caom2:part caom2:id="8fea5a70-796e-4d9a-8d85-ad44ce39a7aa">
               <caom2:name>0</caom2:name>
               <caom2:productType>science</caom2:productType>
               <caom2:chunks>
-                <caom2:chunk caom2:id="1dd48805-cffc-4865-a035-2cf09ac70dba">
+                <caom2:chunk caom2:id="0cd26065-ccea-48d3-84cc-447ada7a9793">
                   <caom2:productType>science</caom2:productType>
                   <caom2:naxis>4</caom2:naxis>
                   <caom2:positionAxis1>1</caom2:positionAxis1>
@@ -87,21 +86,22 @@
                         <caom2:refCoord>
                           <caom2:coord1>
                             <caom2:pix>1024.5</caom2:pix>
-                            <caom2:val>323.194929223</caom2:val>
+                            <caom2:val>342.87049032</caom2:val>
                           </caom2:coord1>
                           <caom2:coord2>
                             <caom2:pix>1024.5</caom2:pix>
-                            <caom2:val>29.578051118</caom2:val>
+                            <caom2:val>-7.64297349953</caom2:val>
                           </caom2:coord2>
                         </caom2:refCoord>
-                        <caom2:cd11>-0.000247533632091</caom2:cd11>
-                        <caom2:cd12>5.37399388236e-06</caom2:cd12>
-                        <caom2:cd21>5.47148285553e-06</caom2:cd21>
-                        <caom2:cd22>0.000247962393364</caom2:cd22>
+                        <caom2:cd11>-0.000247645606338</caom2:cd11>
+                        <caom2:cd12>5.46672253227e-06</caom2:cd12>
+                        <caom2:cd21>5.60103725693e-06</caom2:cd21>
+                        <caom2:cd22>0.000248028658234</caom2:cd22>
                       </caom2:function>
                     </caom2:axis>
                     <caom2:coordsys>ICRS</caom2:coordsys>
                     <caom2:equinox>2000.0</caom2:equinox>
+                    <caom2:resolution>1.626686759038446</caom2:resolution>
                   </caom2:position>
                   <caom2:energy>
                     <caom2:axis>
@@ -134,25 +134,25 @@
                       <caom2:range>
                         <caom2:start>
                           <caom2:pix>0.5</caom2:pix>
-                          <caom2:val>58653.32666666667</caom2:val>
+                          <caom2:val>58680.302615740744</caom2:val>
                         </caom2:start>
                         <caom2:end>
                           <caom2:pix>1.5</caom2:pix>
-                          <caom2:val>58653.326898148145</caom2:val>
+                          <caom2:val>58680.30284722222</caom2:val>
                         </caom2:end>
                       </caom2:range>
                       <caom2:function>
                         <caom2:naxis>1</caom2:naxis>
-                        <caom2:delta>20.295</caom2:delta>
+                        <caom2:delta>20.309</caom2:delta>
                         <caom2:refCoord>
                           <caom2:pix>0.5</caom2:pix>
-                          <caom2:val>58653.32666666667</caom2:val>
+                          <caom2:val>58680.302615740744</caom2:val>
                         </caom2:refCoord>
                       </caom2:function>
                     </caom2:axis>
                     <caom2:timesys>UTC</caom2:timesys>
                     <caom2:trefpos>TOPOCENTER</caom2:trefpos>
-                    <caom2:exposure>20.295</caom2:exposure>
+                    <caom2:exposure>20.309</caom2:exposure>
                     <caom2:resolution>0.1</caom2:resolution>
                   </caom2:time>
                 </caom2:chunk>

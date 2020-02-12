@@ -89,7 +89,7 @@ from caom2pipe import manage_composable as mc
 from caom2pipe import execute_composable as ec
 
 
-__all__ = ['omm_main_app', 'update', 'OmmName', 'COLLECTION', 'APPLICATION',
+__all__ = ['to_caom2', 'update', 'OmmName', 'COLLECTION', 'APPLICATION',
            '_update_cal_provenance', '_update_science_provenance',
            'OmmChooser']
 
@@ -127,7 +127,7 @@ class OmmName(mc.StorageName):
         if file_name is None and fname_on_disk is None:
             if obs_id.endswith('.fits') or obs_id.endswith('fits.gz'):
                 raise mc.CadcException('Bad obs id value {}', obs_id)
-            self.fname_in_ad = '{}.fits.gz'.format(obs_id)
+            self.fname_in_ad = f'{obs_id}.fits.gz'
         elif fname_on_disk is None:
             self.fname_in_ad = OmmName._add_extensions(file_name)
         elif file_name is None:
@@ -145,7 +145,7 @@ class OmmName(mc.StorageName):
         return 'gzip'
 
     def get_file_uri(self):
-        return 'ad:{}/{}'.format(self.collection, self.fname_in_ad)
+        return f'ad:{self.collection}/{self.fname_in_ad}'
 
     def is_valid(self):
         result = False
@@ -167,9 +167,9 @@ class OmmName(mc.StorageName):
         if fname.endswith('.gz'):
             return fname
         elif fname.endswith('.fits'):
-            return '{}.gz'.format(fname)
+            return f'{fname}.gz'
         else:
-            raise mc.CadcException('Unexpected file name {}'.format(fname))
+            raise mc.CadcException(f'Unexpected file name {fname}')
 
     @staticmethod
     def is_composite(uri):
@@ -265,6 +265,11 @@ def accumulate_position(bp):
     bp.set('Chunk.position.axis.axis2.cunit', 'deg')
     bp.clear('Chunk.position.equinox')
     bp.add_fits_attribute('Chunk.position.equinox', 'EQUINOX')
+    # DD - slack - 11-02-20
+    # FWHM meaning is Full width Half Maximum, is a measurement of the stellar
+    # profile on the image. So I suspect IQ being that FWHM value.
+    bp.clear('Chunk.position.resolution')
+    bp.add_fits_attribute('Chunk.position.resolution', 'FWHM')
 
 
 def get_end_ref_coord_val(header):
@@ -464,12 +469,18 @@ def update(observation, **kwargs):
                         p.chunks.append(Chunk())
 
                     for chunk in p.chunks:
-                        chunk.naxis = 4
                         chunk.product_type = get_product_type(headers[0])
                         _update_energy(chunk, headers)
                         _update_time(
                             chunk, headers, observation.observation_id)
                         _update_position(chunk, headers)
+                        if chunk.position is None:
+                            # for WCS validation correctness
+                            chunk.naxis = None
+                            chunk.energy_axis = None
+                            chunk.time_axis = None
+                        else:
+                            chunk.naxis = 4
 
         if observation.observation_id.endswith('_REJECT'):
             _update_requirements(observation)
@@ -481,8 +492,8 @@ def update(observation, **kwargs):
         if OmmName.is_composite(observation.observation_id):
             if OmmChooser().needs_delete(observation):
                 observation = _update_observation_type(observation)
-                logging.info('Changing from Simple to Composite for {}'.format(
-                    observation.observation_id))
+                logging.info(f'Changing from Simple to Composite for '
+                             f'{observation.observation_id}')
             _update_provenance(observation, headers)
             # _update_time_bounds(observation, fqn)
 
@@ -493,7 +504,7 @@ def update(observation, **kwargs):
         logging.debug(tb)
         logging.error(e)
         logging.error(
-            'Terminating ingestion for {}'.format(observation.observation_id))
+            f'Terminating ingestion for {observation.observation_id}')
         return None
 
 
@@ -511,8 +522,8 @@ def _update_energy(chunk, headers):
         chunk.energy = None
         chunk.energy_axis = None
         logging.debug(
-            'Setting chunk energy to None because WLEN {} and '
-            'BANDPASS {}'.format(wlen, bandpass))
+            f'Setting chunk energy to None because WLEN {wlen} and '
+            f'BANDPASS {bandpass}')
     else:
         naxis = CoordAxis1D(Axis('WAVE', 'um'))
         start_ref_coord = RefCoord(0.5, get_start_ref_coord_val(headers[0]))
@@ -534,8 +545,8 @@ def _update_instrument_name(observation):
     elif observation.observation_id.startswith('S'):
         name = 'SPIOMM'
     else:
-        raise mc.CadcException('Unexpected observation id format: {}'.format(
-            observation.observation_id))
+        raise mc.CadcException(f'Unexpected observation id format: '
+                               f'{observation.observation_id}')
     observation.instrument = Instrument(name)
 
 
@@ -570,16 +581,15 @@ def _update_time(chunk, headers, obs_id):
         mjd_start, mjd_end = ac.find_time_bounds(headers)
     if mjd_start is None or mjd_end is None:
         chunk.time = None
-        logging.debug('Cannot calculate mjd_start {} or mjd_end {}'.format(
-            mjd_start, mjd_end))
+        logging.debug(f'Cannot calculate MJD_STAR {mjd_start} or '
+                      f'MDJ_END {mjd_end}')
     elif mjd_start == 'NaN' or mjd_end == 'NaN':
         raise mc.CadcException(
-            'Invalid time values MJD_STAR {} or MJD_END {} for {}, '
-            'stopping ingestion.'.format(mjd_start, mjd_end, obs_id))
+            f'Invalid time values MJD_STAR {mjd_start} or MJD_END {mjd_end} '
+            f'for {obs_id}, stopping ingestion.')
     else:
         logging.debug(
-            'Calculating range with start {} and end {}.'.format(
-                mjd_start, mjd_start))
+            f'Calculating range with start {mjd_start} and end {mjd_end}.')
         start = RefCoord(0.5, mjd_start)
         end = RefCoord(1.5, mjd_end)
         time_cf = CoordFunction1D(1, headers[0].get('TEFF'), start)
@@ -634,18 +644,28 @@ def _update_provenance(observation, headers):
 def _update_science_provenance(observation, headers):
     members_inputs = TypedSet(ObservationURI,)
     plane_inputs = TypedSet(PlaneURI,)
+    # values look like:
+    # IN_00010= 'S/data/cpapir/data/101116/101116_0088.fits.fits.gz'
+    # or
+    # IN_00001= 'S050213_0278.fits.gz' /raw input file (1/5)
+    # or
+    # DD - slack - 11-02-20
+    # Add this new prefix. This will be a much easier fix than changing the
+    # pipeline and all the headers once more.
+    #
+    # ID_00001= 'S/data/cpapir/data/101116/101116_0041.fits.fits.gz'
     for keyword in headers[0]:
-        if keyword.startswith('IN_'):
+        if keyword.startswith('IN_') or keyword.startswith('ID_'):
             value = headers[0].get(keyword)
             base_name = OmmName.remove_extensions(os.path.basename(value))
-            if base_name.startswith('S'):
+            if base_name.startswith('S') or value.startswith('S'):
                 # starting 'S' means a science input, 'C' will mean cal
                 file_id = '{}_SCI'.format(base_name.replace('S', 'C', 1))
-            elif base_name.startswith('C'):
-                file_id = '{}_CAL'.format(base_name)
+            elif base_name.startswith('C') or value.startswith('C'):
+                file_id = f'{base_name}_CAL'
             else:
                 raise mc.CadcException(
-                    'Unknown file naming pattern {}'.format(base_name))
+                    f'Unknown file naming pattern {base_name}')
 
             obs_member_uri_str = mc.CaomName.make_obs_uri_from_obs_id(
                 COLLECTION, file_id)
@@ -668,7 +688,7 @@ def _update_cal_provenance(observation, headers):
         if keyword.startswith('F_ON') or keyword.startswith('F_OFF'):
             value = headers[0].get(keyword)
             base_name = OmmName.remove_extensions(os.path.basename(value))
-            file_id = 'C{}_CAL'.format(base_name)
+            file_id = f'C{base_name}_CAL'
 
             obs_member_uri_str = mc.CaomName.make_obs_uri_from_obs_id(
                 COLLECTION, file_id)
@@ -709,14 +729,14 @@ def _update_time_bounds(observation, fqn):
         extname = fits_data[1].header['EXTNAME']
         if 'BINTABLE' in xtension and 'PROVENANCE' in extname:
             for ii in fits_data[1].data[0]['STARTTIME']:
-                lower_values = '{} {}'.format(ii, lower_values)
+                lower_values = f'{ii} {lower_values}'
             for ii in fits_data[1].data[0]['DURATION']:
-                upper_values = '{} {} '.format(ii, upper_values)
+                upper_values = f'{ii} {upper_values} '
         else:
             raise mc.CadcException(
-                'Opened a composite file that does not match the '
-                'expected profile (XTENSION=BINTABLE/EXTNAME=PROVENANCE). '
-                '{} {}'.format(xtension, extname))
+                f'Opened a composite file that does not match the '
+                f'expected profile (XTENSION=BINTABLE/EXTNAME=PROVENANCE). '
+                f'{xtension} {extname}')
 
     for plane in observation.planes:
         for artifact in observation.planes[plane].artifacts:
@@ -758,8 +778,8 @@ def _update_telescope_location(observation, headers):
     telescope = headers[0].get('TELESCOP')
 
     if telescope is None:
-        logging.warning('No telescope name. Could not set telescope '
-                        'location for {}'.format(observation.observation_id))
+        logging.warning(f'No telescope name. Could not set telescope '
+                        f'location for {observation.observation_id}')
         return
 
     telescope = telescope.upper()
@@ -787,8 +807,7 @@ def _update_telescope_location(observation, headers):
                 ac.get_location(
                     lat, long, DEFAULT_GEOCENTRIC[telescope]['elevation'])
     else:
-        raise mc.CadcException(
-            'Unexpected telescope name {}'.format(telescope))
+        raise mc.CadcException(f'Unexpected telescope name {telescope}')
 
     logging.debug('Done _update_telescope_location')
 
@@ -824,22 +843,26 @@ def _get_uri(args):
         result = args.lineage[0].split('/', 1)[1]
     else:
         raise mc.CadcException(
-            'Could not define uri from these args {}'.format(args))
+            f'Could not define uri from these args {args}')
+    return result
+
+
+def to_caom2():
+    args = get_gen_proc_arg_parser().parse_args()
+    uri = _get_uri(args)
+    blueprints = _build_blueprints(uri)
+    result = gen_proc(args, blueprints)
+    logging.debug(f'Done {APPLICATION} processing.')
     return result
 
 
 def omm_main_app():
     args = get_gen_proc_arg_parser().parse_args()
     try:
-        uri = _get_uri(args)
-        blueprints = _build_blueprints(uri)
-        result = gen_proc(args, blueprints)
+        result = to_caom2()
         sys.exit(result)
     except Exception as e:
-        logging.error('Failed {} execution for {} with {}.'.format(
-            APPLICATION, args, e))
+        logging.error(f'Failed {APPLICATION} execution for {args} with {e}.')
         tb = traceback.format_exc()
         logging.debug(tb)
         sys.exit(-1)
-
-    logging.debug('Done {} processing.'.format(APPLICATION))

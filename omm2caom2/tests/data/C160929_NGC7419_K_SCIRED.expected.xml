@@ -192,8 +192,7 @@
           <caom2:uri>ad:OMM/C160929_NGC7419_K_SCIRED.fits.gz</caom2:uri>
           <caom2:productType>science</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
-          <caom2:contentType>application/octet-stream</caom2:contentType>
-          <caom2:contentLength>37</caom2:contentLength>
+          <caom2:contentType>application/fits</caom2:contentType>
           <caom2:contentChecksum>md5:e330482de75d5c4c88ce6f6ef99035ea</caom2:contentChecksum>
           <caom2:parts>
             <caom2:part caom2:id="00000000-0000-0000-9a74-b7c9bb59cdb1">
@@ -240,6 +239,7 @@
                     </caom2:axis>
                     <caom2:coordsys>ICRS</caom2:coordsys>
                     <caom2:equinox>2000.0</caom2:equinox>
+                    <caom2:resolution>2.31406164133</caom2:resolution>
                   </caom2:position>
                   <caom2:energy>
                     <caom2:axis>

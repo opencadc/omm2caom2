@@ -101,22 +101,20 @@ def visit(observation, **kwargs):
                 file_id = mc.CaomName(artifact.uri).file_id
                 file_name = mc.CaomName(artifact.uri).file_name
                 science_fqn = os.path.join(working_dir, file_name)
-                logging.error('first {}'.format(science_fqn))
                 if not os.path.exists(science_fqn):
                     if science_fqn.endswith('.gz'):
                         science_fqn = science_fqn.replace('.gz', '')
                     else:
-                        science_fqn = '{}.gz'.format(science_fqn)
-                    logging.error('second {}'.format(science_fqn))
+                        science_fqn = f'{science_fqn}.gz'
                     if not os.path.exists(science_fqn):
                         raise mc.CadcException(
-                            '{} visit file not found'.format(science_fqn))
+                            f'{science_fqn} visit file not found')
                 science_fqn = _unzip(science_fqn)
-                logging.debug('working on file {}'.format(science_fqn))
+                logging.debug(f'working on file {science_fqn}')
                 count += _do_prev(file_id, science_fqn, working_dir, plane,
                                   cadc_client, observable.metrics)
-    logging.info('Completed preview augmentation for {}.'.format(
-            observation.observation_id))
+    logging.info(f'Completed preview augmentation for '
+                 f'{observation.observation_id}.')
     return {'artifacts': count}
 
 
@@ -137,14 +135,14 @@ def _do_prev(file_id, science_fqn, working_dir, plane, cadc_client, metrics):
 
     if os.access(preview_fqn, 0):
         os.remove(preview_fqn)
-    prev_cmd = 'fitscut --all --autoscale=99.5 --asinh-scale --jpg --invert ' \
-               '--compass {}'.format(science_fqn)
+    prev_cmd = f'fitscut --all --autoscale=99.5 --asinh-scale --jpg --invert ' \
+               f'--compass {science_fqn}'
     mc.exec_cmd_redirect(prev_cmd, preview_fqn)
 
     if os.access(thumb_fqn, 0):
         os.remove(thumb_fqn)
-    prev_cmd = 'fitscut --all --output-size=256 --autoscale=99.5 ' \
-               '--asinh-scale --jpg --invert --compass {}'.format(science_fqn)
+    prev_cmd = f'fitscut --all --output-size=256 --autoscale=99.5 ' \
+               f'--asinh-scale --jpg --invert --compass {science_fqn}'
     mc.exec_cmd_redirect(prev_cmd, thumb_fqn)
 
     prev_uri = OmmName(file_id).prev_uri
@@ -166,7 +164,7 @@ def _store_smalls(cadc_client, working_directory, preview_fname,
 
 def _unzip(science_fqn):
     if science_fqn.endswith('.gz'):
-        logging.debug('Unzipping {}.'.format(science_fqn))
+        logging.debug(f'Unzipping {science_fqn}.')
         unzipped_science_fqn = science_fqn.replace('.gz', '')
         import gzip
         with open(science_fqn, 'rb') as f_read:
