@@ -34,6 +34,7 @@ RUN pip install cadcdata && \
         pip install deprecated && \
         pip install ftputil && \
         pip install PyYAML && \
+        pip install pytz && \
         pip install spherical-geometry && \
         pip install vos
 
