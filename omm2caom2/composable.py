@@ -83,30 +83,6 @@ meta_visitors = []
 data_visitors = [preview_augmentation, footprint_augmentation]
 
 
-def _run():
-    """Run the processing for multiple files.
-
-    :return 0 if successful, -1 if there's any sort of failure. Return status
-        is used by airflow for task instance management and reporting.
-    """
-    config = mc.Config()
-    config.get_executors()
-    return ec.run_by_file(config, OmmName, APPLICATION,
-                          meta_visitors, data_visitors, OmmChooser())
-
-
-def run():
-    """Wraps _run in exception handling, with sys.exit calls."""
-    try:
-        result = _run()
-        sys.exit(result)
-    except Exception as e:
-        logging.error(e)
-        tb = traceback.format_exc()
-        logging.debug(tb)
-        sys.exit(-1)
-
-
 def _run_proxy():
     """Run the processing for multiple files, using a well-known proxy.
 
@@ -173,17 +149,17 @@ def run_single():
         sys.exit(-1)
 
 
-def _run_todo():
+def _run():
     return rc.run_by_todo(config=None, name_builder=None, chooser=OmmChooser(),
                           command_name=APPLICATION,
                           meta_visitors=meta_visitors,
                           data_visitors=data_visitors)
 
 
-def run_todo():
-    """Wraps _run_todo in exception handling, with sys.exit calls."""
+def run():
+    """Wraps _run in exception handling, with sys.exit calls."""
     try:
-        result = _run_todo()
+        result = _run()
         sys.exit(result)
     except Exception as e:
         logging.error(e)
