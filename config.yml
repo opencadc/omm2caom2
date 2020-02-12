@@ -1,8 +1,8 @@
-working_directory: /usr/src/app/
+working_directory: /usr/src/app
 # the netrc_filename value must be a fully-qualified name
 netrc_filename: /usr/src/app/netrc
-# test value is ivo://cadc.nrc.ca/sc2repo
 resource_id: ivo://cadc.nrc.ca/ams
+# resource_id: ivo://cadc.nrc.ca/sc2repo
 todo_file_name: todo.txt
 # values True False
 use_local_files: True
@@ -33,6 +33,7 @@ archive: OMM
 collection: OMM
 observe_execution: True
 observable_directory: /usr/src/app/metrics
+rejected_directory: /usr/src/app/rejected
 # how to control the work that gets done
 # possible values are:
 # - scrape - read the headers, write out the xml - kind of a test mode
