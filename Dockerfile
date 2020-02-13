@@ -30,6 +30,7 @@ RUN pip install cadcdata && \
         pip install cadctap && \
         pip install caom2 && \
         pip install caom2repo && \
+        pip install caom2utils && \
         pip install deprecated && \
         pip install ftputil && \
         pip install PyYAML && \
@@ -65,9 +66,6 @@ RUN oldpath=`pwd` && cd /tmp \
 && rm -Rf /tmp/fitscut*
 
 WORKDIR /usr/src/app
-RUN git clone https://github.com/SharonGoliath/caom2tools.git && \
-  pip install ./caom2tools/caom2utils
-  
 RUN git clone https://github.com/opencadc-metadata-curation/caom2pipe.git && \
   pip install ./caom2pipe
   

@@ -620,6 +620,11 @@ def _update_position(chunk, headers):
         chunk.position_axis_1 = None
         chunk.position_axis_2 = None
         logging.debug('Removing the partial position record from the chunk.')
+
+    if chunk.position is not None:
+        fwhm = headers[0].get('FWHM')
+        if fwhm is not None:
+            chunk.position.resolution = mc.to_float(fwhm)
     logging.debug('End _update_position')
 
 
