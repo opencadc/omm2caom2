@@ -47,7 +47,7 @@
         <caom2:project>Standard Pipeline</caom2:project>
         <caom2:producer>LAE</caom2:producer>
         <caom2:runID>190618</caom2:runID>
-        <caom2:reference>http://genesis.astro.umontreal.ca</caom2:reference>
+        <caom2:reference>http://omm-astro.ca</caom2:reference>
       </caom2:provenance>
       <caom2:artifacts>
         <caom2:artifact caom2:id="edf99f08-1071-40f3-a4d5-53816ba16783">

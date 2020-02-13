@@ -50,7 +50,7 @@
         <caom2:project>Standard Pipeline</caom2:project>
         <caom2:producer>LAE</caom2:producer>
         <caom2:runID>170323</caom2:runID>
-        <caom2:reference>http://genesis.astro.umontreal.ca</caom2:reference>
+        <caom2:reference>http://omm-astro.ca</caom2:reference>
         <caom2:inputs>
           <caom2:planeURI>caom:OMM/C170323_0166_CAL/C170323_0166_CAL</caom2:planeURI>
           <caom2:planeURI>caom:OMM/C170323_0163_CAL/C170323_0163_CAL</caom2:planeURI>

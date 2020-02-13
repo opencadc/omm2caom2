@@ -229,7 +229,7 @@ def accumulate_plane(bp):
     bp.set('Plane.metaRelease', 'get_meta_release_date(header)')
     bp.set('Plane.dataRelease', 'get_data_release_date(header)')
     bp.set('Plane.provenance.version', '1.0')
-    bp.set('Plane.provenance.reference', 'http://genesis.astro.umontreal.ca')
+    bp.set('Plane.provenance.reference', 'http://omm-astro.ca')
     bp.set('Plane.provenance.project', 'Standard Pipeline')
 
 
@@ -370,10 +370,10 @@ def get_position_resolution(header):
     :param header Array of astropy headers"""
     temp = None
     temp_astr = mc.to_float(header.get('RMSASTR'))
-    if temp_astr != -1.0:
+    if temp_astr is not None and temp_astr != -1.0:
         temp = temp_astr
     temp_mass = mc.to_float(header.get('RMS2MASS'))
-    if temp_mass != -1.0:
+    if temp_mass is not None and temp_mass != -1.0:
         temp = temp_mass
     return temp
 
@@ -658,9 +658,11 @@ def _update_science_provenance(observation, headers):
         if keyword.startswith('IN_') or keyword.startswith('ID_'):
             value = headers[0].get(keyword)
             base_name = OmmName.remove_extensions(os.path.basename(value))
-            if base_name.startswith('S') or value.startswith('S'):
+            if base_name.startswith('S'):
                 # starting 'S' means a science input, 'C' will mean cal
                 file_id = '{}_SCI'.format(base_name.replace('S', 'C', 1))
+            elif value.startswith('S'):
+                file_id = f'C{base_name}_SCI'
             elif base_name.startswith('C') or value.startswith('C'):
                 file_id = f'{base_name}_CAL'
             else:
