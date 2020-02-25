@@ -81,6 +81,14 @@
                         <caom2:ctype>DEC--TAN</caom2:ctype>
                         <caom2:cunit>deg</caom2:cunit>
                       </caom2:axis2>
+                      <caom2:error1>
+                        <caom2:syser>0.0</caom2:syser>
+                        <caom2:rnder>0.356965859258</caom2:rnder>
+                      </caom2:error1>
+                      <caom2:error2>
+                        <caom2:syser>0.0</caom2:syser>
+                        <caom2:rnder>0.356965859258</caom2:rnder>
+                      </caom2:error2>
                       <caom2:function>
                         <caom2:dimension>
                           <caom2:naxis1>2048</caom2:naxis1>

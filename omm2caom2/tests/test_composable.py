@@ -175,10 +175,11 @@ def test_run_single():
         os.getcwd = getcwd_orig
 
 
-@patch('caom2pipe.execute_composable.CaomExecute._fits2caom2_cmd_direct')
+@patch('caom2pipe.execute_composable.CaomExecute._visit_meta')
 @patch('caom2pipe.execute_composable.CAOM2RepoClient')
 @patch('caom2pipe.execute_composable.CadcDataClient')
 def test_run_rc_todo(data_client_mock, repo_mock, exec_mock):
+    _write_todo('C121212_domeflat_K_CALRED.fits.gz')
     repo_mock.return_value.read.side_effect = _mock_repo_read
     repo_mock.return_value.create.side_effect = Mock()
     repo_mock.return_value.update.side_effect = _mock_repo_update
@@ -195,7 +196,8 @@ def test_run_rc_todo(data_client_mock, repo_mock, exec_mock):
         os.getcwd = getcwd_orig
 
     assert repo_mock.return_value.read.called, 'repo read not called'
-    assert repo_mock.return_value.create.called, 'repo create not called'
+    assert repo_mock.return_value.update.called, 'repo update not called'
+    # default config file says visit only
     assert exec_mock.called, 'expect to be called'
 
 
@@ -205,17 +207,21 @@ def _write_todo(test_obs_id):
 
 
 def _mock_repo_read(arg1, arg2):
-    return None
+    return _build_obs()
 
 
 def _mock_repo_update(ignore1):
     return None
 
 
-def _mock_exec():
-    obs = SimpleObservation(collection='TEST',
-                            observation_id='C121212_domeflat_K_CALRED',
-                            algorithm=Algorithm(name='test'))
+def _mock_exec(ignore1):
+    obs = _build_obs()
     mc.write_obs_to_file(obs, f'{test_main_app.TEST_DATA_DIR}/'
                          f'C121212_domeflat_K_CALRED/'
                          f'C121212_domeflat_K_CALRED.fits.xml')
+
+
+def _build_obs():
+    return SimpleObservation(collection='TEST',
+                             observation_id='C121212_domeflat_K_CALRED',
+                             algorithm=Algorithm(name='test'))
