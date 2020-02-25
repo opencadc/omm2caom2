@@ -68,6 +68,7 @@
 #
 
 import logging
+import pkg_resources
 import sys
 import tempfile
 import traceback
@@ -150,10 +151,11 @@ def run_single():
 
 
 def _run():
+    version = pkg_resources.get_distribution("omm2caom2").version
     return rc.run_by_todo(config=None, name_builder=None, chooser=OmmChooser(),
                           command_name=APPLICATION,
                           meta_visitors=meta_visitors,
-                          data_visitors=data_visitors)
+                          data_visitors=data_visitors, version=version)
 
 
 def run():
