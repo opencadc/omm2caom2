@@ -14,10 +14,6 @@ RUN apk --no-cache add \
     libpng-dev \
     gfortran \
     openblas-dev \
-    py-numpy \
-    py-pip \
-    python \
-    python-dev \
     wget
 
 RUN oldpath=`pwd` && cd /tmp && \
