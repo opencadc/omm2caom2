@@ -101,7 +101,7 @@ def test_footprint_update_position():
     with pytest.raises(mc.CadcException):
         test_result = footprint_augmentation.visit(test_obs)
 
-    test_kwargs['working_directory'] = TESTDATA_DIR
+    test_kwargs['working_directory'] = TEST_FILES_DIR
     test_result = footprint_augmentation.visit(test_obs, **test_kwargs)
     assert test_result is not None, 'expected a visit return value'
     assert test_result['chunks'] == 1
