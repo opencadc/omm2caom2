@@ -188,7 +188,7 @@ class OmmChooser(ec.OrganizeChooser):
         return (isinstance(observation, SimpleObservation) and
                 OmmName.is_composite(observation.observation_id))
 
-    def use_compressed(self):
+    def use_compressed(self, ignore):
         return True
 
 

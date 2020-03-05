@@ -78,7 +78,8 @@ from caom2pipe import manage_composable as mc
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 TESTDATA_DIR = os.path.join(THIS_DIR, 'data')
 TEST_OBS = 'C170324_0054_SCI'
-TEST_FILE = '{}.fits.gz'.format(TEST_OBS)
+TEST_FILE = f'{TEST_OBS}.fits.gz'
+TEST_FILES_DIR = '/test_files'
 
 
 def test_footprint_aug_visit():
@@ -114,9 +115,9 @@ def test_preview_aug_visit():
 
 
 def test_preview_augment_plane():
-    preview = os.path.join(TESTDATA_DIR,
+    preview = os.path.join(TEST_FILES_DIR,
                            OmmName(TEST_OBS, TEST_FILE).prev)
-    thumb = os.path.join(TESTDATA_DIR,
+    thumb = os.path.join(TEST_FILES_DIR,
                          OmmName(TEST_OBS, TEST_FILE).thumb)
     if os.path.exists(preview):
         os.remove(preview)
@@ -135,7 +136,7 @@ def test_preview_augment_plane():
     test_observable = mc.Observable(rejected=None,
                                     metrics=test_metrics)
 
-    test_kwargs = {'working_directory': TESTDATA_DIR,
+    test_kwargs = {'working_directory': TEST_FILES_DIR,
                    'cadc_client': None,
                    'observable': test_observable}
     test_result = preview_augmentation.visit(test_obs, **test_kwargs)

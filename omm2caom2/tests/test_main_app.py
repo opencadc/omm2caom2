@@ -69,10 +69,8 @@
 
 
 from omm2caom2 import main_app, APPLICATION
-from caom2.diff import get_differences
 from caom2pipe import manage_composable as mc
 
-from hashlib import md5
 import os
 import sys
 
@@ -114,14 +112,9 @@ def test_main_app(test_name):
         print(sys.argv)
         main_app.to_caom2()
     obs_path = test_name.replace('.fits.header', '.expected.xml')
-    expected = mc.read_obs_from_file(obs_path)
-    actual = mc.read_obs_from_file(output_file)
-    result = get_differences(expected, actual, 'Observation')
-    if result:
-        text = '\n'.join([r for r in result])
-        msg = f'Differences found in observation {expected.observation_id}' \
-              f'\n{text}'
-        raise AssertionError(msg)
+    result = mc.compare_observations(obs_path, output_file)
+    if result is not None:
+        raise AssertionError(result)
     # assert False  # cause I want to see logging messages
 
 

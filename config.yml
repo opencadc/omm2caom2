@@ -55,5 +55,7 @@ task_types:
   - ingest
   - modify
 features:
+  supports_latest_caom: False
+  supports_multiple_files: False
   use_file_names: True
   use_urls: False
