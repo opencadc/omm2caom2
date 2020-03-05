@@ -68,6 +68,7 @@
 #
 import os
 import pytest
+import shutil
 
 from caom2 import ChecksumURI
 from omm2caom2 import footprint_augmentation, preview_augmentation
@@ -89,7 +90,7 @@ def test_footprint_aug_visit():
 
 def test_footprint_update_position():
     test_kwargs = {'science_file':
-                   OmmName(TEST_OBS, TEST_FILE).file_name}
+                   OmmName(TEST_OBS, TEST_FILE).fname_on_disk}
     test_fqn = os.path.join(TESTDATA_DIR,
                             OmmName(TEST_OBS, TEST_FILE).model_file_name)
     test_obs = mc.read_obs_from_file(test_fqn.replace('fits', 'expected'))

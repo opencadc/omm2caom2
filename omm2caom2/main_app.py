@@ -139,6 +139,13 @@ class OmmName(mc.StorageName):
 
         super(OmmName, self).__init__(
             obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, fname_on_disk)
+        self._logger = logging.getLogger(__name__)
+        self._logger.error(self)
+
+    def __str__(self):
+        return f'obs_id {self.obs_id} file_name {self.file_name} ' \
+               f'fname_on_disk {self.fname_on_disk} fname_in_ad ' \
+               f'{self.fname_in_ad}'
 
     @property
     def mime_encoding(self):
