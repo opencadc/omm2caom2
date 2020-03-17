@@ -6,7 +6,7 @@ resource_id: ivo://cadc.nrc.ca/ams
 todo_file_name: todo.txt
 # values True False
 use_local_files: True
-# values DEBUG INFO WARN ERROR
+# values DEBUG INFO WARNING ERROR
 logging_level: DEBUG
 # values True False
 log_to_file: True
