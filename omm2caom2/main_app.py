@@ -661,6 +661,12 @@ def _update_science_provenance(observation, headers):
     # ID_00001= 'S/data/cpapir/data/101116/101116_0041.fits.fits.gz'
     for keyword in headers[0]:
         if keyword.startswith('IN_') or keyword.startswith('ID_'):
+            temp = keyword.split('_')[1]
+            try:
+                int(temp)
+            except ValueError as e:
+                # skip the keyword ID_PROG
+                continue
             value = headers[0].get(keyword)
             base_name = OmmName.remove_extensions(os.path.basename(value))
             if base_name.startswith('S'):
