@@ -408,11 +408,16 @@ def get_data_release_date(header):
 
     :param header Array of astropy headers"""
     rel_date = header.get('RELEASE')
-    if rel_date is not None:
-        return rel_date
-    else:
+    if rel_date is None:
         rel_date = header.get('DATE')
-        return rel_date
+        intent = get_obs_intent(header)
+        if rel_date is not None and intent is ObservationIntentType.SCIENCE:
+            # DD, SB - slack - 19-03-20 - if release is not in the header
+            # observation date plus two years. This only applies to science
+            # observations.
+            temp = mc.make_time(rel_date)
+            rel_date = temp.replace(year=temp.year + 2)
+    return rel_date
 
 
 def get_meta_release_date(header):
@@ -632,6 +637,15 @@ def _update_position(chunk, headers):
         fwhm = headers[0].get('FWHM')
         if fwhm is not None:
             chunk.position.resolution = mc.to_float(fwhm)
+
+    # DD - 19-03-20 - slack
+    # There are OMM observations with no WCS information, because the
+    # astrometry software did not solve. The lack of solution may have been
+    # because of cloud cover or because a field is just not very populated
+    # with stars, like near the zenith, but the data still has value.
+    #
+    # In this case, use RA/DEC, and provide an incomplete WCS solution.
+
     logging.debug('End _update_position')
 
 
