@@ -48,6 +48,9 @@
         <caom2:runID>171019</caom2:runID>
         <caom2:reference>http://omm-astro.ca</caom2:reference>
       </caom2:provenance>
+      <caom2:quality>
+        <caom2:flag>junk</caom2:flag>
+      </caom2:quality>
       <caom2:artifacts>
         <caom2:artifact caom2:id="00000000-0000-0000-b8da-99ead374e2e2" caom2:lastModified="2019-10-19T22:17:40.109" caom2:maxLastModified="2019-10-19T22:17:40.109" caom2:metaChecksum="md5:9fda3dd65ecfe4b49024e23e102f801a" caom2:accMetaChecksum="md5:903b79a9ba2353271682bdbb126d99f4">
           <caom2:uri>ad:OMM/C171019_0377_SCI.fits.gz</caom2:uri>
@@ -62,9 +65,6 @@
               <caom2:chunks>
                 <caom2:chunk caom2:id="00000000-0000-0000-8f35-55f450ab847a" caom2:lastModified="2018-12-29T02:55:52.791" caom2:maxLastModified="2018-12-29T02:55:52.791" caom2:metaChecksum="md5:13ecc5591de1ad609829800deea595ac" caom2:accMetaChecksum="md5:53d8801502018872a401d7771eb1524b">
                   <caom2:productType>science</caom2:productType>
-                  <caom2:naxis>4</caom2:naxis>
-                  <caom2:energyAxis>3</caom2:energyAxis>
-                  <caom2:timeAxis>4</caom2:timeAxis>
                   <caom2:energy>
                     <caom2:axis>
                       <caom2:axis>
