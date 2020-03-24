@@ -80,8 +80,8 @@ import astropy.wcs as wcs
 from caom2 import TargetType, ObservationIntentType, CalibrationLevel
 from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
 from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
-from caom2 import ObservationURI, PlaneURI, TypedSet, CoordBounds1D
-from caom2 import Requirements, Status, Instrument, Provenance
+from caom2 import ObservationURI, PlaneURI, TypedSet, CoordBounds1D, Quality
+from caom2 import Requirements, Status, Instrument, Provenance, DataQuality
 from caom2 import SimpleObservation, CompositeObservation, Algorithm
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
 from caom2pipe import astro_composable as ac
@@ -478,7 +478,8 @@ def update(observation, **kwargs):
                         _update_energy(chunk, headers)
                         _update_time(
                             chunk, headers, observation.observation_id)
-                        _update_position(chunk, headers)
+                        _update_position(observation.planes[plane],
+                                         observation.intent, chunk, headers)
                         if chunk.position is None:
                             # for WCS validation correctness
                             chunk.naxis = None
@@ -609,9 +610,21 @@ def _update_time(chunk, headers, obs_id):
     logging.debug('Done _update_time.')
 
 
-def _update_position(chunk, headers):
+def _update_position(plane, intent, chunk, headers):
     """Check that position information has been set appropriately.
-    Reset to null if there's bad input data."""
+    Reset to null if there's bad input data.
+
+    DD - 19-03-20 - slack
+    There are OMM observations with no WCS information, because the
+    astrometry software did not solve. The lack of solution may have been
+    because of cloud cover or because a field is just not very populated
+    with stars, like near the zenith, but the data still has value.
+
+    The OMM opinion:
+    When, for SCI files only, there is no WCS solution, it means that the
+    image is really bad and we should classify it junk.
+
+    """
     logging.debug('Begin _update_position')
     mc.check_param(chunk, Chunk)
 
@@ -624,20 +637,14 @@ def _update_position(chunk, headers):
         chunk.position = None
         chunk.position_axis_1 = None
         chunk.position_axis_2 = None
+        if intent is ObservationIntentType.SCIENCE:
+            plane.quality = DataQuality(Quality.JUNK)
         logging.debug('Removing the partial position record from the chunk.')
 
     if chunk.position is not None:
         fwhm = headers[0].get('FWHM')
         if fwhm is not None:
             chunk.position.resolution = mc.to_float(fwhm)
-
-    # DD - 19-03-20 - slack
-    # There are OMM observations with no WCS information, because the
-    # astrometry software did not solve. The lack of solution may have been
-    # because of cloud cover or because a field is just not very populated
-    # with stars, like near the zenith, but the data still has value.
-    #
-    # In this case, use RA/DEC, and provide an incomplete WCS solution.
 
     logging.debug('End _update_position')
 
