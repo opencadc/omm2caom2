@@ -28,6 +28,7 @@ RUN pip install cadcdata && \
         pip install caom2repo && \
         pip install caom2utils && \
         pip install deprecated && \
+        pip install importlib-metadata && \
         pip install ftputil && \
         pip install PyYAML && \
         pip install pytz && \
