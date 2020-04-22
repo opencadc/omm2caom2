@@ -3,6 +3,7 @@ FROM opencadc/matplotlib:3.8-slim
 # these layers are the common layers for footprintfinder construction
 RUN apt-get update
 RUN apt-get install -y build-essential \
+    git \
     wget
 
 RUN oldpath=`pwd` && cd /tmp && \
@@ -19,8 +20,8 @@ RUN pip install cadcdata && \
         pip install deprecated && \
         pip install importlib-metadata && \
         pip install ftputil && \
-        pip install PyYAML && \
         pip install pytz && \
+        pip install PyYAML && \
         pip install spherical-geometry && \
         pip install vos
 
@@ -32,7 +33,7 @@ RUN git clone https://github.com/HEASARC/cfitsio && \
   make install && \
   make clean
 
-RUN apk --no-cache add libjpeg-turbo-dev
+# RUN apk --no-cache add libjpeg-turbo-dev
 
 RUN oldpath=`pwd` && cd /tmp \
 && git clone https://github.com/spacetelescope/fitscut \
@@ -60,7 +61,7 @@ RUN git clone https://github.com/opencadc-metadata-curation/omm2caom2.git && \
   pip install ./omm2caom2 && \
   cp ./omm2caom2/docker-entrypoint.sh /
 
-RUN apk --no-cache del git \
-    g++
+# RUN apk --no-cache del git \
+#     g++
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
