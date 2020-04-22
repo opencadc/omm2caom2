@@ -2,7 +2,8 @@ FROM opencadc/matplotlib:3.8-slim
 
 # these layers are the common layers for footprintfinder construction
 RUN apt-get update
-RUN apt-get install -y build-essential
+RUN apt-get install -y build-essential \
+    wget
 
 RUN oldpath=`pwd` && cd /tmp && \
     wget http://www.eso.org/~fstoehr/footprintfinder.py && \
