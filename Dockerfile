@@ -1,25 +1,13 @@
-FROM opencadc/matplotlib
+FROM opencadc/matplotlib:3.8-slim
 
 # these layers are the common layers for footprintfinder construction
-
-RUN apk --no-cache add \
-        bash \
-        coreutils \
-        git \
-        libmagic \
-        make
-        
-RUN apk --no-cache add \
-    freetype-dev \
-    libpng-dev \
-    gfortran \
-    openblas-dev \
-    wget
+RUN apt-get update
+RUN apt-get install -y build-essential
 
 RUN oldpath=`pwd` && cd /tmp && \
     wget http://www.eso.org/~fstoehr/footprintfinder.py && \
-    cp footprintfinder.py /usr/local/lib/python3.7/site-packages/footprintfinder.py && \
-    chmod 755 /usr/local/lib/python3.7/site-packages/footprintfinder.py && \
+    cp footprintfinder.py /usr/local/lib/python3.8/site-packages/footprintfinder.py && \
+    chmod 755 /usr/local/lib/python3.8/site-packages/footprintfinder.py && \
     cd $oldpath
 
 RUN pip install cadcdata && \
