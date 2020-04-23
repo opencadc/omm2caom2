@@ -25,6 +25,8 @@ RUN pip install cadcdata \
     spherical-geometry \
     vos
 
+RUN apt-get install -y libjpeg-dev
+
 RUN git clone https://github.com/HEASARC/cfitsio && \
   cd cfitsio && \
   ./configure --prefix=/usr && \
