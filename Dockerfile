@@ -61,7 +61,8 @@ RUN git clone https://github.com/opencadc-metadata-curation/caom2pipe.git && \
 RUN git clone https://github.com/opencadc-metadata-curation/omm2caom2.git && \
   cp ./omm2caom2/omm2caom2/omm_docker_run_cleanup.py /usr/local/bin && \
   pip install ./omm2caom2 && \
-  cp ./omm2caom2/docker-entrypoint.sh /
+  cp ./omm2caom2/docker-entrypoint.sh / && \
+  cp ./omm2caom2/config.yml /
 
 # RUN apk --no-cache del git \
 #     g++

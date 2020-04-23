@@ -67,6 +67,17 @@
 # ***********************************************************************
 #
 
+"""
+DD - slack - 24-03-20
+Once deployed, @Sharon Goliath will start, eventually, a task at CADC which
+will: 1- identify al SCI observations without RA/DEC, i.e. valid WCS and will
+modify the archive catalog for these observations to be junk. This means they
+will disappear from the regular catalog. These junked observations will be
+available only through the programmatic TAP interface or using topcat pointing
+to https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/argus/
+
+"""
+
 import importlib
 import logging
 import numpy
@@ -645,6 +656,8 @@ def _update_position(plane, intent, chunk, headers):
         chunk.position_axis_1 = None
         chunk.position_axis_2 = None
         if intent is ObservationIntentType.SCIENCE:
+            logging.warning(f'No spatial WCS. Classifying plane '
+                            f'{plane.product_id} as JUNK.')
             plane.quality = DataQuality(Quality.JUNK)
         logging.debug('Removing the partial position record from the chunk.')
 
