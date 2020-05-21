@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <caom2:Observation xmlns:caom2="http://www.opencadc.org/caom2/xml/v2.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:SimpleObservation" caom2:id="6a13cc16-7a25-4a6c-b3ff-8fa0649c3024">
   <caom2:collection>OMM</caom2:collection>
-  <caom2:observationID>C190715_0582_SCI</caom2:observationID>
+  <caom2:observationID>C190715_0582</caom2:observationID>
   <caom2:metaRelease>2019-07-16T03:15:46.000</caom2:metaRelease>
   <caom2:algorithm>
     <caom2:name>exposure</caom2:name>

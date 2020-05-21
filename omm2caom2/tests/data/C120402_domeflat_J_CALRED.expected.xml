@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <caom2:Observation xmlns:caom2="http://www.opencadc.org/caom2/xml/v2.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:CompositeObservation" caom2:id="00000000-0000-0000-bcd7-3bcbd887a061">
   <caom2:collection>OMM</caom2:collection>
-  <caom2:observationID>C120402_domeflat_J_CALRED</caom2:observationID>
+  <caom2:observationID>C120402_domeflat_J</caom2:observationID>
   <caom2:metaRelease>2012-04-03T06:02:31.000</caom2:metaRelease>
   <caom2:algorithm>
     <caom2:name>composite</caom2:name>
@@ -49,28 +49,28 @@
         <caom2:runID>120402</caom2:runID>
         <caom2:reference>http://omm-astro.ca</caom2:reference>
         <caom2:inputs>
-          <caom2:planeURI>caom:OMM/C120402_0727_CAL/C120402_0727_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0725_CAL/C120402_0725_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0719_CAL/C120402_0719_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0736_CAL/C120402_0736_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0734_CAL/C120402_0734_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0726_CAL/C120402_0726_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0720_CAL/C120402_0720_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0731_CAL/C120402_0731_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0735_CAL/C120402_0735_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0732_CAL/C120402_0732_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0723_CAL/C120402_0723_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0718_CAL/C120402_0718_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0722_CAL/C120402_0722_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0729_CAL/C120402_0729_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0716_CAL/C120402_0716_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0728_CAL/C120402_0728_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0717_CAL/C120402_0717_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0733_CAL/C120402_0733_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0730_CAL/C120402_0730_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0721_CAL/C120402_0721_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0715_CAL/C120402_0715_CAL</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C120402_0724_CAL/C120402_0724_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0727/C120402_0727_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0725/C120402_0725_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0719/C120402_0719_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0736/C120402_0736_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0734/C120402_0734_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0726/C120402_0726_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0720/C120402_0720_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0731/C120402_0731_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0735/C120402_0735_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0732/C120402_0732_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0723/C120402_0723_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0718/C120402_0718_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0722/C120402_0722_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0729/C120402_0729_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0716/C120402_0716_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0728/C120402_0728_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0717/C120402_0717_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0733/C120402_0733_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0730/C120402_0730_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0721/C120402_0721_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0715/C120402_0715_CAL</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C120402_0724/C120402_0724_CAL</caom2:planeURI>
         </caom2:inputs>
       </caom2:provenance>
       <caom2:artifacts>
@@ -148,27 +148,27 @@
     </caom2:plane>
   </caom2:planes>
   <caom2:members>
-    <caom2:observationURI>caom:OMM/C120402_0730_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0725_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0719_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0723_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0729_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0736_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0728_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0721_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0722_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0716_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0720_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0732_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0735_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0717_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0724_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0726_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0734_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0718_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0727_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0731_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0715_CAL</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C120402_0733_CAL</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0730</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0725</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0719</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0723</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0729</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0736</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0728</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0721</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0722</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0716</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0720</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0732</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0735</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0717</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0724</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0726</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0734</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0718</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0727</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0731</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0715</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C120402_0733</caom2:observationURI>
   </caom2:members>
 </caom2:Observation>

@@ -146,31 +146,30 @@ class MyExitError(Exception):
 #         os.getcwd = getcwd_orig
 
 
-@patch('sys.exit', Mock(return_value=MyExitError))
-def test_run_single():
-    test_obs_id = 'C121121_J024345.57-021326.4_K_SCIRED'
-    test_f = '{}.fits'.format(test_obs_id)
+@patch('caom2pipe.execute_composable.OrganizeExecutesWithDoOne.do_one')
+def test_run_single(run_mock):
+    test_obs_id = 'C121121_J024345.57-021326.4_K'
+    test_f_id = f'{test_obs_id}_SCIRED'
+    test_f = f'{test_f_id}.fits.gz'
     getcwd_orig = os.getcwd
     os.getcwd = Mock(return_value=test_main_app.TEST_DATA_DIR)
     test_proxy = '{}/cadcproxy.pem'.format(test_main_app.TEST_DATA_DIR)
     try:
         # execution
-        with patch('caom2pipe.execute_composable._do_one') as run_mock:
-            sys.argv = ('omm2caom2 {} {}'.format(test_f, test_proxy)).split()
-            composable.run_single()
-            assert run_mock.called, 'should have been called'
-            args, kwargs = run_mock.call_args
-            assert args[3] == APPLICATION, 'wrong command'
-            test_storage = args[2]
-            assert isinstance(test_storage, OmmName), type(test_storage)
-            assert test_storage.obs_id == test_obs_id, 'wrong obs id'
-            assert test_storage.file_name == test_f, 'wrong file name'
-            assert test_storage.fname_on_disk is None, 'wrong fname on disk'
-            assert test_storage.url is None, 'wrong url'
-            assert test_storage.lineage == \
-                '{}/ad:OMM/{}.gz'.format(test_obs_id, test_f), \
-                'wrong lineage'
-            assert test_storage.external_urls is None, 'wrong external urls'
+        sys.argv = ('omm2caom2 {} {}'.format(test_f, test_proxy)).split()
+        composable._run_single()
+        assert run_mock.called, 'should have been called'
+        args, kwargs = run_mock.call_args
+        test_storage = args[0]
+        assert isinstance(test_storage, OmmName), type(test_storage)
+        assert test_storage.obs_id == test_obs_id, 'wrong obs id'
+        assert test_storage.file_name == test_f, 'wrong file name'
+        assert test_storage.fname_on_disk is None, 'wrong fname on disk'
+        assert test_storage.url is None, 'wrong url'
+        assert test_storage.lineage == \
+            '{}/ad:OMM/{}'.format(test_f_id, test_f), \
+            'wrong lineage'
+        assert test_storage.external_urls is None, 'wrong external urls'
     finally:
         os.getcwd = getcwd_orig
 

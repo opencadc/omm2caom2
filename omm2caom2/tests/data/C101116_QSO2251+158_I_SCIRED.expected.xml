@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <caom2:Observation xmlns:caom2="http://www.opencadc.org/caom2/xml/v2.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:CompositeObservation" caom2:id="ec0e6150-7f01-4800-a0ef-c40a34b53a2c">
   <caom2:collection>OMM</caom2:collection>
-  <caom2:observationID>C101116_QSO2251+158_I_SCIRED</caom2:observationID>
+  <caom2:observationID>C101116_QSO2251+158_I</caom2:observationID>
   <caom2:metaRelease>2010-11-16T18:02:49.000</caom2:metaRelease>
   <caom2:algorithm>
     <caom2:name>composite</caom2:name>
@@ -52,33 +52,33 @@
         <caom2:runID>101116</caom2:runID>
         <caom2:reference>http://omm-astro.ca</caom2:reference>
         <caom2:inputs>
-          <caom2:planeURI>caom:OMM/C101116_0049_SCI/C101116_0049_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0053_SCI/C101116_0053_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0044_SCI/C101116_0044_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0041_SCI/C101116_0041_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0057_SCI/C101116_0057_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0051_SCI/C101116_0051_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0048_SCI/C101116_0048_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0055_SCI/C101116_0055_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0042_SCI/C101116_0042_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0045_SCI/C101116_0045_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0054_SCI/C101116_0054_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0062_SCI/C101116_0062_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0043_SCI/C101116_0043_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0060_SCI/C101116_0060_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0063_SCI/C101116_0063_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0059_SCI/C101116_0059_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0052_SCI/C101116_0052_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0067_SCI/C101116_0067_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0058_SCI/C101116_0058_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0065_SCI/C101116_0065_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0061_SCI/C101116_0061_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0066_SCI/C101116_0066_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0050_SCI/C101116_0050_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0064_SCI/C101116_0064_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0047_SCI/C101116_0047_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0046_SCI/C101116_0046_SCI</caom2:planeURI>
-          <caom2:planeURI>caom:OMM/C101116_0056_SCI/C101116_0056_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0049/C101116_0049_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0053/C101116_0053_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0044/C101116_0044_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0041/C101116_0041_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0057/C101116_0057_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0051/C101116_0051_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0048/C101116_0048_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0055/C101116_0055_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0042/C101116_0042_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0045/C101116_0045_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0054/C101116_0054_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0062/C101116_0062_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0043/C101116_0043_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0060/C101116_0060_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0063/C101116_0063_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0059/C101116_0059_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0052/C101116_0052_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0067/C101116_0067_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0058/C101116_0058_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0065/C101116_0065_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0061/C101116_0061_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0066/C101116_0066_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0050/C101116_0050_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0064/C101116_0064_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0047/C101116_0047_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0046/C101116_0046_SCI</caom2:planeURI>
+          <caom2:planeURI>caom:OMM/C101116_0056/C101116_0056_SCI</caom2:planeURI>
         </caom2:inputs>
       </caom2:provenance>
       <caom2:artifacts>
@@ -204,32 +204,32 @@
     </caom2:plane>
   </caom2:planes>
   <caom2:members>
-    <caom2:observationURI>caom:OMM/C101116_0045_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0057_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0060_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0056_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0042_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0048_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0051_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0044_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0065_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0061_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0041_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0049_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0050_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0052_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0059_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0053_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0067_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0063_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0046_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0064_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0043_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0047_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0066_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0055_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0054_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0062_SCI</caom2:observationURI>
-    <caom2:observationURI>caom:OMM/C101116_0058_SCI</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0045</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0057</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0060</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0056</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0042</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0048</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0051</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0044</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0065</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0061</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0041</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0049</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0050</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0052</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0059</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0053</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0067</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0063</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0046</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0064</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0043</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0047</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0066</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0055</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0054</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0062</caom2:observationURI>
+    <caom2:observationURI>caom:OMM/C101116_0058</caom2:observationURI>
   </caom2:members>
 </caom2:Observation>

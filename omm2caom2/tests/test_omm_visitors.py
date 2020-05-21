@@ -78,8 +78,8 @@ from caom2pipe import manage_composable as mc
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 TESTDATA_DIR = os.path.join(THIS_DIR, 'data')
-TEST_OBS = 'C170324_0054_SCI'
-TEST_FILE = f'{TEST_OBS}.fits.gz'
+TEST_OBS = 'C170324_0054'
+TEST_FILE = f'{TEST_OBS}_SCI.fits.gz'
 TEST_FILES_DIR = '/test_files'
 
 
@@ -89,13 +89,13 @@ def test_footprint_aug_visit():
 
 
 def test_footprint_update_position():
-    test_kwargs = {'science_file':
-                   OmmName(TEST_OBS, TEST_FILE).fname_on_disk}
+    omm_name = OmmName(obs_id=TEST_OBS, file_name=TEST_FILE)
+    test_kwargs = {'science_file': omm_name.file_name}
     test_fqn = os.path.join(TESTDATA_DIR,
-                            OmmName(TEST_OBS, TEST_FILE).model_file_name)
-    test_obs = mc.read_obs_from_file(test_fqn.replace('fits', 'expected'))
-    test_chunk = test_obs.planes[TEST_OBS].artifacts[
-        OmmName(TEST_OBS, TEST_FILE).file_uri].parts['0'].chunks[0]
+                            f'{omm_name.product_id}.expected.xml')
+    test_obs = mc.read_obs_from_file(test_fqn)
+    test_chunk = test_obs.planes[omm_name.product_id].artifacts[
+        omm_name.file_uri].parts['0'].chunks[0]
     assert test_chunk.position.axis.bounds is None
 
     # expected failure due to required kwargs parameter
@@ -116,18 +116,17 @@ def test_preview_aug_visit():
 
 
 def test_preview_augment_plane():
-    preview = os.path.join(TEST_FILES_DIR,
-                           OmmName(TEST_OBS, TEST_FILE).prev)
-    thumb = os.path.join(TEST_FILES_DIR,
-                         OmmName(TEST_OBS, TEST_FILE).thumb)
+    omm_name = OmmName(obs_id=TEST_OBS, file_name=TEST_FILE)
+    preview = os.path.join(TEST_FILES_DIR, omm_name.prev)
+    thumb = os.path.join(TEST_FILES_DIR, omm_name.thumb)
     if os.path.exists(preview):
         os.remove(preview)
     if os.path.exists(thumb):
         os.remove(thumb)
     test_fqn = os.path.join(TESTDATA_DIR,
-                            OmmName(TEST_OBS, TEST_FILE).model_file_name)
-    test_obs = mc.read_obs_from_file(test_fqn.replace('fits', 'expected'))
-    assert len(test_obs.planes[TEST_OBS].artifacts) == 1
+                            f'{omm_name.product_id}.expected.xml')
+    test_obs = mc.read_obs_from_file(test_fqn)
+    assert len(test_obs.planes[omm_name.product_id].artifacts) == 1
     preva = 'ad:OMM/C170324_0054_SCI_prev.jpg'
     thumba = 'ad:OMM/C170324_0054_SCI_prev_256.jpg'
 
@@ -143,33 +142,33 @@ def test_preview_augment_plane():
     test_result = preview_augmentation.visit(test_obs, **test_kwargs)
     assert test_result is not None, 'expected a visit return value'
     assert test_result['artifacts'] == 2
-    assert len(test_obs.planes[TEST_OBS].artifacts) == 3
+    assert len(test_obs.planes[omm_name.product_id].artifacts) == 3
     assert os.path.exists(preview)
     assert os.path.exists(thumb)
-    assert test_obs.planes[TEST_OBS].artifacts[preva].content_checksum == \
-        ChecksumURI('md5:f37d21c53055498d1b5cb7753e1c6d6f'), \
+    assert test_obs.planes[omm_name.product_id].artifacts[preva].content_checksum == \
+        ChecksumURI('md5:de9f39804f172682ea9b001f8ca11f15'), \
         'prev checksum failure'
-    assert test_obs.planes[TEST_OBS].artifacts[thumba].content_checksum == \
-        ChecksumURI('md5:19661c3c2508ecc22425ee2a05881ed4'), \
+    assert test_obs.planes[omm_name.product_id].artifacts[thumba].content_checksum == \
+        ChecksumURI('md5:cd118dae04391f6bea93ba4bf2711adf'), \
         'thumb checksum failure'
 
     # now do updates
-    test_obs.planes[TEST_OBS].artifacts[preva].content_checksum = \
-        ChecksumURI('f37d21c53055498d1b5cb7753e1c6d6f')
-    test_obs.planes[TEST_OBS].artifacts[thumba].content_checksum = \
-        ChecksumURI('19661c3c2508ecc22425ee2a05881ed4')
+    test_obs.planes[omm_name.product_id].artifacts[preva].content_checksum = \
+        ChecksumURI('de9f39804f172682ea9b001f8ca11f15')
+    test_obs.planes[omm_name.product_id].artifacts[thumba].content_checksum = \
+        ChecksumURI('cd118dae04391f6bea93ba4bf2711adf')
     test_result = preview_augmentation.visit(test_obs, **test_kwargs)
     assert test_result is not None, 'expected update visit return value'
     assert test_result['artifacts'] == 2
     assert len(test_obs.planes) == 1
-    assert len(test_obs.planes[TEST_OBS].artifacts) == 3
+    assert len(test_obs.planes[omm_name.product_id].artifacts) == 3
     assert os.path.exists(preview)
     assert os.path.exists(thumb)
-    assert test_obs.planes[TEST_OBS].artifacts[preva].content_checksum == \
-        ChecksumURI('md5:f37d21c53055498d1b5cb7753e1c6d6f'), \
+    assert test_obs.planes[omm_name.product_id].artifacts[preva].content_checksum == \
+        ChecksumURI('md5:de9f39804f172682ea9b001f8ca11f15'), \
         'prev update failed'
-    assert test_obs.planes[TEST_OBS].artifacts[thumba].content_checksum == \
-        ChecksumURI('md5:19661c3c2508ecc22425ee2a05881ed4'), \
+    assert test_obs.planes[omm_name.product_id].artifacts[thumba].content_checksum == \
+        ChecksumURI('md5:cd118dae04391f6bea93ba4bf2711adf'), \
         'prev_256 update failed'
 
     assert len(test_metrics.history) == 0, 'wrong history, client is not None'

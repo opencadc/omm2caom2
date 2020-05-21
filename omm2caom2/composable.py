@@ -113,7 +113,6 @@ def _run_single():
     :return 0 if successful, -1 if there's any sort of failure. Return status
         is used by airflow for task instance management and reporting.
     """
-    logging.error(sys.argv)
     config = mc.Config()
     config.get_executors()
     config.collection = COLLECTION
@@ -131,9 +130,9 @@ def _run_single():
     if config.features.use_file_names:
         storage_name = OmmName(file_name=sys.argv[1])
     else:
-        obs_id = OmmName.remove_extensions(sys.argv[1])
-        storage_name = OmmName(obs_id=obs_id)
-    return ec.run_single(config, storage_name, APPLICATION, meta_visitors,
+        raise mc.CadcException(
+            'May only run with Feature use_file_names = True')
+    return rc.run_single(config, storage_name, APPLICATION, meta_visitors,
                          data_visitors, OmmChooser())
 
 

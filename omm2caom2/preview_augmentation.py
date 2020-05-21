@@ -111,8 +111,9 @@ def visit(observation, **kwargs):
                             f'{science_fqn} visit file not found')
                 science_fqn = _unzip(science_fqn)
                 logging.debug(f'working on file {science_fqn}')
+                omm_name = OmmName(file_name=file_name)
                 count += _do_prev(file_id, science_fqn, working_dir, plane,
-                                  cadc_client, observable.metrics)
+                                  cadc_client, observable.metrics, omm_name)
     logging.info(f'Completed preview augmentation for '
                  f'{observation.observation_id}.')
     return {'artifacts': count}
@@ -127,10 +128,11 @@ def _augment(plane, uri, fqn, product_type):
                                                     temp)
 
 
-def _do_prev(file_id, science_fqn, working_dir, plane, cadc_client, metrics):
-    preview = OmmName(file_id).prev
+def _do_prev(file_id, science_fqn, working_dir, plane, cadc_client, metrics,
+             omm_name):
+    preview = omm_name.prev
     preview_fqn = os.path.join(working_dir, preview)
-    thumb = OmmName(file_id).thumb
+    thumb = omm_name.thumb
     thumb_fqn = os.path.join(working_dir, thumb)
 
     if os.access(preview_fqn, 0):
@@ -145,8 +147,8 @@ def _do_prev(file_id, science_fqn, working_dir, plane, cadc_client, metrics):
                f'--asinh-scale --jpg --invert --compass {science_fqn}'
     mc.exec_cmd_redirect(prev_cmd, thumb_fqn)
 
-    prev_uri = OmmName(file_id).prev_uri
-    thumb_uri = OmmName(file_id).thumb_uri
+    prev_uri = omm_name.prev_uri
+    thumb_uri = omm_name.thumb_uri
     _augment(plane, prev_uri, preview_fqn, ProductType.PREVIEW)
     _augment(plane, thumb_uri, thumb_fqn, ProductType.THUMBNAIL)
     if cadc_client is not None:

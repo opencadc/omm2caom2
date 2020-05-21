@@ -66,6 +66,7 @@
 #
 # ***********************************************************************
 #
+
 import pytest
 
 from caom2pipe import manage_composable as mc
@@ -73,28 +74,30 @@ from omm2caom2 import OmmName
 
 
 def test_is_valid():
-    assert OmmName('C121212_00001_SCI').is_valid()
-    assert not OmmName('c121212_00001_SCI').is_valid()
-    assert OmmName('C121212_00001_CAL').is_valid()
-    assert not OmmName('c121212_00001_CAL').is_valid()
-    assert OmmName('C121212_domeflat_K_CALRED').is_valid()
-    assert not OmmName('C121212_DOMEFLAT_K_CALRED').is_valid()
-    assert OmmName('C121212_sh2-132_J_old_SCIRED').is_valid()
-    assert OmmName('C121212_J0454+8024_J_SCIRED').is_valid()
-    assert OmmName('C121212_00001_TEST').is_valid()
-    assert OmmName('C121212_00001_FOCUS').is_valid()
-    assert OmmName('C121121_J024345.57-021326.4_K_SCIRED').is_valid()
+    assert OmmName(file_name='C121212_00001_SCI.fits.gz').is_valid()
+    assert not OmmName(file_name='c121212_00001_SCI.fits.gz').is_valid()
+    assert OmmName(file_name='C121212_00001_CAL.fits.gz').is_valid()
+    assert not OmmName(file_name='c121212_00001_CAL.fits.gz').is_valid()
+    assert OmmName(file_name='C121212_domeflat_K_CALRED.fits.gz').is_valid()
+    assert not OmmName(
+        file_name='C121212_DOMEFLAT_K_CALRED.fits.gz').is_valid()
+    assert OmmName(file_name='C121212_sh2-132_J_old_SCIRED.fits.gz').is_valid()
+    assert OmmName(file_name='C121212_J0454+8024_J_SCIRED.fits.gz').is_valid()
+    assert OmmName(file_name='C121212_00001_TEST.fits.gz').is_valid()
+    assert OmmName(file_name='C121212_00001_FOCUS.fits.gz').is_valid()
+    assert OmmName(
+        file_name='C121121_J024345.57-021326.4_K_SCIRED.fits.gz').is_valid()
 
     test_subject = OmmName(file_name='C121212_00001_SCI.fits')
     assert test_subject.is_valid()
-    assert test_subject.obs_id == 'C121212_00001_SCI'
+    assert test_subject.obs_id == 'C121212_00001'
     test_subject = OmmName(file_name='C121212_00001_SCI.fits.gz')
     assert test_subject.is_valid()
-    assert test_subject.obs_id == 'C121212_00001_SCI'
+    assert test_subject.obs_id == 'C121212_00001'
     test_subject = OmmName(fname_on_disk='C121212_00001_SCI.fits',
                            file_name='C121212_00001_SCI.fits.gz')
     assert test_subject.is_valid()
-    assert test_subject.obs_id == 'C121212_00001_SCI'
+    assert test_subject.obs_id == 'C121212_00001'
 
     with pytest.raises(mc.CadcException):
         test_subject = OmmName(file_name='C121212_00001_SCI')
@@ -104,9 +107,20 @@ def test_is_valid():
 
 
 def test_omm_name():
-    TEST_NAME = 'C121212_00001_SCI'
-    assert f'ad:OMM/{TEST_NAME}.fits.gz' == OmmName(
-        TEST_NAME, f'{TEST_NAME}.fits').file_uri
-    TEST_NAME = 'C121212_sh2-132_J_old_SCIRED'
-    assert f'{TEST_NAME}_prev.jpg' == OmmName(TEST_NAME).prev
-    assert f'{TEST_NAME}_prev_256.jpg' == OmmName(TEST_NAME).thumb
+    test_name = 'C121212_00001_SCI'
+    assert f'ad:OMM/{test_name}.fits.gz' == OmmName(
+        test_name, f'{test_name}.fits').file_uri
+    test_name = 'C121212_sh2-132_J_old_SCIRED'
+    file_name = f'{test_name}_prev_256.jpg'
+    assert f'{test_name}_prev.jpg' == OmmName(file_name=file_name).prev
+    assert f'{test_name}_prev_256.jpg' == OmmName(file_name=file_name).thumb
+    test_name = 'C121212_sh2-132_J_old_SCIRED'
+    file_name = f'{test_name}_prev_256.jpg'
+    assert f'{test_name}_prev.jpg' == OmmName(file_name=file_name).prev
+    assert f'{test_name}_prev_256.jpg' == OmmName(file_name=file_name).thumb
+    test_obs_id = 'C121121_J024345.57-021326.4_K'
+    test_name = f'{test_obs_id}_SCIRED'
+    file_name = f'{test_name}.fits.gz'
+    assert f'{test_name}_prev.jpg' == OmmName(file_name=file_name).prev
+    assert f'{test_name}_prev_256.jpg' == OmmName(file_name=file_name).thumb
+    assert OmmName(file_name=file_name).obs_id == test_obs_id
