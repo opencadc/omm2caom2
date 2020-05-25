@@ -1,0 +1,124 @@
+<caom2:Observation xmlns:caom2="http://www.opencadc.org/caom2/xml/v2.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:SimpleObservation" caom2:id="375d94d7-b135-4758-82b0-15a729745c53" caom2:lastModified="2020-05-14T20:29:03.435" caom2:maxLastModified="2020-05-14T20:29:07.382" caom2:metaChecksum="md5:39486d1060bd931780d88d9c20544925" caom2:accMetaChecksum="md5:58ccdf8e02cc6eb00064e11b465d622f">
+  <caom2:collection>OMM</caom2:collection>
+  <caom2:observationID>C090219_0001_REJECT</caom2:observationID>
+  <caom2:metaRelease>2009-02-20T10:38:59.000</caom2:metaRelease>
+  <caom2:algorithm>
+    <caom2:name>exposure</caom2:name>
+  </caom2:algorithm>
+  <caom2:type>reject</caom2:type>
+  <caom2:intent>calibration</caom2:intent>
+  <caom2:target>
+    <caom2:name>BAD</caom2:name>
+    <caom2:type>object</caom2:type>
+    <caom2:standard>false</caom2:standard>
+    <caom2:moving>false</caom2:moving>
+  </caom2:target>
+  <caom2:requirements>
+    <caom2:flag>fail</caom2:flag>
+  </caom2:requirements>
+  <caom2:telescope>
+    <caom2:name>OMM-1.6m</caom2:name>
+    <caom2:geoLocationX>1448028.9338499117</caom2:geoLocationX>
+    <caom2:geoLocationY>-4242093.453508253</caom2:geoLocationY>
+    <caom2:geoLocationZ>4523795.338238991</caom2:geoLocationZ>
+  </caom2:telescope>
+  <caom2:instrument>
+    <caom2:name>CPAPIR</caom2:name>
+    <caom2:keywords>
+      <caom2:keyword>DETECTOR=CPAPIR-HAWAII-2</caom2:keyword>
+    </caom2:keywords>
+  </caom2:instrument>
+  <caom2:environment>
+    <caom2:ambientTemp>-10.7333</caom2:ambientTemp>
+  </caom2:environment>
+  <caom2:planes>
+    <caom2:plane caom2:id="edd1ae0a-3997-46e4-85ce-1480b69d1e57" caom2:lastModified="2020-05-14T20:29:03.435" caom2:maxLastModified="2020-05-14T20:29:07.382" caom2:metaChecksum="md5:0232be92ca454daecafe97b1d857322c" caom2:accMetaChecksum="md5:b4e098fa35c09d758771b3feca24e15a">
+      <caom2:productID>C090219_0001_REJECT</caom2:productID>
+      <caom2:metaRelease>2009-02-20T15:38:59.000</caom2:metaRelease>
+      <caom2:dataRelease>2011-02-20T00:00:00.000</caom2:dataRelease>
+      <caom2:dataProductType>image</caom2:dataProductType>
+      <caom2:calibrationLevel>1</caom2:calibrationLevel>
+      <caom2:provenance>
+        <caom2:name>CPAPIR</caom2:name>
+        <caom2:version>1.0</caom2:version>
+        <caom2:project>Standard Pipeline</caom2:project>
+        <caom2:producer>LAE</caom2:producer>
+        <caom2:runID>090219</caom2:runID>
+        <caom2:reference>http://omm-astro.ca</caom2:reference>
+      </caom2:provenance>
+      <caom2:artifacts>
+        <caom2:artifact caom2:id="29a15851-0786-44a4-907d-4d1228fbb17d" caom2:lastModified="2020-05-14T20:29:03.435" caom2:maxLastModified="2020-05-14T20:29:03.435" caom2:metaChecksum="md5:bc1061c5b9d3b080f09023495a6dab06" caom2:accMetaChecksum="md5:08a6340db7ac25d549d08825dbc270db">
+          <caom2:uri>ad:OMM/C090219_0001_REJECT.fits.gz</caom2:uri>
+          <caom2:productType>calibration</caom2:productType>
+          <caom2:releaseType>data</caom2:releaseType>
+          <caom2:contentType>application/fits</caom2:contentType>
+          <caom2:contentLength>7748069</caom2:contentLength>
+          <caom2:contentChecksum>md5:b8be53002e111c86eaec9f0d98668fff</caom2:contentChecksum>
+          <caom2:parts/>
+        </caom2:artifact>
+        <caom2:artifact caom2:id="773322e0-c830-4fe6-9c52-98842f9b14a6" caom2:lastModified="2020-05-14T20:29:07.382" caom2:maxLastModified="2020-05-14T20:29:07.382" caom2:metaChecksum="md5:fb4f17598f66fdeeec82f601b4d08b96" caom2:accMetaChecksum="md5:dfa6e9bb81ece8f5c8f0dfecf89192d8">
+          <caom2:uri>ad:OMM/C090219_0001_REJECT_prev.jpg</caom2:uri>
+          <caom2:productType>preview</caom2:productType>
+          <caom2:releaseType>data</caom2:releaseType>
+          <caom2:contentType>image/jpeg</caom2:contentType>
+          <caom2:contentLength>670899</caom2:contentLength>
+          <caom2:contentChecksum>md5:e96c6ed785a869a7e398da845b169d3d</caom2:contentChecksum>
+          <caom2:parts/>
+        </caom2:artifact>
+        <caom2:artifact caom2:id="ba4b1eb2-bb42-44e2-adfe-dd3b9bb44244" caom2:lastModified="2020-05-14T20:29:07.382" caom2:maxLastModified="2020-05-14T20:29:07.382" caom2:metaChecksum="md5:6b1ca8b9860e01ec830273a899fcd4e2" caom2:accMetaChecksum="md5:e732da0f72d18f2f5111ce82f8da799b">
+          <caom2:uri>ad:OMM/C090219_0001_REJECT_prev_256.jpg</caom2:uri>
+          <caom2:productType>thumbnail</caom2:productType>
+          <caom2:releaseType>data</caom2:releaseType>
+          <caom2:contentType>image/jpeg</caom2:contentType>
+          <caom2:contentLength>10088</caom2:contentLength>
+          <caom2:contentChecksum>md5:dee1f8d95e8dd9eeab203e9a11f835ab</caom2:contentChecksum>
+          <caom2:parts/>
+        </caom2:artifact>
+      </caom2:artifacts>
+    </caom2:plane>
+    <caom2:plane caom2:id="00000000-0000-0000-9175-9d529bd65957" caom2:lastModified="2018-12-28T01:43:29.937" caom2:maxLastModified="2018-12-28T01:43:34.096" caom2:metaChecksum="md5:520ed25924e48f0e827869db37c61c09" caom2:accMetaChecksum="md5:8a96f4bf115e93b799d6b39a34b4364c">
+      <caom2:productID>C090219_0001_SCI</caom2:productID>
+      <caom2:metaRelease>2009-02-20T15:38:59.000</caom2:metaRelease>
+      <caom2:dataRelease>2010-08-22T00:00:00.000</caom2:dataRelease>
+      <caom2:dataProductType>image</caom2:dataProductType>
+      <caom2:calibrationLevel>1</caom2:calibrationLevel>
+      <caom2:provenance>
+        <caom2:name>CPAPIR</caom2:name>
+        <caom2:version>1.0</caom2:version>
+        <caom2:project>Standard Pipeline</caom2:project>
+        <caom2:producer>LAE</caom2:producer>
+        <caom2:runID>090219</caom2:runID>
+        <caom2:reference>http://genesis.astro.umontreal.ca</caom2:reference>
+      </caom2:provenance>
+      <caom2:artifacts>
+        <caom2:artifact caom2:id="00000000-0000-0000-a175-cae4130b2f7b" caom2:lastModified="2018-12-28T01:43:29.937" caom2:maxLastModified="2018-12-28T01:43:29.937" caom2:metaChecksum="md5:7f8bf9dd026c200913ca322bdf489da7" caom2:accMetaChecksum="md5:7c8f321ad51913995717df6e76b33e43">
+          <caom2:uri>ad:OMM/C090219_0001_SCI.fits.gz</caom2:uri>
+          <caom2:productType>science</caom2:productType>
+          <caom2:releaseType>data</caom2:releaseType>
+          <caom2:contentType>application/fits</caom2:contentType>
+          <caom2:contentLength>7757713</caom2:contentLength>
+          <caom2:contentChecksum>md5:84d8680f9c6731f090311c7edb7080db</caom2:contentChecksum>
+          <caom2:parts/>
+        </caom2:artifact>
+        <caom2:artifact caom2:id="00000000-0000-0000-98e7-3fd975da614f" caom2:lastModified="2018-12-28T01:43:34.096" caom2:maxLastModified="2018-12-28T01:43:34.096" caom2:metaChecksum="md5:28b92cf312df9d1c8088ab68476c9d7d" caom2:accMetaChecksum="md5:a0cf12cc0f7d0476c9442ab284fc1908">
+          <caom2:uri>ad:OMM/C090219_0001_SCI_prev.jpg</caom2:uri>
+          <caom2:productType>preview</caom2:productType>
+          <caom2:releaseType>data</caom2:releaseType>
+          <caom2:contentType>image/jpeg</caom2:contentType>
+          <caom2:contentLength>670964</caom2:contentLength>
+          <caom2:contentChecksum>md5:85f2777578ac4655cc7879a3f08b054c</caom2:contentChecksum>
+          <caom2:parts/>
+        </caom2:artifact>
+        <caom2:artifact caom2:id="00000000-0000-0000-8f8f-871513da221b" caom2:lastModified="2018-12-28T01:43:34.096" caom2:maxLastModified="2018-12-28T01:43:34.096" caom2:metaChecksum="md5:43f8ddf7ecd38fdcc31d2b25dea01fad" caom2:accMetaChecksum="md5:105ab230484e80d23e48ded18a8b354e">
+          <caom2:uri>ad:OMM/C090219_0001_SCI_prev_256.jpg</caom2:uri>
+          <caom2:productType>thumbnail</caom2:productType>
+          <caom2:releaseType>data</caom2:releaseType>
+          <caom2:contentType>image/jpeg</caom2:contentType>
+          <caom2:contentLength>10085</caom2:contentLength>
+          <caom2:contentChecksum>md5:2aabd4edb38bd15cd86440a2c201c506</caom2:contentChecksum>
+          <caom2:parts/>
+        </caom2:artifact>
+      </caom2:artifacts>
+    </caom2:plane>
+  </caom2:planes>
+</caom2:Observation>
