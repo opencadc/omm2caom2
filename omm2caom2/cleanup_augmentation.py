@@ -80,9 +80,11 @@ def visit(observation, **kwargs):
     https://github.com/opencadc-metadata-curation/omm2caom2/issues/3
     """
     mc.check_param(observation, Observation)
+    logging.info(f'Begin cleanup augmentation for '
+                 f'{observation.observation_id}')
     cadc_client = kwargs.get('cadc_client')
     if cadc_client is None:
-        raise mc.CadcException('')
+        raise mc.CadcException(f'Need a CADC Client for cleanup augmentation.')
 
     count = 0
     if len(observation.planes) > 1:
@@ -124,9 +126,12 @@ def visit(observation, **kwargs):
         delete_list = list(set(temp))
         for entry in delete_list:
             logging.warning(f'Removing plane {entry} from observation '
-                            f'{observation.observation_id}.')
+                            f'{observation.observation_id}. There are '
+                            f'duplicate photons.')
             count += 1
             observation.planes.pop(entry)
 
     result = {'planes': count}
+    logging.info(f'Completed cleanup augmentation for '
+                 f'{observation.observation_id}')
     return result

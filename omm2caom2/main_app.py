@@ -171,7 +171,7 @@ class OmmName(mc.StorageName):
         super(OmmName, self).__init__(
             obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, fname_on_disk)
         self._logger = logging.getLogger(__name__)
-        self._logger.error(self)
+        self._logger.debug(self)
 
     def __str__(self):
         return f'obs_id {self.obs_id} file_name {self.file_name} ' \
@@ -568,6 +568,8 @@ def update(observation, **kwargs):
     _update_telescope_location(observation, headers)
 
     for plane in observation.planes.values():
+        if omm_name is not None and omm_name.product_id != plane.product_id:
+            continue
         for artifact in plane.artifacts.values():
             if omm_name is None:
                 omm_name = OmmName(artifact_uri=artifact.uri)
