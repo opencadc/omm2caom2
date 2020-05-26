@@ -5,14 +5,12 @@ C160929_NGC7419_K_SCIRED.fits.gz
 C170323_domeflat_K_CALRED.fits.gz
 C071112_0001_CAL.fits.gz              
 C170324_0054_SCI.fits.gz
-C071128_0740_FOCUS.fits.gz            
 C160929_NGC7419_K_SCIRED.fits.gz      
 C180108_0002_SCI.fits.gz
 C090620_0003_SCI.fits.gz              
 C170217_0228_SCI.fits.gz              
 C180616_0135_SCI.fits.gz
 C100521_domeflat_K_CALRED.fits.gz     
-C170318_0002_FOCUS.fits.gz            
 C190618_0336_SCI.fits.gz
 C101116_QSO2251+158_I_SCIRED.fits.gz  
 C170318_0121_SCI.fits.gz              
@@ -23,7 +21,6 @@ C190822_0019_CAL.fits.gz
 C120213_0004_REJECT.fits.gz           
 C170323_domeflat_K_CALRED.fits.gz
 C120402_domeflat_J_CALRED.fits.gz     
-C170324_0028_FOCUS.fits.gz
 C110607_WR121_CONT2_SCIRED.fits.gz
 C080415_domeflat_BrGamma_CALRED.fits.gz
 C171019_0377_SCI.fits.gz

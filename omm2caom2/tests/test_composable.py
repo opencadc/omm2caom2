@@ -152,6 +152,9 @@ def _mock_repo_update(ignore1):
 
 def _mock_exec(ignore1):
     obs = _build_obs()
+    path = f'{test_main_app.TEST_DATA_DIR}/C121212_domeflat_K_CALRED'
+    if not os.path.exists(path):
+        os.mkdir(path)
     mc.write_obs_to_file(obs, f'{test_main_app.TEST_DATA_DIR}/'
                          f'C121212_domeflat_K_CALRED/'
                          f'C121212_domeflat_K_CALRED.fits.xml')

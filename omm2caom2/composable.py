@@ -76,7 +76,7 @@ from caom2pipe import manage_composable as mc
 from caom2pipe import run_composable as rc
 from omm2caom2 import preview_augmentation, footprint_augmentation
 from omm2caom2 import cleanup_augmentation
-from omm2caom2 import OmmChooser, OmmName, APPLICATION, COLLECTION
+from omm2caom2 import OmmBuilder, OmmChooser, OmmName, APPLICATION, COLLECTION
 
 
 META_VISITORS = [cleanup_augmentation]
@@ -125,7 +125,10 @@ def run_single():
 
 
 def _run():
-    return rc.run_by_todo(config=None, name_builder=None, chooser=OmmChooser(),
+    config = mc.Config()
+    config.get_executors()
+    return rc.run_by_todo(config=config, name_builder=OmmBuilder(config),
+                          chooser=OmmChooser(),
                           command_name=APPLICATION,
                           meta_visitors=META_VISITORS,
                           data_visitors=DATA_VISITORS)

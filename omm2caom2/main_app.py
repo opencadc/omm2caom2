@@ -97,13 +97,14 @@ from caom2 import Requirements, Status, Instrument, Provenance, DataQuality
 from caom2 import SimpleObservation, CompositeObservation, Algorithm
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
 from caom2pipe import astro_composable as ac
-from caom2pipe import manage_composable as mc
 from caom2pipe import execute_composable as ec
+from caom2pipe import manage_composable as mc
+from caom2pipe import name_builder_composable as nbc
 
 
 __all__ = ['to_caom2', 'update', 'OmmName', 'COLLECTION', 'APPLICATION',
            '_update_cal_provenance', '_update_science_provenance',
-           'OmmChooser']
+           'OmmBuilder', 'OmmChooser']
 
 
 APPLICATION = 'omm2caom2'
@@ -123,6 +124,19 @@ DEFAULT_GEOCENTRIC = {
             'elevation': 1108.},
     'CTIO': {'x': 1814303.745, 'y': -5214365.744, 'z': -3187340.566,
              'elevation': 2200.}}
+
+
+class OmmBuilder(nbc.StorageNameBuilder):
+    def __init__(self, config):
+        self._config = config
+        self._logger = logging.getLogger(__name__)
+
+    def build(self, entry):
+        if self._config.use_local_files:
+            omm_name = OmmName(fname_on_disk=entry)
+        else:
+            omm_name = OmmName(file_name=entry)
+        return omm_name
 
 
 class OmmName(mc.StorageName):
@@ -581,7 +595,6 @@ def update(observation, **kwargs):
                 _update_requirements(observation)
 
         if OmmName.is_composite(plane.product_id):
-            logging.error(f'is composite is true')
             if OmmChooser().needs_delete(observation):
                 observation = _update_observation_type(observation)
                 logging.info(f'Changing from Simple to Composite for '
