@@ -69,6 +69,9 @@
 
 import logging
 
+from slack import WebClient
+from slack.errors import SlackApiError
+
 from caom2 import Observation
 from caom2pipe import manage_composable as mc
 from omm2caom2 import OmmName, COLLECTION
@@ -130,8 +133,24 @@ def visit(observation, **kwargs):
                             f'duplicate photons.')
             count += 1
             observation.planes.pop(entry)
+            _send_slack_message(entry)
 
     result = {'planes': count}
     logging.info(f'Completed cleanup augmentation for '
                  f'{observation.observation_id}')
     return result
+
+
+def _send_slack_message(entry):
+    config = mc.Config()
+    config.get_executors()
+    client = WebClient(token=config.slack_token)
+
+    msg = f'Delete OMM {entry}.fits.gz'
+    try:
+        ignore = client.chat_postMessage(channel=config.slack_channel,
+                                         text=msg)
+    except SlackApiError as sae:
+        logging.error(f'Could not sent slack message {msg} to '
+                      f'{config.slack_channel}')
+        logging.debug(sae)

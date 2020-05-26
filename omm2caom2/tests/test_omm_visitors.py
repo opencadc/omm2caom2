@@ -69,7 +69,7 @@
 import os
 import pytest
 
-from mock import Mock
+from mock import Mock, patch
 
 from caom2 import ChecksumURI
 from omm2caom2 import footprint_augmentation, preview_augmentation
@@ -178,7 +178,8 @@ def test_preview_augment_plane():
     assert len(test_metrics.history) == 0, 'wrong history, client is not None'
 
 
-def test_cleanup():
+@patch('omm2caom2.cleanup_augmentation._send_slack_message')
+def test_cleanup(slack_mock):
     test_obs_id = 'C090219_0001'
     test_obs_fqn = f'{TEST_DATA_DIR}/{test_obs_id}_start.xml'
     test_obs = mc.read_obs_from_file(test_obs_fqn)
@@ -193,6 +194,8 @@ def test_cleanup():
         'deleted the wrong one'
     assert f'{test_obs_id}_REJECT' in test_obs.planes.keys(), \
         'deleted the other wrong one'
+    assert slack_mock.called, 'mock should be called'
+    assert slack_mock.call_count == 1, 'should only be one deletion notice'
 
 
 def _mock_file_info(archive, f_name):

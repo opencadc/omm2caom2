@@ -22,6 +22,7 @@ RUN pip install cadcdata && \
         pip install ftputil && \
         pip install pytz && \
         pip install PyYAML && \
+        pip install slackclient && \
         pip install spherical-geometry && \
         pip install vos
 

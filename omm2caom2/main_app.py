@@ -330,7 +330,11 @@ def accumulate_plane(bp):
     bp.add_fits_attribute('Plane.provenance.runID', 'NIGHTID')
     bp.set('Plane.metaRelease', 'get_meta_release_date(header)')
     bp.set('Plane.dataRelease', 'get_data_release_date(header)')
-    bp.set('Plane.provenance.version', '1.0')
+    bp.clear('Plane.provenance.version')
+    bp.add_fits_attribute('Plane.provenance.version', 'DRS_VERS')
+    bp.set_default('Plane.provenance.version', '1.0')
+    bp.clear('Plane.provenance.lastExecuted')
+    bp.add_fits_attribute('Plane.provenance.lastExecuted', 'DRS_DATE')
     bp.set('Plane.provenance.reference', 'http://omm-astro.ca')
     bp.set('Plane.provenance.project', 'Standard Pipeline')
 
