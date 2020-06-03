@@ -68,11 +68,9 @@
 #
 
 
-from omm2caom2 import main_app, APPLICATION
-from caom2.diff import get_differences
+from omm2caom2 import main_app, APPLICATION, OmmName
 from caom2pipe import manage_composable as mc
 
-from hashlib import md5
 import os
 import sys
 
@@ -93,16 +91,19 @@ def pytest_generate_tests(metafunc):
 
 def test_main_app(test_name):
     basename = os.path.basename(test_name)
-    product_id = basename.split('.fits')[0]
-    lineage = _get_lineage(product_id, basename)
+    omm_name = OmmName(file_name=basename)
+    lineage = _get_lineage(omm_name.product_id, basename)
     output_file = f'{test_name}.actual.xml'
+    if os.path.exists(output_file):
+        os.unlink(output_file)
+
     local = _get_local(test_name)
     plugin = PLUGIN
-    input_file = f'{TEST_DATA_DIR}/in.{product_id}.fits.xml'
+    input_file = f'{TEST_DATA_DIR}/in.{omm_name.product_id}.fits.xml'
     if os.path.exists(input_file):
         input_param = f'--in {input_file}'
     else:
-        input_param = f'--observation OMM {product_id}'
+        input_param = f'--observation OMM {omm_name.obs_id}'
     with patch('caom2utils.fits2caom2.CadcDataClient') as data_client_mock:
         data_client_mock.return_value.get_file_info.side_effect = \
             _mock_get_file_info
@@ -114,14 +115,9 @@ def test_main_app(test_name):
         print(sys.argv)
         main_app.to_caom2()
     obs_path = test_name.replace('.fits.header', '.expected.xml')
-    expected = mc.read_obs_from_file(obs_path)
-    actual = mc.read_obs_from_file(output_file)
-    result = get_differences(expected, actual, 'Observation')
-    if result:
-        text = '\n'.join([r for r in result])
-        msg = f'Differences found in observation {expected.observation_id}' \
-              f'\n{text}'
-        raise AssertionError(msg)
+    result = mc.compare_observations(obs_path, output_file)
+    if result is not None:
+        assert False, result
     # assert False  # cause I want to see logging messages
 
 

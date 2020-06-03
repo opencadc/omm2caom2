@@ -91,8 +91,8 @@ def compare_obs():
     args = parser.parse_args()
     logging.info(args)
     cwd = os.getcwd()
-    sb_model_fqn = os.path.join(cwd, '{}.sb.xml'.format(args.observationID))
-    ops_model_fqn = os.path.join(cwd, '{}.ops.xml'.format(args.observationID))
+    sb_model_fqn = os.path.join(cwd, f'{args.observationID}.sb.xml')
+    ops_model_fqn = os.path.join(cwd, f'{args.observationID}.ops.xml')
     sb_obs = _get_obs(args.collection, args.observationID, sb_model_fqn,
                       RESOURCE_ID)
     ops_obs = _get_obs(args.collection, args.observationID, ops_model_fqn)
@@ -115,22 +115,19 @@ def _get_obs(collection, obs_id, model_fqn, rid=None):
 def _read_to_file(collection, obs_id, model_fqn, rid):
     """Retrieve the existing observaton model metadata."""
     if rid is not None:
-        repo_cmd = 'caom2-repo read --resource-id {} -n ' \
-                   '{} {} -o {}'.format(rid, collection, obs_id,
-                                        model_fqn).split()
+        repo_cmd = f'caom2-repo read --resource-id {rid} -n ' \
+                   f'{collection} {obs_id} -o {model_fqn}'.split()
     else:
-        repo_cmd = 'caom2-repo read -n {} {} -o {}'.format(
-            collection, obs_id, model_fqn).split()
+        repo_cmd = f'caom2-repo read -n {collection} {obs_id} -o ' \
+                   f'{model_fqn}'.split()
 
     try:
         output, outerr = subprocess.Popen(
             repo_cmd, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE).communicate()
-        logging.info(
-            'Command {} had output {}'.format(repo_cmd, output))
+        logging.info(f'Command {repo_cmd} had output {output}')
     except Exception as e:
-        logging.error(
-            'Error with command {}:: {}'.format(repo_cmd, e))
+        logging.error(f'Error with command {repo_cmd}:: {e}')
         raise RuntimeError('broken')
 
 

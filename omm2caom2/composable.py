@@ -68,44 +68,19 @@
 #
 
 import logging
-import pkg_resources
 import sys
 import tempfile
 import traceback
 
-from caom2pipe import execute_composable as ec
 from caom2pipe import manage_composable as mc
 from caom2pipe import run_composable as rc
 from omm2caom2 import preview_augmentation, footprint_augmentation
-from omm2caom2 import OmmChooser, OmmName, APPLICATION, COLLECTION
+from omm2caom2 import cleanup_augmentation
+from omm2caom2 import OmmBuilder, OmmChooser, OmmName, APPLICATION, COLLECTION
 
 
-meta_visitors = []
-data_visitors = [preview_augmentation, footprint_augmentation]
-
-
-def _run_proxy():
-    """Run the processing for multiple files, using a well-known proxy.
-
-    :return 0 if successful, -1 if there's any sort of failure. Return status
-        is used by airflow for task instance management and reporting.
-    """
-    config = mc.Config()
-    config.get_executors()
-    return ec.run_by_file(config, OmmName, APPLICATION,
-                          meta_visitors, data_visitors, OmmChooser())
-
-
-def run_proxy():
-    """Wraps _omm_run_proxy in exception handling, with sys.exit calls."""
-    try:
-        result = _run_proxy()
-        sys.exit(result)
-    except Exception as e:
-        logging.error(e)
-        tb = traceback.format_exc()
-        logging.debug(tb)
-        sys.exit(-1)
+META_VISITORS = [cleanup_augmentation]
+DATA_VISITORS = [preview_augmentation, footprint_augmentation]
 
 
 def _run_single():
@@ -114,7 +89,6 @@ def _run_single():
     :return 0 if successful, -1 if there's any sort of failure. Return status
         is used by airflow for task instance management and reporting.
     """
-    logging.error(sys.argv)
     config = mc.Config()
     config.get_executors()
     config.collection = COLLECTION
@@ -132,10 +106,10 @@ def _run_single():
     if config.features.use_file_names:
         storage_name = OmmName(file_name=sys.argv[1])
     else:
-        obs_id = OmmName.remove_extensions(sys.argv[1])
-        storage_name = OmmName(obs_id=obs_id)
-    return ec.run_single(config, storage_name, APPLICATION, meta_visitors,
-                         data_visitors, OmmChooser())
+        raise mc.CadcException(
+            'May only run with Feature use_file_names = True')
+    return rc.run_single(config, storage_name, APPLICATION, META_VISITORS,
+                         DATA_VISITORS, OmmChooser())
 
 
 def run_single():
@@ -151,11 +125,13 @@ def run_single():
 
 
 def _run():
-    version = pkg_resources.get_distribution("omm2caom2").version
-    return rc.run_by_todo(config=None, name_builder=None, chooser=OmmChooser(),
+    config = mc.Config()
+    config.get_executors()
+    return rc.run_by_todo(config=config, name_builder=OmmBuilder(config),
+                          chooser=OmmChooser(),
                           command_name=APPLICATION,
-                          meta_visitors=meta_visitors,
-                          data_visitors=data_visitors, version=version)
+                          meta_visitors=META_VISITORS,
+                          data_visitors=DATA_VISITORS)
 
 
 def run():

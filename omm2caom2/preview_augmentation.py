@@ -71,106 +71,63 @@ import logging
 import os
 
 from caom2 import ProductType, ReleaseType
-from caom2 import Observation
 from caom2pipe import manage_composable as mc
 from omm2caom2 import OmmName, COLLECTION
 
 __all__ = ['visit']
 
 
+class OMMPreview(mc.PreviewVisitor):
+
+    def __init__(self, **kwargs):
+        super(OMMPreview, self).__init__(COLLECTION, ReleaseType.DATA,
+                                         **kwargs)
+        self._science_fqn = os.path.join(self._working_dir, self._science_file)
+        self._unzip()
+        self._storage_name = OmmName(file_name=self._science_file)
+        self._preview_fqn = os.path.join(
+            self._working_dir,  self._storage_name.prev)
+        self._thumb_fqn = os.path.join(
+            self._working_dir, self._storage_name.thumb)
+        self._logger = logging.getLogger(__name__)
+
+    def generate_plots(self, obs_id):
+        count = self._gen_prev()
+        self.add_preview(self._storage_name.thumb_uri,
+                         self._storage_name.thumb, ProductType.THUMBNAIL)
+        self.add_preview(self._storage_name.prev_uri,
+                         self._storage_name.prev, ProductType.PREVIEW)
+        self.add_to_delete(self._thumb_fqn)
+        self.add_to_delete(self._preview_fqn)
+        return count
+
+    def _gen_prev(self):
+        if os.access(self._preview_fqn, 0):
+            os.remove(self._preview_fqn)
+        prev_cmd = f'fitscut --all --autoscale=99.5 --asinh-scale --jpg ' \
+                   f'--invert --compass {self._science_fqn}'
+        mc.exec_cmd_redirect(prev_cmd, self._preview_fqn)
+
+        if os.access(self._thumb_fqn, 0):
+            os.remove(self._thumb_fqn)
+        prev_cmd = f'fitscut --all --output-size=256 --autoscale=99.5 ' \
+                   f'--asinh-scale --jpg --invert --compass ' \
+                   f'{self._science_fqn}'
+        mc.exec_cmd_redirect(prev_cmd, self._thumb_fqn)
+        return 2
+
+    def _unzip(self):
+        if self._science_fqn.endswith('.gz'):
+            self._logger.debug(f'Unzipping {self._science_fqn}.')
+            unzipped_science_fqn = self._science_fqn.replace('.gz', '')
+            import gzip
+            with open(self._science_fqn, 'rb') as f_read:
+                gz = gzip.GzipFile(fileobj=f_read)
+                with open(unzipped_science_fqn, 'wb') as f_write:
+                    f_write.write(gz.read())
+            self._science_fqn = unzipped_science_fqn
+
+
 def visit(observation, **kwargs):
-    mc.check_param(observation, Observation)
-
-    working_dir = './'
-    if 'working_directory' in kwargs:
-        working_dir = kwargs['working_directory']
-    if 'cadc_client' in kwargs:
-        cadc_client = kwargs['cadc_client']
-    else:
-        raise mc.CadcException('Need a cadc_client parameter.')
-    if 'observable' in kwargs:
-        observable = kwargs['observable']
-    else:
-        raise mc.CadcException('Need an observable parameter.')
-
-    count = 0
-    for plane in observation.planes.values():
-        for artifact in plane.artifacts.values():
-            if (artifact.uri.endswith('.fits.gz') or
-                    artifact.uri.endswith('.fits')):
-                file_id = mc.CaomName(artifact.uri).file_id
-                file_name = mc.CaomName(artifact.uri).file_name
-                science_fqn = os.path.join(working_dir, file_name)
-                if not os.path.exists(science_fqn):
-                    if science_fqn.endswith('.gz'):
-                        science_fqn = science_fqn.replace('.gz', '')
-                    else:
-                        science_fqn = f'{science_fqn}.gz'
-                    if not os.path.exists(science_fqn):
-                        raise mc.CadcException(
-                            f'{science_fqn} visit file not found')
-                science_fqn = _unzip(science_fqn)
-                logging.debug(f'working on file {science_fqn}')
-                count += _do_prev(file_id, science_fqn, working_dir, plane,
-                                  cadc_client, observable.metrics)
-    logging.info(f'Completed preview augmentation for '
-                 f'{observation.observation_id}.')
-    return {'artifacts': count}
-
-
-def _augment(plane, uri, fqn, product_type):
-    temp = None
-    if uri in plane.artifacts:
-        temp = plane.artifacts[uri]
-    plane.artifacts[uri] = mc.get_artifact_metadata(fqn, product_type,
-                                                    ReleaseType.DATA, uri,
-                                                    temp)
-
-
-def _do_prev(file_id, science_fqn, working_dir, plane, cadc_client, metrics):
-    preview = OmmName(file_id).prev
-    preview_fqn = os.path.join(working_dir, preview)
-    thumb = OmmName(file_id).thumb
-    thumb_fqn = os.path.join(working_dir, thumb)
-
-    if os.access(preview_fqn, 0):
-        os.remove(preview_fqn)
-    prev_cmd = f'fitscut --all --autoscale=99.5 --asinh-scale --jpg --invert ' \
-               f'--compass {science_fqn}'
-    mc.exec_cmd_redirect(prev_cmd, preview_fqn)
-
-    if os.access(thumb_fqn, 0):
-        os.remove(thumb_fqn)
-    prev_cmd = f'fitscut --all --output-size=256 --autoscale=99.5 ' \
-               f'--asinh-scale --jpg --invert --compass {science_fqn}'
-    mc.exec_cmd_redirect(prev_cmd, thumb_fqn)
-
-    prev_uri = OmmName(file_id).prev_uri
-    thumb_uri = OmmName(file_id).thumb_uri
-    _augment(plane, prev_uri, preview_fqn, ProductType.PREVIEW)
-    _augment(plane, thumb_uri, thumb_fqn, ProductType.THUMBNAIL)
-    if cadc_client is not None:
-        _store_smalls(cadc_client, working_dir, preview, thumb, metrics)
-    return 2
-
-
-def _store_smalls(cadc_client, working_directory, preview_fname,
-                  thumb_fname, metrics):
-    mc.data_put(cadc_client, working_directory, preview_fname, COLLECTION,
-                mime_type='image/jpeg', metrics=metrics)
-    mc.data_put(cadc_client, working_directory, thumb_fname, COLLECTION,
-                mime_type='image/jpeg', metrics=metrics)
-
-
-def _unzip(science_fqn):
-    if science_fqn.endswith('.gz'):
-        logging.debug(f'Unzipping {science_fqn}.')
-        unzipped_science_fqn = science_fqn.replace('.gz', '')
-        import gzip
-        with open(science_fqn, 'rb') as f_read:
-            gz = gzip.GzipFile(fileobj=f_read)
-            with open(unzipped_science_fqn, 'wb') as f_write:
-                f_write.write(gz.read())
-        return unzipped_science_fqn
-    else:
-        return science_fqn
+    previewer = OMMPreview(**kwargs)
+    return previewer.visit(observation, previewer.storage_name)

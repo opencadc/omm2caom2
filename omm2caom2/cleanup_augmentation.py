@@ -3,7 +3,7 @@
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 #
-#  (c) 2018.                            (c) 2018.
+#  (c) 2020.                            (c) 2020.
 #  Government of Canada                 Gouvernement du Canada
 #  National Research Council            Conseil national de recherches
 #  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -67,60 +67,90 @@
 # ***********************************************************************
 #
 
-import pytest
+import logging
 
+from slack import WebClient
+from slack.errors import SlackApiError
+
+from caom2 import Observation
 from caom2pipe import manage_composable as mc
-from omm2caom2 import OmmName
+from omm2caom2 import OmmName, COLLECTION
 
 
-def test_is_valid():
-    assert OmmName(file_name='C121212_00001_SCI.fits.gz').is_valid()
-    assert not OmmName(file_name='c121212_00001_SCI.fits.gz').is_valid()
-    assert OmmName(file_name='C121212_00001_CAL.fits.gz').is_valid()
-    assert not OmmName(file_name='c121212_00001_CAL.fits.gz').is_valid()
-    assert OmmName(file_name='C121212_domeflat_K_CALRED.fits.gz').is_valid()
-    assert not OmmName(
-        file_name='C121212_DOMEFLAT_K_CALRED.fits.gz').is_valid()
-    assert OmmName(file_name='C121212_sh2-132_J_old_SCIRED.fits.gz').is_valid()
-    assert OmmName(file_name='C121212_J0454+8024_J_SCIRED.fits.gz').is_valid()
-    assert OmmName(file_name='C121212_00001_TEST.fits.gz').is_valid()
-    assert OmmName(file_name='C121212_00001_FOCUS.fits.gz').is_valid()
-    assert OmmName(
-        file_name='C121121_J024345.57-021326.4_K_SCIRED.fits.gz').is_valid()
+def visit(observation, **kwargs):
+    """
+    Clean up the issue described here (multiple planes for the same photons):
+    https://github.com/opencadc-metadata-curation/omm2caom2/issues/3
+    """
+    mc.check_param(observation, Observation)
+    logging.info(f'Begin cleanup augmentation for '
+                 f'{observation.observation_id}')
+    cadc_client = kwargs.get('cadc_client')
+    if cadc_client is None:
+        raise mc.CadcException(f'Need a CADC Client for cleanup augmentation.')
 
-    test_subject = OmmName(file_name='C121212_00001_SCI.fits')
-    assert test_subject.is_valid()
-    assert test_subject.obs_id == 'C121212_00001'
-    test_subject = OmmName(file_name='C121212_00001_SCI.fits.gz')
-    assert test_subject.is_valid()
-    assert test_subject.obs_id == 'C121212_00001'
-    test_subject = OmmName(fname_on_disk='C121212_00001_SCI.fits',
-                           file_name='C121212_00001_SCI.fits.gz')
-    assert test_subject.is_valid()
-    assert test_subject.obs_id == 'C121212_00001'
+    count = 0
+    if len(observation.planes) > 1:
+        # from Daniel, Sylvie - 21-05-20
+        # How to figure out which plane is newer:
+        # SB - I do not think that we should use the “VERSION” keyword.
+        # I think we must go with the ingested date.
+        #
+        # Daniel Durand
+        # Might be better indeed. Need to compare the SCI and the REJECT file
+        # and see which one is the latest
 
-    with pytest.raises(mc.CadcException):
-        test_subject = OmmName(file_name='C121212_00001_SCI')
-        test_subject = OmmName(fname_on_disk='C121212_00001_FOCUS')
-        test_subject = OmmName('C121212_00001_FOCUS.fits')
-        test_subject = OmmName('C121212_00001_FOCUS.fits.gz')
+        latest_plane_id = None
+        latest_timestamp = None
+        temp = []
+        for plane in observation.planes.values():
+            for artifact in plane.artifacts.values():
+                if OmmName.is_preview(artifact.uri):
+                    continue
+                omm_name = OmmName(artifact_uri=artifact.uri)
+                meta = mc.get_cadc_meta_client(
+                    cadc_client, COLLECTION, omm_name.fname_in_ad)
+                if meta is None:
+                    logging.warning(
+                        f'Did not find {artifact.uri} in CADC storage.')
+                else:
+                    if latest_plane_id is None:
+                        latest_plane_id = plane.product_id
+                        latest_timestamp = mc.make_time(meta.get('lastmod'))
+                    else:
+                        current_timestamp = mc.make_time(meta.get('lastmod'))
+                        if current_timestamp > latest_timestamp:
+                            latest_timestamp = current_timestamp
+                            temp.append(latest_plane_id)
+                            latest_plane_id = plane.product_id
+                        else:
+                            temp.append(plane.product_id)
+
+        delete_list = list(set(temp))
+        for entry in delete_list:
+            logging.warning(f'Removing plane {entry} from observation '
+                            f'{observation.observation_id}. There are '
+                            f'duplicate photons.')
+            count += 1
+            observation.planes.pop(entry)
+            _send_slack_message(entry)
+
+    result = {'planes': count}
+    logging.info(f'Completed cleanup augmentation for '
+                 f'{observation.observation_id}')
+    return result
 
 
-def test_omm_name():
-    test_name = 'C121212_00001_SCI'
-    assert f'ad:OMM/{test_name}.fits.gz' == OmmName(
-        test_name, f'{test_name}.fits').file_uri
-    test_name = 'C121212_sh2-132_J_old_SCIRED'
-    file_name = f'{test_name}_prev_256.jpg'
-    assert f'{test_name}_prev.jpg' == OmmName(file_name=file_name).prev
-    assert f'{test_name}_prev_256.jpg' == OmmName(file_name=file_name).thumb
-    test_name = 'C121212_sh2-132_J_old_SCIRED'
-    file_name = f'{test_name}_prev_256.jpg'
-    assert f'{test_name}_prev.jpg' == OmmName(file_name=file_name).prev
-    assert f'{test_name}_prev_256.jpg' == OmmName(file_name=file_name).thumb
-    test_obs_id = 'C121121_J024345.57-021326.4_K'
-    test_name = f'{test_obs_id}_SCIRED'
-    file_name = f'{test_name}.fits.gz'
-    assert f'{test_name}_prev.jpg' == OmmName(file_name=file_name).prev
-    assert f'{test_name}_prev_256.jpg' == OmmName(file_name=file_name).thumb
-    assert OmmName(file_name=file_name).obs_id == test_obs_id
+def _send_slack_message(entry):
+    config = mc.Config()
+    config.get_executors()
+    client = WebClient(token=config.slack_token)
+
+    msg = f'Delete OMM {entry}.fits.gz'
+    try:
+        ignore = client.chat_postMessage(channel=config.slack_channel,
+                                         text=msg)
+    except SlackApiError as sae:
+        logging.error(f'Could not sent slack message {msg} to '
+                      f'{config.slack_channel}')
+        logging.debug(sae)

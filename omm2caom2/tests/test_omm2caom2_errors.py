@@ -68,6 +68,7 @@
 #
 
 import os
+import pytest
 
 from caom2utils import fits2caom2
 from caom2pipe import manage_composable as mc
@@ -85,5 +86,6 @@ def test_time_nan():
     obs = mc.read_obs_from_file(test_xml)
     headers = fits2caom2.get_cadc_headers(test_file)
     kwargs = {'headers': headers}
-    result = omm2caom2.update(obs, **kwargs)
-    assert result is None, 'should have returned nothing'
+    with pytest.raises(mc.CadcException):
+        result = omm2caom2.update(obs, **kwargs)
+        assert result is None, 'should have returned nothing'

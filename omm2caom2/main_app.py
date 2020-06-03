@@ -67,10 +67,22 @@
 # ***********************************************************************
 #
 
+"""
+DD - slack - 24-03-20
+Once deployed, @Sharon Goliath will start, eventually, a task at CADC which
+will: 1- identify al SCI observations without RA/DEC, i.e. valid WCS and will
+modify the archive catalog for these observations to be junk. This means they
+will disappear from the regular catalog. These junked observations will be
+available only through the programmatic TAP interface or using topcat pointing
+to https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/argus/
+
+"""
+
 import importlib
 import logging
 import numpy
 import os
+import re
 import sys
 import traceback
 
@@ -85,13 +97,14 @@ from caom2 import Requirements, Status, Instrument, Provenance, DataQuality
 from caom2 import SimpleObservation, CompositeObservation, Algorithm
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
 from caom2pipe import astro_composable as ac
-from caom2pipe import manage_composable as mc
 from caom2pipe import execute_composable as ec
+from caom2pipe import manage_composable as mc
+from caom2pipe import name_builder_composable as nbc
 
 
 __all__ = ['to_caom2', 'update', 'OmmName', 'COLLECTION', 'APPLICATION',
            '_update_cal_provenance', '_update_science_provenance',
-           'OmmChooser']
+           'OmmBuilder', 'OmmChooser']
 
 
 APPLICATION = 'omm2caom2'
@@ -113,6 +126,19 @@ DEFAULT_GEOCENTRIC = {
              'elevation': 2200.}}
 
 
+class OmmBuilder(nbc.StorageNameBuilder):
+    def __init__(self, config):
+        self._config = config
+        self._logger = logging.getLogger(__name__)
+
+    def build(self, entry):
+        if self._config.use_local_files:
+            omm_name = OmmName(fname_on_disk=entry)
+        else:
+            omm_name = OmmName(file_name=entry)
+        return omm_name
+
+
 class OmmName(mc.StorageName):
     """OMM naming rules:
     - support mixed-case file name storage, and mixed-case obs id values
@@ -123,39 +149,81 @@ class OmmName(mc.StorageName):
 
     OMM_NAME_PATTERN = 'C[\\w+-.]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
 
-    def __init__(self, obs_id=None, fname_on_disk=None, file_name=None):
-        if file_name is None and fname_on_disk is None:
-            if obs_id.endswith('.fits') or obs_id.endswith('fits.gz'):
-                raise mc.CadcException('Bad obs id value {}', obs_id)
-            self.fname_in_ad = f'{obs_id}.fits.gz'
-        elif fname_on_disk is None:
+    def __init__(self, obs_id=None, fname_on_disk=None, file_name=None,
+                 artifact_uri=None):
+        if (file_name is None and fname_on_disk is None and
+                artifact_uri is None):
+            raise mc.CadcException(
+                f'Bad StorageName initialization for {obs_id}.')
+        elif file_name is not None:
             self.fname_in_ad = OmmName._add_extensions(file_name)
-        elif file_name is None:
+        elif fname_on_disk is not None:
             self.fname_in_ad = OmmName._add_extensions(fname_on_disk)
-        else:
-            self.fname_in_ad = OmmName._add_extensions(fname_on_disk)
+        elif artifact_uri is not None:
+            self.fname_in_ad = mc.CaomName(artifact_uri).file_name
+        self._file_name = self.fname_in_ad
+        self._file_id = OmmName.remove_extensions(self.fname_in_ad)
+        self._product_id = self._file_id.replace(
+            '_prev_256', '').replace('_prev', '')
         if obs_id is None:
-            obs_id = mc.StorageName.remove_extensions(self.fname_in_ad)
+            obs_id = OmmName.get_obs_id(self.fname_in_ad)
 
         super(OmmName, self).__init__(
             obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, fname_on_disk)
+        self._logger = logging.getLogger(__name__)
+        self._logger.debug(self)
+
+    def __str__(self):
+        return f'obs_id {self.obs_id} file_name {self.file_name} ' \
+               f'fname_on_disk {self.fname_on_disk} fname_in_ad ' \
+               f'{self.fname_in_ad} file_id {self._file_id} product_id ' \
+               f'{self._product_id}'
+
+    @property
+    def file_name(self):
+        """The file name."""
+        return self._file_name
 
     @property
     def mime_encoding(self):
         return 'gzip'
 
-    def get_file_uri(self):
+    @property
+    def prev(self):
+        """The preview file name for the file."""
+        return f'{self._product_id}_prev.jpg'
+
+    @property
+    def product_id(self):
+        return self._product_id
+
+    @property
+    def thumb(self):
+        """The thumbnail file name for the file."""
+        return f'{self._product_id}_prev_256.jpg'
+
+    @property
+    def file_uri(self):
         return f'ad:{self.collection}/{self.fname_in_ad}'
 
+    def is_rejected(self):
+        return '_REJECT' in self._file_id
+
     def is_valid(self):
-        result = False
-        if super(OmmName, self).is_valid():
-            if (self.obs_id.endswith('_SCIRED')
-                    or self.obs_id.endswith('_CALRED')):
-                obs_id_upper = self.obs_id.upper()
-                if '_DOMEFLAT_' in obs_id_upper or '_DARK_' in obs_id_upper:
-                    if '_domeflat_' in self.obs_id or '_dark_' in self.obs_id:
+        pattern = re.compile(self.collection_pattern)
+        result = pattern.match(self._file_id)
+        if result:
+            if ('_SCIRED' in self._file_id
+                    or '_CALRED' in self._file_id):
+                f_name_id_upper = self._file_id.upper()
+                # file names are mixed case in the middle
+                if ('_DOMEFLAT_' in f_name_id_upper or
+                        '_DARK_' in f_name_id_upper):
+                    if ('_domeflat_' in self._file_id or
+                            '_dark_' in self._file_id):
                         result = True
+                    else:
+                        result = False
                 else:
                     result = True
             else:
@@ -168,12 +236,26 @@ class OmmName(mc.StorageName):
             return fname
         elif fname.endswith('.fits'):
             return f'{fname}.gz'
+        elif fname.endswith('.fits.header'):
+            return fname.replace('.header', '.gz')
+        elif fname.endswith('.jpg'):
+            return fname
         else:
             raise mc.CadcException(f'Unexpected file name {fname}')
 
     @staticmethod
+    def get_obs_id(f_name):
+        temp = f_name.replace('_prev_256.jpg', '').replace('_prev.jpg', '')
+        return '_'.join(ii for ii in
+                        OmmName.remove_extensions(temp).split('_')[:-1])
+
+    @staticmethod
     def is_composite(uri):
         return '_SCIRED' in uri or '_CALRED' in uri
+
+    @staticmethod
+    def remove_extensions(f_name):
+        return mc.StorageName.remove_extensions(f_name).replace('.jpg', '')
 
 
 class OmmChooser(ec.OrganizeChooser):
@@ -185,11 +267,31 @@ class OmmChooser(ec.OrganizeChooser):
         super(OmmChooser, self).__init__()
 
     def needs_delete(self, observation):
-        return (isinstance(observation, SimpleObservation) and
-                OmmName.is_composite(observation.observation_id))
+        result = False
+        if isinstance(observation, SimpleObservation):
+            if len(observation.planes) > 1:
+                # even if there is no need for delete, it just takes longer,
+                # the Observation won't end up in an in-correct state, so
+                # be more lenient than less in determining whether or not an
+                # observation needs deleting
+                result = True
+            else:
+                for plane in observation.planes.values():
+                    if OmmName.is_composite(plane.product_id):
+                        result = True
+                        break
+        return result
 
-    def use_compressed(self):
+    def use_compressed(self, ignore):
         return True
+
+
+def accumulate_bp(blueprint, uri):
+    accumulate_position(blueprint)
+    accumulate_obs(blueprint, uri)
+    accumulate_plane(blueprint)
+    accumulate_artifact(blueprint)
+    accumulate_part(blueprint)
 
 
 def accumulate_obs(bp, uri):
@@ -228,7 +330,11 @@ def accumulate_plane(bp):
     bp.add_fits_attribute('Plane.provenance.runID', 'NIGHTID')
     bp.set('Plane.metaRelease', 'get_meta_release_date(header)')
     bp.set('Plane.dataRelease', 'get_data_release_date(header)')
-    bp.set('Plane.provenance.version', '1.0')
+    bp.clear('Plane.provenance.version')
+    bp.add_fits_attribute('Plane.provenance.version', 'DRS_VERS')
+    bp.set_default('Plane.provenance.version', '1.0')
+    bp.clear('Plane.provenance.lastExecuted')
+    bp.add_fits_attribute('Plane.provenance.lastExecuted', 'DRS_DATE')
     bp.set('Plane.provenance.reference', 'http://omm-astro.ca')
     bp.set('Plane.provenance.project', 'Standard Pipeline')
 
@@ -454,64 +560,60 @@ def update(observation, **kwargs):
     logging.debug('Begin update.')
     mc.check_param(observation, Observation)
 
-    headers = None
-    if 'headers' in kwargs:
-        headers = kwargs['headers']
-    fqn = None
-    if 'fqn' in kwargs:
-        fqn = kwargs['fqn']
-    try:
-        _update_telescope_location(observation, headers)
+    headers = kwargs.get('headers')
+    fqn = kwargs.get('fqn')
+    uri = kwargs.get('uri')
 
-        for plane in observation.planes:
-            for artifact in observation.planes[plane].artifacts:
-                parts = observation.planes[plane].artifacts[artifact].parts
-                for part in parts:
-                    p = parts[part]
-                    if len(p.chunks) == 0 and part == '0':
-                        # always have a time axis, and usually an energy
-                        # axis as well, so create a chunk for the zero-th part
-                        p.chunks.append(Chunk())
+    omm_name = None
+    if uri is None and fqn is not None:
+        omm_name = OmmName(os.path.basename(fqn))
+    elif fqn is None and uri is not None:
+        omm_name = OmmName(artifact_uri=uri)
+    _update_telescope_location(observation, headers)
 
-                    for chunk in p.chunks:
-                        chunk.product_type = get_product_type(headers[0])
-                        _update_energy(chunk, headers)
-                        _update_time(
-                            chunk, headers, observation.observation_id)
-                        _update_position(observation.planes[plane],
-                                         observation.intent, chunk, headers)
-                        if chunk.position is None:
-                            # for WCS validation correctness
-                            chunk.naxis = None
-                            chunk.energy_axis = None
-                            chunk.time_axis = None
-                        else:
-                            chunk.naxis = 4
+    for plane in observation.planes.values():
+        if omm_name is not None and omm_name.product_id != plane.product_id:
+            continue
+        for artifact in plane.artifacts.values():
+            if omm_name is None:
+                omm_name = OmmName(artifact_uri=artifact.uri)
+            for part in artifact.parts.values():
+                if len(part.chunks) == 0 and part.name == '0':
+                    # always have a time axis, and usually an energy
+                    # axis as well, so create a chunk for the zero-th part
+                    part.chunks.append(Chunk())
 
-        if observation.observation_id.endswith('_REJECT'):
-            _update_requirements(observation)
+                for chunk in part.chunks:
+                    chunk.product_type = get_product_type(headers[0])
+                    _update_energy(chunk, headers)
+                    _update_time(
+                        chunk, headers, observation.observation_id)
+                    _update_position(plane, observation.intent, chunk, headers)
+                    if chunk.position is None:
+                        # for WCS validation correctness
+                        chunk.naxis = None
+                        chunk.energy_axis = None
+                        chunk.time_axis = None
+                    else:
+                        chunk.naxis = 4
 
-        if (observation.instrument is None or observation.instrument.name is None
-                or len(observation.instrument.name) == 0):
-            _update_instrument_name(observation)
+            if omm_name.is_rejected():
+                _update_requirements(observation)
 
-        if OmmName.is_composite(observation.observation_id):
+        if OmmName.is_composite(plane.product_id):
             if OmmChooser().needs_delete(observation):
                 observation = _update_observation_type(observation)
                 logging.info(f'Changing from Simple to Composite for '
                              f'{observation.observation_id}')
             _update_provenance(observation, headers)
-            # _update_time_bounds(observation, fqn)
 
-        logging.debug('Done update.')
-        return observation
-    except mc.CadcException as e:
-        tb = traceback.format_exc()
-        logging.debug(tb)
-        logging.error(e)
-        logging.error(
-            f'Terminating ingestion for {observation.observation_id}')
-        return None
+    if (observation.instrument is None or
+            observation.instrument.name is None
+            or len(observation.instrument.name) == 0):
+        _update_instrument_name(observation)
+
+    logging.debug('Done update.')
+    return observation
 
 
 def _update_energy(chunk, headers):
@@ -638,6 +740,8 @@ def _update_position(plane, intent, chunk, headers):
         chunk.position_axis_1 = None
         chunk.position_axis_2 = None
         if intent is ObservationIntentType.SCIENCE:
+            logging.warning(f'No spatial WCS. Classifying plane '
+                            f'{plane.product_id} as JUNK.')
             plane.quality = DataQuality(Quality.JUNK)
         logging.debug('Removing the partial position record from the chunk.')
 
@@ -657,9 +761,10 @@ def _update_provenance(observation, headers):
     In the CALRED files, the provenance information is available via
     header keywords.
     """
-    logging.debug('Begin _update_provenance')
+    logging.debug(f'Begin _update_provenance for {observation.observation_id} '
+                  f'with {observation.intent}.')
 
-    if observation.observation_id.endswith('_SCIRED'):
+    if observation.intent is ObservationIntentType.SCIENCE:
         _update_science_provenance(observation, headers)
     else:
         _update_cal_provenance(observation, headers)
@@ -692,9 +797,11 @@ def _update_science_provenance(observation, headers):
             base_name = OmmName.remove_extensions(os.path.basename(value))
             if base_name.startswith('S'):
                 # starting 'S' means a science input, 'C' will mean cal
-                file_id = '{}_SCI'.format(base_name.replace('S', 'C', 1))
+                base_name = base_name.replace('S', 'C', 1)
+                file_id = f'{base_name}_SCI'
             elif value.startswith('S'):
-                file_id = f'C{base_name}_SCI'
+                base_name = f'C{base_name}'
+                file_id = f'{base_name}_SCI'
             elif base_name.startswith('C') or value.startswith('C'):
                 file_id = f'{base_name}_CAL'
             else:
@@ -702,17 +809,15 @@ def _update_science_provenance(observation, headers):
                     f'Unknown file naming pattern {base_name}')
 
             obs_member_uri_str = mc.CaomName.make_obs_uri_from_obs_id(
-                COLLECTION, file_id)
+                COLLECTION, base_name)
             obs_member_uri = ObservationURI(obs_member_uri_str)
-            # the product id is the same as the observation id for OMM
             plane_uri = PlaneURI.get_plane_uri(obs_member_uri, file_id)
             plane_inputs.add(plane_uri)
             members_inputs.add(obs_member_uri)
 
     mc.update_typed_set(observation.members, members_inputs)
-    mc.update_typed_set(
-        observation.planes[observation.observation_id].provenance.inputs,
-        plane_inputs)
+    for plane in observation.planes.values():
+        mc.update_typed_set(plane.provenance.inputs, plane_inputs)
 
 
 def _update_cal_provenance(observation, headers):
@@ -721,19 +826,17 @@ def _update_cal_provenance(observation, headers):
     for keyword in headers[0]:
         if keyword.startswith('F_ON') or keyword.startswith('F_OFF'):
             value = headers[0].get(keyword)
-            base_name = OmmName.remove_extensions(os.path.basename(value))
-            file_id = f'C{base_name}_CAL'
+            base_name = f'C{OmmName.remove_extensions(os.path.basename(value))}'
+            file_id = f'{base_name}_CAL'
 
             obs_member_uri_str = mc.CaomName.make_obs_uri_from_obs_id(
-                COLLECTION, file_id)
+                COLLECTION, base_name)
             obs_member_uri = ObservationURI(obs_member_uri_str)
-            # the product id is the same as the observation id for OMM
             plane_uri = PlaneURI.get_plane_uri(obs_member_uri, file_id)
             plane_inputs.add(plane_uri)
             members_inputs.add(obs_member_uri)
 
-    for key in observation.planes:
-        plane = observation.planes[key]
+    for plane in observation.planes.values():
         if plane.provenance is None:
             plane.provenance = Provenance('CPAPIR')
         mc.update_typed_set(plane.provenance.inputs, plane_inputs)
@@ -846,7 +949,7 @@ def _update_telescope_location(observation, headers):
     logging.debug('Done _update_telescope_location')
 
 
-def _build_blueprints(uri):
+def _build_blueprints(uris):
     """This application relies on the caom2utils fits2caom2 ObsBlueprint
     definition for mapping FITS file values to CAOM model element
     attributes. This method builds the OMM blueprint for a single
@@ -857,24 +960,23 @@ def _build_blueprints(uri):
 
     :param uri The artifact URI for the file to be processed."""
     module = importlib.import_module(__name__)
-    blueprint = ObsBlueprint(module=module)
-    accumulate_position(blueprint)
-    accumulate_obs(blueprint, uri)
-    accumulate_plane(blueprint)
-    accumulate_artifact(blueprint)
-    accumulate_part(blueprint)
-    blueprints = {uri: blueprint}
+    blueprints = {}
+    for uri in uris:
+        blueprint = ObsBlueprint(module=module)
+        if not mc.StorageName.is_preview(uri):
+            accumulate_bp(blueprint, uri)
+        blueprints[uri] = blueprint
     return blueprints
 
 
-def _get_uri(args):
-    if args.observation:
-        result = OmmName(args.observation[1]).get_file_uri()
-    elif args.local:
-        obs_id = OmmName.remove_extensions(os.path.basename(args.local[0]))
-        result = OmmName(obs_id).get_file_uri()
+def _get_uris(args):
+    result = []
+    if args.local:
+        for ii in args.local:
+            result.append(OmmName(file_name=os.path.basename(ii)).file_uri)
     elif args.lineage:
-        result = args.lineage[0].split('/', 1)[1]
+        for ii in args.lineage:
+            result.append(ii.split('/', 1)[1])
     else:
         raise mc.CadcException(
             f'Could not define uri from these args {args}')
@@ -883,8 +985,8 @@ def _get_uri(args):
 
 def to_caom2():
     args = get_gen_proc_arg_parser().parse_args()
-    uri = _get_uri(args)
-    blueprints = _build_blueprints(uri)
+    uris = _get_uris(args)
+    blueprints = _build_blueprints(uris)
     result = gen_proc(args, blueprints)
     logging.debug(f'Done {APPLICATION} processing.')
     return result

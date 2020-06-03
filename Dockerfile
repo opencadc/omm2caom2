@@ -1,25 +1,15 @@
-FROM opencadc/matplotlib
+FROM opencadc/matplotlib:3.8-slim
 
 # these layers are the common layers for footprintfinder construction
-
-RUN apk --no-cache add \
-        bash \
-        coreutils \
-        git \
-        libmagic \
-        make
-        
-RUN apk --no-cache add \
-    freetype-dev \
-    libpng-dev \
-    gfortran \
-    openblas-dev \
+RUN apt-get update
+RUN apt-get install -y build-essential \
+    git \
     wget
 
 RUN oldpath=`pwd` && cd /tmp && \
     wget http://www.eso.org/~fstoehr/footprintfinder.py && \
-    cp footprintfinder.py /usr/local/lib/python3.7/site-packages/footprintfinder.py && \
-    chmod 755 /usr/local/lib/python3.7/site-packages/footprintfinder.py && \
+    cp footprintfinder.py /usr/local/lib/python3.8/site-packages/footprintfinder.py && \
+    chmod 755 /usr/local/lib/python3.8/site-packages/footprintfinder.py && \
     cd $oldpath
 
 RUN pip install cadcdata && \
@@ -30,10 +20,13 @@ RUN pip install cadcdata && \
         pip install deprecated && \
         pip install importlib-metadata && \
         pip install ftputil && \
-        pip install PyYAML && \
         pip install pytz && \
+        pip install PyYAML && \
+        pip install slackclient && \
         pip install spherical-geometry && \
         pip install vos
+
+RUN apt-get install -y libjpeg-dev
 
 RUN git clone https://github.com/HEASARC/cfitsio && \
   cd cfitsio && \
@@ -42,8 +35,6 @@ RUN git clone https://github.com/HEASARC/cfitsio && \
   make shared && \
   make install && \
   make clean
-
-RUN apk --no-cache add libjpeg-turbo-dev
 
 RUN oldpath=`pwd` && cd /tmp \
 && git clone https://github.com/spacetelescope/fitscut \
@@ -63,15 +54,22 @@ RUN oldpath=`pwd` && cd /tmp \
 && rm -Rf /tmp/fitscut*
 
 WORKDIR /usr/src/app
-RUN git clone https://github.com/opencadc-metadata-curation/caom2pipe.git && \
+
+ARG OPENCADC_BRANCH=master
+ARG OPENCADC_REPO=opencadc
+ARG OMC_REPO=opencadc-metadata-curation
+
+RUN git clone https://github.com/${OPENCADC_REPO}/caom2tools.git --branch ${OPENCADC_BRANCH} --single-branch && \
+    pip install ./caom2tools/caom2 && \
+    pip install ./caom2tools/caom2utils
+
+RUN git clone https://github.com/${OMC_REPO}/caom2pipe.git && \
   pip install ./caom2pipe
   
-RUN git clone https://github.com/opencadc-metadata-curation/omm2caom2.git && \
+RUN git clone https://github.com/${OMC_REPO}/omm2caom2.git && \
   cp ./omm2caom2/omm2caom2/omm_docker_run_cleanup.py /usr/local/bin && \
   pip install ./omm2caom2 && \
-  cp ./omm2caom2/docker-entrypoint.sh /
-
-RUN apk --no-cache del git \
-    g++
+  cp ./omm2caom2/docker-entrypoint.sh / && \
+  cp ./omm2caom2/config.yml /
 
 ENTRYPOINT ["/docker-entrypoint.sh"]

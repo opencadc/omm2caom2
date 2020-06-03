@@ -75,7 +75,7 @@ from caom2pipe import manage_composable as mc
 
 from mock import patch, Mock
 
-from omm2caom2 import composable, OmmName, APPLICATION
+from omm2caom2 import composable, OmmName
 import test_main_app
 
 
@@ -84,93 +84,29 @@ TODO_FILE = '{}/todo.txt'.format(test_main_app.TEST_DATA_DIR)
 PROGRESS_FILE = '/usr/src/app/logs/progress.txt'
 
 
-class MyExitError(Exception):
-    pass
-
-
-# @patch('sys.exit', Mock(return_value=MyExitError))
-# def test_run():
-#     test_obs_id = 'C121212_00001_SCI'
-#     test_f = '{}.fits'.format(test_obs_id)
-#     _write_todo(test_f)
-#     getcwd_orig = os.getcwd
-#     os.getcwd = Mock(return_value=test_main_app.TEST_DATA_DIR)
-#     try:
-#         # execution
-#         with patch('caom2pipe.execute_composable._do_one') \
-#                 as run_mock:
-#             composable.run()
-#             assert run_mock.called, 'should have been called'
-#             args, kwargs = run_mock.call_args
-#             assert args[3] == APPLICATION, 'wrong command'
-#             test_storage = args[2]
-#             assert isinstance(test_storage, OmmName), type(test_storage)
-#             assert test_storage.obs_id == test_obs_id, 'wrong obs id'
-#             assert test_storage.file_name == test_f, 'wrong file name'
-#             assert test_storage.fname_on_disk is None, 'wrong fname on disk'
-#             assert test_storage.url is None, 'wrong url'
-#             assert test_storage.lineage == \
-#                 '{}/ad:OMM/{}.gz'.format(test_obs_id, test_f), \
-#                 'wrong lineage'
-#             assert test_storage.external_urls is None, 'wrong external urls'
-#     finally:
-#         os.getcwd = getcwd_orig
-
-
-# @patch('sys.exit', Mock(return_value=MyExitError))
-# def test_run_errors():
-#     test_obs_id = 'C121212_domeflat_K_CALRED'
-#     test_f = '{}.fits'.format(test_obs_id)
-#     _write_todo(test_f)
-#     getcwd_orig = os.getcwd
-#     os.getcwd = Mock(return_value=test_main_app.TEST_DATA_DIR)
-#     try:
-#         # execution
-#         with patch('caom2pipe.execute_composable._do_one') \
-#                 as run_mock:
-#             composable.run()
-#             assert run_mock.called, 'should have been called'
-#             args, kwargs = run_mock.call_args
-#             assert args[3] == APPLICATION, 'wrong command'
-#             test_storage = args[2]
-#             assert isinstance(test_storage, OmmName), type(test_storage)
-#             assert test_storage.obs_id == test_obs_id, 'wrong obs id'
-#             assert test_storage.file_name == test_f, 'wrong file name'
-#             assert test_storage.fname_on_disk is None, 'wrong fname on disk'
-#             assert test_storage.url is None, 'wrong url'
-#             assert test_storage.lineage == \
-#                 '{}/ad:OMM/{}.gz'.format(test_obs_id, test_f), \
-#                 'wrong lineage'
-#             assert test_storage.external_urls is None, 'wrong external urls'
-#     finally:
-#         os.getcwd = getcwd_orig
-
-
-@patch('sys.exit', Mock(return_value=MyExitError))
-def test_run_single():
-    test_obs_id = 'C121121_J024345.57-021326.4_K_SCIRED'
-    test_f = '{}.fits'.format(test_obs_id)
+@patch('caom2pipe.execute_composable.OrganizeExecutesWithDoOne.do_one')
+def test_run_single(run_mock):
+    test_obs_id = 'C121121_J024345.57-021326.4_K'
+    test_f_id = f'{test_obs_id}_SCIRED'
+    test_f = f'{test_f_id}.fits.gz'
     getcwd_orig = os.getcwd
     os.getcwd = Mock(return_value=test_main_app.TEST_DATA_DIR)
-    test_proxy = '{}/cadcproxy.pem'.format(test_main_app.TEST_DATA_DIR)
+    test_proxy = f'{test_main_app.TEST_DATA_DIR}/cadcproxy.pem'
     try:
         # execution
-        with patch('caom2pipe.execute_composable._do_one') as run_mock:
-            sys.argv = ('omm2caom2 {} {}'.format(test_f, test_proxy)).split()
-            composable.run_single()
-            assert run_mock.called, 'should have been called'
-            args, kwargs = run_mock.call_args
-            assert args[3] == APPLICATION, 'wrong command'
-            test_storage = args[2]
-            assert isinstance(test_storage, OmmName), type(test_storage)
-            assert test_storage.obs_id == test_obs_id, 'wrong obs id'
-            assert test_storage.file_name == test_f, 'wrong file name'
-            assert test_storage.fname_on_disk is None, 'wrong fname on disk'
-            assert test_storage.url is None, 'wrong url'
-            assert test_storage.lineage == \
-                '{}/ad:OMM/{}.gz'.format(test_obs_id, test_f), \
-                'wrong lineage'
-            assert test_storage.external_urls is None, 'wrong external urls'
+        sys.argv = f'omm2caom2 {test_f} {test_proxy}'.split()
+        composable._run_single()
+        assert run_mock.called, 'should have been called'
+        args, kwargs = run_mock.call_args
+        test_storage = args[0]
+        assert isinstance(test_storage, OmmName), type(test_storage)
+        assert test_storage.obs_id == test_obs_id, 'wrong obs id'
+        assert test_storage.file_name == test_f, 'wrong file name'
+        assert test_storage.fname_on_disk is None, 'wrong fname on disk'
+        assert test_storage.url is None, 'wrong url'
+        assert test_storage.lineage == \
+            f'{test_f_id}/ad:OMM/{test_f}', 'wrong lineage'
+        assert test_storage.external_urls is None, 'wrong external urls'
     finally:
         os.getcwd = getcwd_orig
 
@@ -203,7 +139,7 @@ def test_run_rc_todo(data_client_mock, repo_mock, exec_mock):
 
 def _write_todo(test_obs_id):
     with open(TODO_FILE, 'w') as f:
-        f.write('{}\n'.format(test_obs_id))
+        f.write(f'{test_obs_id}\n')
 
 
 def _mock_repo_read(arg1, arg2):
@@ -216,6 +152,9 @@ def _mock_repo_update(ignore1):
 
 def _mock_exec(ignore1):
     obs = _build_obs()
+    path = f'{test_main_app.TEST_DATA_DIR}/C121212_domeflat_K_CALRED'
+    if not os.path.exists(path):
+        os.mkdir(path)
     mc.write_obs_to_file(obs, f'{test_main_app.TEST_DATA_DIR}/'
                          f'C121212_domeflat_K_CALRED/'
                          f'C121212_domeflat_K_CALRED.fits.xml')

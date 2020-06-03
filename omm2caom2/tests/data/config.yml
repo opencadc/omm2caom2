@@ -6,3 +6,6 @@ use_local_files: False
 task_types:
   - visit
 logging_level: DEBUG
+features:
+  supports_latest_caom: False
+  supports_multiple_files: False

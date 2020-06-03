@@ -89,7 +89,7 @@ def test_update_cal_provenance():
     assert len(test_obs.members) == 22, 'wrong obs members length'
     test_member = test_obs.members.pop()
     assert test_member.uri.find('caom:OMM/C170323') == 0, 'wrong member value'
-    assert test_member.uri.endswith('_CAL'), 'wrong member value'
+    assert test_member.uri.startswith('caom:OMM'), 'wrong member value'
     for ii in test_obs.planes:
         plane = test_obs.planes[ii]
         assert plane.provenance is not None, 'no provenance'
@@ -115,7 +115,7 @@ def test_update_sci_provenance():
     assert len(test_obs.members) == 133, 'wrong obs members length'
     test_member = test_obs.members.pop()
     assert test_member.uri.find('caom:OMM/C160929') == 0, 'wrong member value'
-    assert test_member.uri.endswith('_SCI'), 'wrong member value'
+    assert test_member.uri.startswith('caom:OMM'), 'wrong member value'
     for ii in test_obs.planes:
         plane = test_obs.planes[ii]
         assert plane.provenance is not None, 'no provenance'
