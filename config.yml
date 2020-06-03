@@ -34,8 +34,8 @@ collection: OMM
 observe_execution: True
 observable_directory: /usr/src/app/metrics
 rejected_directory: /usr/src/app/rejected
-slack_channel: abc
-slack_token: def
+slack_channel: TODO
+slack_token: TODO
 # how to control the work that gets done
 # possible values are:
 # - scrape - read the headers, write out the xml - kind of a test mode
