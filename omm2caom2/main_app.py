@@ -371,11 +371,18 @@ def accumulate_position(bp):
     bp.set('Chunk.position.axis.axis2.cunit', 'deg')
     bp.clear('Chunk.position.equinox')
     bp.add_fits_attribute('Chunk.position.equinox', 'EQUINOX')
+    bp.set('Chunk.position.resolution',
+           'get_chunk_position_resolution(header)')
+
+
+def get_chunk_position_resolution(header):
     # DD - slack - 11-02-20
     # FWHM meaning is Full width Half Maximum, is a measurement of the stellar
     # profile on the image. So I suspect IQ being that FWHM value.
-    bp.clear('Chunk.position.resolution')
-    bp.add_fits_attribute('Chunk.position.resolution', 'FWHM')
+    resolution = header.get('FWHM')
+    if resolution is not None and isinstance(resolution, int):
+        resolution = float(resolution)
+    return resolution
 
 
 def get_end_ref_coord_val(header):
@@ -744,11 +751,6 @@ def _update_position(plane, intent, chunk, headers):
                             f'{plane.product_id} as JUNK.')
             plane.quality = DataQuality(Quality.JUNK)
         logging.debug('Removing the partial position record from the chunk.')
-
-    if chunk.position is not None:
-        fwhm = headers[0].get('FWHM')
-        if fwhm is not None:
-            chunk.position.resolution = mc.to_float(fwhm)
 
     logging.debug('End _update_position')
 
