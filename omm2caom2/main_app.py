@@ -133,7 +133,10 @@ class OmmBuilder(nbc.StorageNameBuilder):
 
     def build(self, entry):
         if self._config.use_local_files:
-            omm_name = OmmName(fname_on_disk=entry)
+            if mc.TaskTypes.INGEST_OBS in self._config.task_types:
+                omm_name = OmmName(obs_id=entry)
+            else:
+                omm_name = OmmName(fname_on_disk=entry)
         else:
             omm_name = OmmName(file_name=entry)
         return omm_name
@@ -151,25 +154,30 @@ class OmmName(mc.StorageName):
 
     def __init__(self, obs_id=None, fname_on_disk=None, file_name=None,
                  artifact_uri=None):
-        if (file_name is None and fname_on_disk is None and
-                artifact_uri is None):
-            raise mc.CadcException(
-                f'Bad StorageName initialization for {obs_id}.')
-        elif file_name is not None:
-            self.fname_in_ad = OmmName._add_extensions(file_name)
-        elif fname_on_disk is not None:
-            self.fname_in_ad = OmmName._add_extensions(fname_on_disk)
-        elif artifact_uri is not None:
-            self.fname_in_ad = mc.CaomName(artifact_uri).file_name
-        self._file_name = self.fname_in_ad
-        self._file_id = OmmName.remove_extensions(self.fname_in_ad)
-        self._product_id = self._file_id.replace(
-            '_prev_256', '').replace('_prev', '')
         if obs_id is None:
+            if (file_name is None and fname_on_disk is None and
+                    artifact_uri is None):
+                raise mc.CadcException(
+                    f'Bad StorageName initialization for {obs_id}.')
+            elif file_name is not None:
+                self.fname_in_ad = OmmName._add_extensions(file_name)
+            elif fname_on_disk is not None:
+                self.fname_in_ad = OmmName._add_extensions(fname_on_disk)
+            elif artifact_uri is not None:
+                self.fname_in_ad = mc.CaomName(artifact_uri).file_name
+            self._file_name = self.fname_in_ad
+            self._file_id = OmmName.remove_extensions(self.fname_in_ad)
+            self._product_id = self._file_id.replace(
+                '_prev_256', '').replace('_prev', '')
             obs_id = OmmName.get_obs_id(self.fname_in_ad)
-
-        super(OmmName, self).__init__(
-            obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, fname_on_disk)
+            super(OmmName, self).__init__(
+                obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, fname_on_disk)
+        else:
+            self.obs_id = obs_id
+            self.fname_in_ad = None
+            self._file_name = None
+            self._file_id = None
+            self._product_id = None
         self._logger = logging.getLogger(__name__)
         self._logger.debug(self)
 
