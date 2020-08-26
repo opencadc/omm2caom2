@@ -178,6 +178,8 @@ class OmmName(mc.StorageName):
             self._file_name = None
             self._file_id = None
             self._product_id = None
+            super(OmmName, self).__init__(
+                obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, None)
         self._logger = logging.getLogger(__name__)
         self._logger.debug(self)
 
