@@ -132,13 +132,13 @@ class OmmBuilder(nbc.StorageNameBuilder):
         self._logger = logging.getLogger(__name__)
 
     def build(self, entry):
-        if self._config.use_local_files:
-            if mc.TaskTypes.INGEST_OBS in self._config.task_types:
-                omm_name = OmmName(obs_id=entry)
-            else:
-                omm_name = OmmName(fname_on_disk=entry)
+        if mc.TaskTypes.INGEST_OBS in self._config.task_types:
+            omm_name = OmmName(obs_id=entry)
         else:
-            omm_name = OmmName(file_name=entry)
+            if self._config.use_local_files:
+                omm_name = OmmName(fname_on_disk=entry)
+            else:
+                omm_name = OmmName(file_name=entry)
         return omm_name
 
 
