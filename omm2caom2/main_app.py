@@ -220,24 +220,28 @@ class OmmName(mc.StorageName):
         return '_REJECT' in self._file_id
 
     def is_valid(self):
-        pattern = re.compile(self.collection_pattern)
-        result = pattern.match(self._file_id)
-        if result:
-            if ('_SCIRED' in self._file_id
-                    or '_CALRED' in self._file_id):
-                f_name_id_upper = self._file_id.upper()
-                # file names are mixed case in the middle
-                if ('_DOMEFLAT_' in f_name_id_upper or
-                        '_DARK_' in f_name_id_upper):
-                    if ('_domeflat_' in self._file_id or
-                            '_dark_' in self._file_id):
-                        result = True
+        if self._file_id is None:
+            self._logger.warning('file_id is not set.')
+            result = True
+        else:
+            pattern = re.compile(self.collection_pattern)
+            result = pattern.match(self._file_id)
+            if result:
+                if ('_SCIRED' in self._file_id
+                        or '_CALRED' in self._file_id):
+                    f_name_id_upper = self._file_id.upper()
+                    # file names are mixed case in the middle
+                    if ('_DOMEFLAT_' in f_name_id_upper or
+                            '_DARK_' in f_name_id_upper):
+                        if ('_domeflat_' in self._file_id or
+                                '_dark_' in self._file_id):
+                            result = True
+                        else:
+                            result = False
                     else:
-                        result = False
+                        result = True
                 else:
                     result = True
-            else:
-                result = True
         return result
 
     @staticmethod
