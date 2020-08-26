@@ -109,7 +109,7 @@ def test_is_valid():
 def test_omm_name():
     test_name = 'C121212_00001_SCI'
     assert f'ad:OMM/{test_name}.fits.gz' == OmmName(
-        test_name, f'{test_name}.fits').file_uri
+        file_name=f'{test_name}.fits').file_uri
     test_name = 'C121212_sh2-132_J_old_SCIRED'
     file_name = f'{test_name}_prev_256.jpg'
     assert f'{test_name}_prev.jpg' == OmmName(file_name=file_name).prev

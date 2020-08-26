@@ -90,7 +90,7 @@ def test_footprint_aug_visit():
 
 
 def test_footprint_update_position():
-    omm_name = OmmName(obs_id=TEST_OBS, file_name=TEST_FILE)
+    omm_name = OmmName(file_name=TEST_FILE)
     test_kwargs = {'science_file': omm_name.file_name}
     test_fqn = os.path.join(TEST_DATA_DIR,
                             f'{omm_name.product_id}.expected.xml')
@@ -117,7 +117,7 @@ def test_preview_aug_visit():
 
 
 def test_preview_augment_plane():
-    omm_name = OmmName(obs_id=TEST_OBS, file_name=TEST_FILE)
+    omm_name = OmmName(file_name=TEST_FILE)
     preview = os.path.join(TEST_FILES_DIR, omm_name.prev)
     thumb = os.path.join(TEST_FILES_DIR, omm_name.thumb)
     if os.path.exists(preview):

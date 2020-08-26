@@ -94,7 +94,7 @@ from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
 from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
 from caom2 import ObservationURI, PlaneURI, TypedSet, CoordBounds1D, Quality
 from caom2 import Requirements, Status, Instrument, Provenance, DataQuality
-from caom2 import SimpleObservation, CompositeObservation, Algorithm
+from caom2 import SimpleObservation, DerivedObservation, Algorithm
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
 from caom2pipe import astro_composable as ac
 from caom2pipe import execute_composable as ec
@@ -132,10 +132,13 @@ class OmmBuilder(nbc.StorageNameBuilder):
         self._logger = logging.getLogger(__name__)
 
     def build(self, entry):
-        if self._config.use_local_files:
-            omm_name = OmmName(fname_on_disk=entry)
+        if mc.TaskType.INGEST_OBS in self._config.task_types:
+            omm_name = OmmName(obs_id=entry)
         else:
-            omm_name = OmmName(file_name=entry)
+            if self._config.use_local_files:
+                omm_name = OmmName(fname_on_disk=entry)
+            else:
+                omm_name = OmmName(file_name=entry)
         return omm_name
 
 
@@ -151,25 +154,32 @@ class OmmName(mc.StorageName):
 
     def __init__(self, obs_id=None, fname_on_disk=None, file_name=None,
                  artifact_uri=None):
-        if (file_name is None and fname_on_disk is None and
-                artifact_uri is None):
-            raise mc.CadcException(
-                f'Bad StorageName initialization for {obs_id}.')
-        elif file_name is not None:
-            self.fname_in_ad = OmmName._add_extensions(file_name)
-        elif fname_on_disk is not None:
-            self.fname_in_ad = OmmName._add_extensions(fname_on_disk)
-        elif artifact_uri is not None:
-            self.fname_in_ad = mc.CaomName(artifact_uri).file_name
-        self._file_name = self.fname_in_ad
-        self._file_id = OmmName.remove_extensions(self.fname_in_ad)
-        self._product_id = self._file_id.replace(
-            '_prev_256', '').replace('_prev', '')
         if obs_id is None:
+            if (file_name is None and fname_on_disk is None and
+                    artifact_uri is None):
+                raise mc.CadcException(
+                    f'Bad StorageName initialization for {obs_id}.')
+            elif file_name is not None:
+                self.fname_in_ad = OmmName._add_extensions(file_name)
+            elif fname_on_disk is not None:
+                self.fname_in_ad = OmmName._add_extensions(fname_on_disk)
+            elif artifact_uri is not None:
+                self.fname_in_ad = mc.CaomName(artifact_uri).file_name
+            self._file_name = self.fname_in_ad
+            self._file_id = OmmName.remove_extensions(self.fname_in_ad)
+            self._product_id = self._file_id.replace(
+                '_prev_256', '').replace('_prev', '')
             obs_id = OmmName.get_obs_id(self.fname_in_ad)
-
-        super(OmmName, self).__init__(
-            obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, fname_on_disk)
+            super(OmmName, self).__init__(
+                obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, fname_on_disk)
+        else:
+            self.obs_id = obs_id
+            self.fname_in_ad = None
+            self._file_name = None
+            self._file_id = None
+            self._product_id = None
+            super(OmmName, self).__init__(
+                obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, None)
         self._logger = logging.getLogger(__name__)
         self._logger.debug(self)
 
@@ -210,24 +220,28 @@ class OmmName(mc.StorageName):
         return '_REJECT' in self._file_id
 
     def is_valid(self):
-        pattern = re.compile(self.collection_pattern)
-        result = pattern.match(self._file_id)
-        if result:
-            if ('_SCIRED' in self._file_id
-                    or '_CALRED' in self._file_id):
-                f_name_id_upper = self._file_id.upper()
-                # file names are mixed case in the middle
-                if ('_DOMEFLAT_' in f_name_id_upper or
-                        '_DARK_' in f_name_id_upper):
-                    if ('_domeflat_' in self._file_id or
-                            '_dark_' in self._file_id):
-                        result = True
+        if self._file_id is None:
+            self._logger.warning('file_id is not set.')
+            result = True
+        else:
+            pattern = re.compile(self.collection_pattern)
+            result = pattern.match(self._file_id)
+            if result:
+                if ('_SCIRED' in self._file_id
+                        or '_CALRED' in self._file_id):
+                    f_name_id_upper = self._file_id.upper()
+                    # file names are mixed case in the middle
+                    if ('_DOMEFLAT_' in f_name_id_upper or
+                            '_DARK_' in f_name_id_upper):
+                        if ('_domeflat_' in self._file_id or
+                                '_dark_' in self._file_id):
+                            result = True
+                        else:
+                            result = False
                     else:
-                        result = False
+                        result = True
                 else:
                     result = True
-            else:
-                result = True
         return result
 
     @staticmethod
@@ -298,6 +312,7 @@ def accumulate_obs(bp, uri):
     """Configure the OMM-specific ObsBlueprint at the CAOM model Observation
     level."""
     logging.debug('Begin accumulate_obs.')
+    bp.clear('Observation.algorithm.name')
     bp.set('Observation.type', 'get_obs_type(header)')
     bp.set('Observation.intent', 'get_obs_intent(header)')
     bp.add_fits_attribute('Observation.instrument.name', 'INSTRUME')
@@ -601,8 +616,6 @@ def update(observation, **kwargs):
                         chunk.naxis = None
                         chunk.energy_axis = None
                         chunk.time_axis = None
-                    else:
-                        chunk.naxis = 4
 
             if omm_name.is_rejected():
                 _update_requirements(observation)
@@ -647,7 +660,7 @@ def _update_energy(chunk, headers):
         chunk.energy = SpectralWCS(naxis, specsys='TOPCENT',
                                    ssysobs='TOPCENT', ssyssrc='TOPCENT',
                                    bandpass_name=headers[0].get('FILTER'))
-        chunk.energy_axis = 3
+        chunk.energy_axis = None
         logging.debug('Setting chunk energy range (CoordRange1D).')
 
 
@@ -668,20 +681,21 @@ def _update_instrument_name(observation):
 def _update_observation_type(observation):
     """For the case where a SimpleObservation needs to become a
     CompositeObservation."""
-    return CompositeObservation(observation.collection,
-                                observation.observation_id,
-                                Algorithm('composite'),
-                                observation.sequence_number,
-                                observation.intent,
-                                observation.type,
-                                observation.proposal,
-                                observation.telescope,
-                                observation.instrument,
-                                observation.target,
-                                observation.meta_release,
-                                observation.planes,
-                                observation.environment,
-                                observation.target_position)
+    return DerivedObservation(observation.collection,
+                              observation.observation_id,
+                              Algorithm('composite'),
+                              observation.sequence_number,
+                              observation.intent,
+                              observation.type,
+                              observation.proposal,
+                              observation.telescope,
+                              observation.instrument,
+                              observation.target,
+                              observation.meta_release,
+                              observation.meta_read_groups,
+                              observation.planes,
+                              observation.environment,
+                              observation.target_position)
 
 
 def _update_time(chunk, headers, obs_id):
@@ -715,7 +729,7 @@ def _update_time(chunk, headers, obs_id):
         chunk.time.resolution = 0.1
         chunk.time.timesys = 'UTC'
         chunk.time.trefpos = 'TOPOCENTER'
-        chunk.time_axis = 4
+        chunk.time_axis = None
     logging.debug('Done _update_time.')
 
 
