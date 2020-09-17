@@ -86,54 +86,57 @@ def visit(observation, **kwargs):
     logging.info(f'Begin cleanup augmentation for '
                  f'{observation.observation_id}')
     cadc_client = kwargs.get('cadc_client')
-    if cadc_client is None:
-        raise mc.CadcException(f'Need a CADC Client for cleanup augmentation.')
-
     count = 0
-    if len(observation.planes) > 1:
-        # from Daniel, Sylvie - 21-05-20
-        # How to figure out which plane is newer:
-        # SB - I do not think that we should use the “VERSION” keyword.
-        # I think we must go with the ingested date.
-        #
-        # Daniel Durand
-        # Might be better indeed. Need to compare the SCI and the REJECT file
-        # and see which one is the latest
+    if cadc_client is None:
+        logging.warning(
+            'Stopping. Need a CADC Client for cleanup augmentation.')
+    else:
+        if len(observation.planes) > 1:
+            # from Daniel, Sylvie - 21-05-20
+            # How to figure out which plane is newer:
+            # SB - I do not think that we should use the “VERSION” keyword.
+            # I think we must go with the ingested date.
+            #
+            # Daniel Durand
+            # Might be better indeed. Need to compare the SCI and the REJECT
+            # file and see which one is the latest
 
-        latest_plane_id = None
-        latest_timestamp = None
-        temp = []
-        for plane in observation.planes.values():
-            for artifact in plane.artifacts.values():
-                if OmmName.is_preview(artifact.uri):
-                    continue
-                omm_name = OmmName(artifact_uri=artifact.uri)
-                meta = mc.get_cadc_meta_client(
-                    cadc_client, COLLECTION, omm_name.fname_in_ad)
-                if meta is None:
-                    logging.warning(
-                        f'Did not find {artifact.uri} in CADC storage.')
-                else:
-                    if latest_plane_id is None:
-                        latest_plane_id = plane.product_id
-                        latest_timestamp = mc.make_time(meta.get('lastmod'))
+            latest_plane_id = None
+            latest_timestamp = None
+            temp = []
+            for plane in observation.planes.values():
+                for artifact in plane.artifacts.values():
+                    if OmmName.is_preview(artifact.uri):
+                        continue
+                    omm_name = OmmName(artifact_uri=artifact.uri)
+                    meta = mc.get_cadc_meta_client(
+                        cadc_client, COLLECTION, omm_name.fname_in_ad)
+                    if meta is None:
+                        logging.warning(
+                            f'Did not find {artifact.uri} in CADC storage.')
                     else:
-                        current_timestamp = mc.make_time(meta.get('lastmod'))
-                        if current_timestamp > latest_timestamp:
-                            latest_timestamp = current_timestamp
-                            temp.append(latest_plane_id)
+                        if latest_plane_id is None:
                             latest_plane_id = plane.product_id
+                            latest_timestamp = mc.make_time(
+                                meta.get('lastmod'))
                         else:
-                            temp.append(plane.product_id)
+                            current_timestamp = mc.make_time(
+                                meta.get('lastmod'))
+                            if current_timestamp > latest_timestamp:
+                                latest_timestamp = current_timestamp
+                                temp.append(latest_plane_id)
+                                latest_plane_id = plane.product_id
+                            else:
+                                temp.append(plane.product_id)
 
-        delete_list = list(set(temp))
-        for entry in delete_list:
-            logging.warning(f'Removing plane {entry} from observation '
-                            f'{observation.observation_id}. There are '
-                            f'duplicate photons.')
-            count += 1
-            observation.planes.pop(entry)
-            _send_slack_message(entry)
+            delete_list = list(set(temp))
+            for entry in delete_list:
+                logging.warning(f'Removing plane {entry} from observation '
+                                f'{observation.observation_id}. There are '
+                                f'duplicate photons.')
+                count += 1
+                observation.planes.pop(entry)
+                _send_slack_message(entry)
 
     result = {'planes': count}
     logging.info(f'Completed cleanup augmentation for '
