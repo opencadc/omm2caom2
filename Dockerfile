@@ -13,18 +13,17 @@ RUN oldpath=`pwd` && cd /tmp && \
     cd $oldpath
 
 RUN pip install cadcdata && \
-        pip install cadctap && \
-        pip install caom2 && \
-        pip install caom2repo && \
-        pip install caom2utils && \
-        pip install deprecated && \
-        pip install importlib-metadata && \
-        pip install ftputil && \
-        pip install pytz && \
-        pip install PyYAML && \
-        pip install slackclient && \
-        pip install spherical-geometry && \
-        pip install vos
+    cadctap && \
+    caom2 && \
+    caom2repo && \
+    caom2utils && \
+    importlib-metadata && \
+    ftputil && \
+    pytz && \
+    PyYAML && \
+    slackclient && \
+    spherical-geometry && \
+    vos
 
 RUN apt-get install -y libjpeg-dev
 
@@ -60,8 +59,6 @@ ARG OPENCADC_REPO=opencadc
 ARG OMC_REPO=opencadc-metadata-curation
 
 RUN git clone https://github.com/${OPENCADC_REPO}/caom2tools.git --branch ${OPENCADC_BRANCH} --single-branch && \
-    pip install ./caom2tools/caom2 && \
-    pip install ./caom2tools/caom2repo && \
     pip install ./caom2tools/caom2utils
 
 RUN git clone https://github.com/${OMC_REPO}/caom2pipe.git && \

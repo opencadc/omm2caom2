@@ -133,12 +133,12 @@ class OmmBuilder(nbc.StorageNameBuilder):
 
     def build(self, entry):
         if mc.TaskType.INGEST_OBS in self._config.task_types:
-            omm_name = OmmName(obs_id=entry)
+            omm_name = OmmName(obs_id=entry, entry=entry)
         else:
             if self._config.use_local_files:
-                omm_name = OmmName(fname_on_disk=entry)
+                omm_name = OmmName(fname_on_disk=entry, entry=entry)
             else:
-                omm_name = OmmName(file_name=entry)
+                omm_name = OmmName(file_name=entry, entry=entry)
         return omm_name
 
 
@@ -153,7 +153,7 @@ class OmmName(mc.StorageName):
     OMM_NAME_PATTERN = 'C[\\w+-.]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
 
     def __init__(self, obs_id=None, fname_on_disk=None, file_name=None,
-                 artifact_uri=None):
+                 artifact_uri=None, entry=None):
         if obs_id is None:
             if (file_name is None and fname_on_disk is None and
                     artifact_uri is None):
@@ -171,7 +171,8 @@ class OmmName(mc.StorageName):
                 '_prev_256', '').replace('_prev', '')
             obs_id = OmmName.get_obs_id(self.fname_in_ad)
             super(OmmName, self).__init__(
-                obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, fname_on_disk)
+                obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, fname_on_disk,
+                entry=entry)
         else:
             self.obs_id = obs_id
             self.fname_in_ad = None
@@ -179,7 +180,8 @@ class OmmName(mc.StorageName):
             self._file_id = None
             self._product_id = None
             super(OmmName, self).__init__(
-                obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, None)
+                obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, None,
+                entry=entry)
         self._logger = logging.getLogger(__name__)
         self._logger.debug(self)
 
@@ -312,6 +314,7 @@ def accumulate_obs(bp, uri):
     """Configure the OMM-specific ObsBlueprint at the CAOM model Observation
     level."""
     logging.debug('Begin accumulate_obs.')
+    bp.clear('Observation.algorithm.name')
     bp.set('Observation.type', 'get_obs_type(header)')
     bp.set('Observation.intent', 'get_obs_intent(header)')
     bp.add_fits_attribute('Observation.instrument.name', 'INSTRUME')
