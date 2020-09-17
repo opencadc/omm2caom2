@@ -12,17 +12,17 @@ RUN oldpath=`pwd` && cd /tmp && \
     chmod 755 /usr/local/lib/python3.8/site-packages/footprintfinder.py && \
     cd $oldpath
 
-RUN pip install cadcdata && \
-    cadctap && \
-    caom2 && \
-    caom2repo && \
-    caom2utils && \
-    importlib-metadata && \
-    ftputil && \
-    pytz && \
-    PyYAML && \
-    slackclient && \
-    spherical-geometry && \
+RUN pip install cadcdata \
+    cadctap \
+    caom2 \
+    caom2repo \
+    caom2utils \
+    importlib-metadata \
+    ftputil \
+    pytz \
+    PyYAML \
+    slackclient \
+    spherical-geometry \
     vos
 
 RUN apt-get install -y libjpeg-dev
