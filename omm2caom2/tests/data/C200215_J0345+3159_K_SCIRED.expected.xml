@@ -385,11 +385,9 @@
               <caom2:chunks>
                 <caom2:chunk caom2:id="8788f396-c0d6-4ad3-b266-aa503d01eec0" caom2:lastModified="2020-02-17T16:45:28.184" caom2:maxLastModified="2020-02-17T16:45:28.184" caom2:metaChecksum="md5:4ddde93781c5c24c8ee14f86016cf8cd" caom2:accMetaChecksum="md5:175e76b02e72078f5d0580a2c27b8918">
                   <caom2:productType>science</caom2:productType>
-                  <caom2:naxis>4</caom2:naxis>
+                  <caom2:naxis>2</caom2:naxis>
                   <caom2:positionAxis1>1</caom2:positionAxis1>
                   <caom2:positionAxis2>2</caom2:positionAxis2>
-                  <caom2:energyAxis>3</caom2:energyAxis>
-                  <caom2:timeAxis>4</caom2:timeAxis>
                   <caom2:position>
                     <caom2:axis>
                       <caom2:axis1>

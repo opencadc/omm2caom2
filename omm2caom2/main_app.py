@@ -94,7 +94,7 @@ from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
 from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
 from caom2 import ObservationURI, PlaneURI, TypedSet, CoordBounds1D, Quality
 from caom2 import Requirements, Status, Instrument, Provenance, DataQuality
-from caom2 import SimpleObservation, CompositeObservation, Algorithm
+from caom2 import SimpleObservation, DerivedObservation, Algorithm
 from caom2utils import ObsBlueprint, get_gen_proc_arg_parser, gen_proc
 from caom2pipe import astro_composable as ac
 from caom2pipe import execute_composable as ec
@@ -618,8 +618,6 @@ def update(observation, **kwargs):
                         chunk.naxis = None
                         chunk.energy_axis = None
                         chunk.time_axis = None
-                    else:
-                        chunk.naxis = 4
 
             if omm_name.is_rejected():
                 _update_requirements(observation)
@@ -664,7 +662,7 @@ def _update_energy(chunk, headers):
         chunk.energy = SpectralWCS(naxis, specsys='TOPCENT',
                                    ssysobs='TOPCENT', ssyssrc='TOPCENT',
                                    bandpass_name=headers[0].get('FILTER'))
-        chunk.energy_axis = 3
+        chunk.energy_axis = None
         logging.debug('Setting chunk energy range (CoordRange1D).')
 
 
@@ -685,20 +683,21 @@ def _update_instrument_name(observation):
 def _update_observation_type(observation):
     """For the case where a SimpleObservation needs to become a
     CompositeObservation."""
-    return CompositeObservation(observation.collection,
-                                observation.observation_id,
-                                Algorithm('composite'),
-                                observation.sequence_number,
-                                observation.intent,
-                                observation.type,
-                                observation.proposal,
-                                observation.telescope,
-                                observation.instrument,
-                                observation.target,
-                                observation.meta_release,
-                                observation.planes,
-                                observation.environment,
-                                observation.target_position)
+    return DerivedObservation(observation.collection,
+                              observation.observation_id,
+                              Algorithm('composite'),
+                              observation.sequence_number,
+                              observation.intent,
+                              observation.type,
+                              observation.proposal,
+                              observation.telescope,
+                              observation.instrument,
+                              observation.target,
+                              observation.meta_release,
+                              observation.meta_read_groups,
+                              observation.planes,
+                              observation.environment,
+                              observation.target_position)
 
 
 def _update_time(chunk, headers, obs_id):
@@ -732,7 +731,7 @@ def _update_time(chunk, headers, obs_id):
         chunk.time.resolution = 0.1
         chunk.time.timesys = 'UTC'
         chunk.time.trefpos = 'TOPOCENTER'
-        chunk.time_axis = 4
+        chunk.time_axis = None
     logging.debug('Done _update_time.')
 
 
