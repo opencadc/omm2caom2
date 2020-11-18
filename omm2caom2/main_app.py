@@ -133,12 +133,12 @@ class OmmBuilder(nbc.StorageNameBuilder):
 
     def build(self, entry):
         if mc.TaskType.INGEST_OBS in self._config.task_types:
-            omm_name = OmmName(obs_id=entry)
+            omm_name = OmmName(obs_id=entry, entry=entry)
         else:
             if self._config.use_local_files:
-                omm_name = OmmName(fname_on_disk=entry)
+                omm_name = OmmName(fname_on_disk=entry, entry=entry)
             else:
-                omm_name = OmmName(file_name=entry)
+                omm_name = OmmName(file_name=entry, entry=entry)
         return omm_name
 
 
@@ -153,7 +153,7 @@ class OmmName(mc.StorageName):
     OMM_NAME_PATTERN = 'C[\\w+-.]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
 
     def __init__(self, obs_id=None, fname_on_disk=None, file_name=None,
-                 artifact_uri=None):
+                 artifact_uri=None, entry=None):
         if obs_id is None:
             if (file_name is None and fname_on_disk is None and
                     artifact_uri is None):
@@ -171,7 +171,8 @@ class OmmName(mc.StorageName):
                 '_prev_256', '').replace('_prev', '')
             obs_id = OmmName.get_obs_id(self.fname_in_ad)
             super(OmmName, self).__init__(
-                obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, fname_on_disk)
+                obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, fname_on_disk,
+                entry=entry)
         else:
             self.obs_id = obs_id
             self.fname_in_ad = None
@@ -179,7 +180,8 @@ class OmmName(mc.StorageName):
             self._file_id = None
             self._product_id = None
             super(OmmName, self).__init__(
-                obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, None)
+                obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, None,
+                entry=entry)
         self._logger = logging.getLogger(__name__)
         self._logger.debug(self)
 
@@ -587,9 +589,9 @@ def update(observation, **kwargs):
     uri = kwargs.get('uri')
 
     omm_name = None
-    if uri is None and fqn is not None:
-        omm_name = OmmName(os.path.basename(fqn))
-    elif fqn is None and uri is not None:
+    if fqn is not None:
+        omm_name = OmmName(file_name=os.path.basename(fqn))
+    elif uri is not None:
         omm_name = OmmName(artifact_uri=uri)
     _update_telescope_location(observation, headers)
 
@@ -657,8 +659,8 @@ def _update_energy(chunk, headers):
         start_ref_coord = RefCoord(0.5, get_start_ref_coord_val(headers[0]))
         end_ref_coord = RefCoord(1.5, get_end_ref_coord_val(headers[0]))
         naxis.range = CoordRange1D(start_ref_coord, end_ref_coord)
-        chunk.energy = SpectralWCS(naxis, specsys='TOPCENT',
-                                   ssysobs='TOPCENT', ssyssrc='TOPCENT',
+        chunk.energy = SpectralWCS(naxis, specsys='TOPOCENT',
+                                   ssysobs='TOPOCENT', ssyssrc='TOPOCENT',
                                    bandpass_name=headers[0].get('FILTER'))
         chunk.energy_axis = None
         logging.debug('Setting chunk energy range (CoordRange1D).')

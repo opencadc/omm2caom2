@@ -86,9 +86,9 @@
                         </caom2:end>
                       </caom2:range>
                     </caom2:axis>
-                    <caom2:specsys>TOPCENT</caom2:specsys>
-                    <caom2:ssysobs>TOPCENT</caom2:ssysobs>
-                    <caom2:ssyssrc>TOPCENT</caom2:ssyssrc>
+                    <caom2:specsys>TOPOCENT</caom2:specsys>
+                    <caom2:ssysobs>TOPOCENT</caom2:ssysobs>
+                    <caom2:ssyssrc>TOPOCENT</caom2:ssyssrc>
                     <caom2:bandpassName>K</caom2:bandpassName>
                   </caom2:energy>
                   <caom2:time>

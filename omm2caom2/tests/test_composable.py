@@ -133,7 +133,8 @@ def test_run_rc_todo(data_client_mock, repo_mock, exec_mock):
 
     assert repo_mock.return_value.read.called, 'repo read not called'
     assert repo_mock.return_value.update.called, 'repo update not called'
-    # default config file says visit only
+    # default config file says visit only, so it's a MetaVisit implementation,
+    # so no data transfer
     assert exec_mock.called, 'expect to be called'
 
 

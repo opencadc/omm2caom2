@@ -70,7 +70,7 @@
 import pytest
 
 from caom2pipe import manage_composable as mc
-from omm2caom2 import OmmName
+from omm2caom2 import OmmName, OmmBuilder
 
 
 def test_is_valid():
@@ -107,9 +107,13 @@ def test_is_valid():
 
 
 def test_omm_name():
+    test_config = mc.Config()
+    test_config.task_types = []
+    test_config.use_local_files = True
+    test_builder = OmmBuilder(test_config)
     test_name = 'C121212_00001_SCI'
-    assert f'ad:OMM/{test_name}.fits.gz' == OmmName(
-        file_name=f'{test_name}.fits').file_uri
+    test_subject = test_builder.build(f'{test_name}.fits')
+    assert f'ad:OMM/{test_name}.fits.gz' == test_subject.file_uri
     test_name = 'C121212_sh2-132_J_old_SCIRED'
     file_name = f'{test_name}_prev_256.jpg'
     assert f'{test_name}_prev.jpg' == OmmName(file_name=file_name).prev
