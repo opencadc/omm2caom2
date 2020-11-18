@@ -589,9 +589,9 @@ def update(observation, **kwargs):
     uri = kwargs.get('uri')
 
     omm_name = None
-    if uri is None and fqn is not None:
-        omm_name = OmmName(os.path.basename(fqn))
-    elif fqn is None and uri is not None:
+    if fqn is not None:
+        omm_name = OmmName(file_name=os.path.basename(fqn))
+    elif uri is not None:
         omm_name = OmmName(artifact_uri=uri)
     _update_telescope_location(observation, headers)
 
@@ -659,8 +659,8 @@ def _update_energy(chunk, headers):
         start_ref_coord = RefCoord(0.5, get_start_ref_coord_val(headers[0]))
         end_ref_coord = RefCoord(1.5, get_end_ref_coord_val(headers[0]))
         naxis.range = CoordRange1D(start_ref_coord, end_ref_coord)
-        chunk.energy = SpectralWCS(naxis, specsys='TOPCENT',
-                                   ssysobs='TOPCENT', ssyssrc='TOPCENT',
+        chunk.energy = SpectralWCS(naxis, specsys='TOPOCENT',
+                                   ssysobs='TOPOCENT', ssyssrc='TOPOCENT',
                                    bandpass_name=headers[0].get('FILTER'))
         chunk.energy_axis = None
         logging.debug('Setting chunk energy range (CoordRange1D).')

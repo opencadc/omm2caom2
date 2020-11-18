@@ -114,8 +114,7 @@ def test_run_single(run_mock):
 @patch('caom2pipe.execute_composable.CaomExecute._visit_meta')
 @patch('caom2pipe.execute_composable.CAOM2RepoClient')
 @patch('caom2pipe.execute_composable.CadcDataClient')
-@patch('caom2pipe.transfer_composable.CadcDataClient')
-def test_run_rc_todo(transfer_mock, data_client_mock, repo_mock, exec_mock):
+def test_run_rc_todo(data_client_mock, repo_mock, exec_mock):
     _write_todo('C121212_domeflat_K_CALRED.fits.gz')
     repo_mock.return_value.read.side_effect = _mock_repo_read
     repo_mock.return_value.create.side_effect = Mock()
@@ -134,9 +133,9 @@ def test_run_rc_todo(transfer_mock, data_client_mock, repo_mock, exec_mock):
 
     assert repo_mock.return_value.read.called, 'repo read not called'
     assert repo_mock.return_value.update.called, 'repo update not called'
-    # default config file says visit only
+    # default config file says visit only, so it's a MetaVisit implementation,
+    # so no data transfer
     assert exec_mock.called, 'expect to be called'
-    assert transfer_mock.called, 'transfer mock not called'
 
 
 def _write_todo(test_obs_id):
