@@ -15,7 +15,7 @@ docker-entrypoint.sh, and config.yml. Copy these files to the working directory.
 1. config.yml is configuration information for the ingestion. It will work with 
 the files named and described here. For a complete description of its
 content, see 
-https://github.com/opencadc-metadata-curation/collection2caom2/wiki/config.yml.
+https://github.com/opencadc/collection2caom2/wiki/config.yml.
 
 1. In this directory, create a file name netrc. This is the expected 
 .netrc file that will have the credentials required for the caom2repo and 
@@ -81,4 +81,4 @@ from data. This file should have content that looks like the following:
    ```
 
 1. For some instructions that might be helpful on using containers, see:
-https://github.com/opencadc-metadata-curation/collection2caom2/wiki/Docker-and-Collections
+https://github.com/opencadc/collection2caom2/wiki/Docker-and-Collections
