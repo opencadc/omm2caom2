@@ -104,8 +104,9 @@ def test_run_single(run_mock):
         assert test_storage.file_name == test_f, 'wrong file name'
         assert test_storage.fname_on_disk is None, 'wrong fname on disk'
         assert test_storage.url is None, 'wrong url'
-        assert test_storage.lineage == \
-            f'{test_f_id}/ad:OMM/{test_f}', 'wrong lineage'
+        assert (
+            test_storage.lineage == f'{test_f_id}/ad:OMM/{test_f}'
+        ), 'wrong lineage'
         assert test_storage.external_urls is None, 'wrong external urls'
     finally:
         os.getcwd = getcwd_orig
@@ -119,8 +120,9 @@ def test_run_rc_todo(data_client_mock, repo_mock, exec_mock):
     repo_mock.return_value.read.side_effect = _mock_repo_read
     repo_mock.return_value.create.side_effect = Mock()
     repo_mock.return_value.update.side_effect = _mock_repo_update
-    data_client_mock.return_value.get_file_info.side_effect = \
+    data_client_mock.return_value.get_file_info.side_effect = (
         test_main_app._mock_get_file_info
+    )
     exec_mock.side_effect = _mock_exec
     getcwd_orig = os.getcwd
     os.getcwd = Mock(return_value=test_main_app.TEST_DATA_DIR)
@@ -156,12 +158,17 @@ def _mock_exec(ignore1):
     path = f'{test_main_app.TEST_DATA_DIR}/C121212_domeflat_K_CALRED'
     if not os.path.exists(path):
         os.mkdir(path)
-    mc.write_obs_to_file(obs, f'{test_main_app.TEST_DATA_DIR}/'
-                         f'C121212_domeflat_K_CALRED/'
-                         f'C121212_domeflat_K_CALRED.fits.xml')
+    mc.write_obs_to_file(
+        obs,
+        f'{test_main_app.TEST_DATA_DIR}/'
+        f'C121212_domeflat_K_CALRED/'
+        f'C121212_domeflat_K_CALRED.fits.xml',
+    )
 
 
 def _build_obs():
-    return SimpleObservation(collection='TEST',
-                             observation_id='C121212_domeflat_K_CALRED',
-                             algorithm=Algorithm(name='test'))
+    return SimpleObservation(
+        collection='TEST',
+        observation_id='C121212_domeflat_K_CALRED',
+        algorithm=Algorithm(name='test'),
+    )

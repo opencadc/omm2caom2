@@ -80,8 +80,9 @@ __all__ = ['visit']
 
 def visit(observation, **kwargs):
     assert observation is not None, 'Input parameter must have a value.'
-    assert isinstance(observation, Observation), \
-        'Input parameter must be an Observation'
+    assert isinstance(
+        observation, Observation
+    ), 'Input parameter must be an Observation'
 
     working_dir = './'
     if 'working_directory' in kwargs:
@@ -91,7 +92,8 @@ def visit(observation, **kwargs):
     else:
         raise mc.CadcException(
             f'No science_file parameter provided to vistor '
-            f'for obs {observation.observation_id}.')
+            f'for obs {observation.observation_id}.'
+        )
     # TODO - this moves location handling structures to other than the
     # main composable code - this could be MUCH better handled, just not
     # sure how right now
@@ -114,12 +116,17 @@ def visit(observation, **kwargs):
             for part in artifact.parts.values():
                 for chunk in part.chunks:
                     cc.exec_footprintfinder(
-                        chunk, science_fqn, log_file_directory,
-                        observation.observation_id)
+                        chunk,
+                        science_fqn,
+                        log_file_directory,
+                        observation.observation_id,
+                    )
                     count += 1
 
-    logging.info(f'Completed footprint augmentation for '
-                 f'{observation.observation_id}')
+    logging.info(
+        f'Completed footprint augmentation for '
+        f'{observation.observation_id}'
+    )
     return {'chunks': count}
 
 
@@ -128,6 +135,7 @@ def _unzip(science_fqn):
         logging.debug(f'Unzipping {science_fqn} for footprintfinder.')
         unzipped_science_fqn = science_fqn.replace('.gz', '')
         import gzip
+
         with open(science_fqn, 'rb') as f_read:
             gz = gzip.GzipFile(fileobj=f_read)
             with open(unzipped_science_fqn, 'wb') as f_write:

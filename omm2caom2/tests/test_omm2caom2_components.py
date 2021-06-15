@@ -94,11 +94,13 @@ def test_update_cal_provenance():
         plane = test_obs.planes[ii]
         assert plane.provenance is not None, 'no provenance'
         assert plane.provenance.inputs is not None, 'no provenance inputs'
-        assert len(plane.provenance.inputs) == 22, \
-            'wrong provenance inputs length'
+        assert (
+            len(plane.provenance.inputs) == 22
+        ), 'wrong provenance inputs length'
         test_plane_input = plane.provenance.inputs.pop()
-        assert test_plane_input.uri.find(
-            'caom:OMM/C170323') == 0, 'wrong input value'
+        assert (
+            test_plane_input.uri.find('caom:OMM/C170323') == 0
+        ), 'wrong input value'
         assert test_plane_input.uri.endswith('_CAL'), 'wrong input value'
 
 
@@ -120,9 +122,11 @@ def test_update_sci_provenance():
         plane = test_obs.planes[ii]
         assert plane.provenance is not None, 'no provenance'
         assert plane.provenance.inputs is not None, 'no provenance inputs'
-        assert len(plane.provenance.inputs) == 133, \
-            'wrong provenance inputs length'
+        assert (
+            len(plane.provenance.inputs) == 133
+        ), 'wrong provenance inputs length'
         test_plane_input = plane.provenance.inputs.pop()
-        assert test_plane_input.uri.find(
-            'caom:OMM/C160929') == 0, 'wrong input value'
+        assert (
+            test_plane_input.uri.find('caom:OMM/C160929') == 0
+        ), 'wrong input value'
         assert test_plane_input.uri.endswith('_SCI'), 'wrong input value'

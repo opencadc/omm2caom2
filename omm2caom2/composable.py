@@ -93,8 +93,7 @@ def _run_single():
     config.get_executors()
     config.collection = COLLECTION
     config.working_directory = '/usr/src/app'
-    config.task_types = [mc.TaskType.INGEST,
-                         mc.TaskType.MODIFY]
+    config.task_types = [mc.TaskType.INGEST, mc.TaskType.MODIFY]
     config.resource_id = 'ivo://cadc.nrc.ca/sc2repo'
     if config.features.run_in_airflow:
         temp = tempfile.NamedTemporaryFile()
@@ -107,9 +106,16 @@ def _run_single():
         storage_name = OmmName(file_name=sys.argv[1])
     else:
         raise mc.CadcException(
-            'May only run with Feature use_file_names = True')
-    return rc.run_single(config, storage_name, APPLICATION, META_VISITORS,
-                         DATA_VISITORS, OmmChooser())
+            'May only run with Feature use_file_names = True'
+        )
+    return rc.run_single(
+        config,
+        storage_name,
+        APPLICATION,
+        META_VISITORS,
+        DATA_VISITORS,
+        OmmChooser(),
+    )
 
 
 def run_single():
@@ -127,11 +133,14 @@ def run_single():
 def _run():
     config = mc.Config()
     config.get_executors()
-    return rc.run_by_todo(config=config, name_builder=OmmBuilder(config),
-                          chooser=OmmChooser(),
-                          command_name=APPLICATION,
-                          meta_visitors=META_VISITORS,
-                          data_visitors=DATA_VISITORS)
+    return rc.run_by_todo(
+        config=config,
+        name_builder=OmmBuilder(config),
+        chooser=OmmChooser(),
+        command_name=APPLICATION,
+        meta_visitors=META_VISITORS,
+        data_visitors=DATA_VISITORS,
+    )
 
 
 def run():

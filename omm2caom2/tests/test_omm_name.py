@@ -80,13 +80,15 @@ def test_is_valid():
     assert not OmmName(file_name='c121212_00001_CAL.fits.gz').is_valid()
     assert OmmName(file_name='C121212_domeflat_K_CALRED.fits.gz').is_valid()
     assert not OmmName(
-        file_name='C121212_DOMEFLAT_K_CALRED.fits.gz').is_valid()
+        file_name='C121212_DOMEFLAT_K_CALRED.fits.gz'
+    ).is_valid()
     assert OmmName(file_name='C121212_sh2-132_J_old_SCIRED.fits.gz').is_valid()
     assert OmmName(file_name='C121212_J0454+8024_J_SCIRED.fits.gz').is_valid()
     assert OmmName(file_name='C121212_00001_TEST.fits.gz').is_valid()
     assert OmmName(file_name='C121212_00001_FOCUS.fits.gz').is_valid()
     assert OmmName(
-        file_name='C121121_J024345.57-021326.4_K_SCIRED.fits.gz').is_valid()
+        file_name='C121121_J024345.57-021326.4_K_SCIRED.fits.gz'
+    ).is_valid()
 
     test_subject = OmmName(file_name='C121212_00001_SCI.fits')
     assert test_subject.is_valid()
@@ -94,8 +96,10 @@ def test_is_valid():
     test_subject = OmmName(file_name='C121212_00001_SCI.fits.gz')
     assert test_subject.is_valid()
     assert test_subject.obs_id == 'C121212_00001'
-    test_subject = OmmName(fname_on_disk='C121212_00001_SCI.fits',
-                           file_name='C121212_00001_SCI.fits.gz')
+    test_subject = OmmName(
+        fname_on_disk='C121212_00001_SCI.fits',
+        file_name='C121212_00001_SCI.fits.gz',
+    )
     assert test_subject.is_valid()
     assert test_subject.obs_id == 'C121212_00001'
 

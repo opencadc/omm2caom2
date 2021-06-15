@@ -83,13 +83,15 @@ def visit(observation, **kwargs):
     https://github.com/opencadc-metadata-curation/omm2caom2/issues/3
     """
     mc.check_param(observation, Observation)
-    logging.info(f'Begin cleanup augmentation for '
-                 f'{observation.observation_id}')
+    logging.info(
+        f'Begin cleanup augmentation for ' f'{observation.observation_id}'
+    )
     cadc_client = kwargs.get('cadc_client')
     count = 0
     if cadc_client is None:
         logging.warning(
-            'Stopping. Need a CADC Client for cleanup augmentation.')
+            'Stopping. Need a CADC Client for cleanup augmentation.'
+        )
     else:
         if len(observation.planes) > 1:
             # from Daniel, Sylvie - 21-05-20
@@ -110,18 +112,22 @@ def visit(observation, **kwargs):
                         continue
                     omm_name = OmmName(artifact_uri=artifact.uri)
                     meta = mc.get_cadc_meta_client(
-                        cadc_client, COLLECTION, omm_name.fname_in_ad)
+                        cadc_client, COLLECTION, omm_name.fname_in_ad
+                    )
                     if meta is None:
                         logging.warning(
-                            f'Did not find {artifact.uri} in CADC storage.')
+                            f'Did not find {artifact.uri} in CADC storage.'
+                        )
                     else:
                         if latest_plane_id is None:
                             latest_plane_id = plane.product_id
                             latest_timestamp = mc.make_time(
-                                meta.get('lastmod'))
+                                meta.get('lastmod')
+                            )
                         else:
                             current_timestamp = mc.make_time(
-                                meta.get('lastmod'))
+                                meta.get('lastmod')
+                            )
                             if current_timestamp > latest_timestamp:
                                 latest_timestamp = current_timestamp
                                 temp.append(latest_plane_id)
@@ -131,16 +137,19 @@ def visit(observation, **kwargs):
 
             delete_list = list(set(temp))
             for entry in delete_list:
-                logging.warning(f'Removing plane {entry} from observation '
-                                f'{observation.observation_id}. There are '
-                                f'duplicate photons.')
+                logging.warning(
+                    f'Removing plane {entry} from observation '
+                    f'{observation.observation_id}. There are '
+                    f'duplicate photons.'
+                )
                 count += 1
                 observation.planes.pop(entry)
                 _send_slack_message(entry)
 
     result = {'planes': count}
-    logging.info(f'Completed cleanup augmentation for '
-                 f'{observation.observation_id}')
+    logging.info(
+        f'Completed cleanup augmentation for ' f'{observation.observation_id}'
+    )
     return result
 
 
@@ -151,9 +160,11 @@ def _send_slack_message(entry):
 
     msg = f'Delete OMM {entry}.fits.gz'
     try:
-        ignore = client.chat_postMessage(channel=config.slack_channel,
-                                         text=msg)
+        ignore = client.chat_postMessage(
+            channel=config.slack_channel, text=msg
+        )
     except SlackApiError as sae:
-        logging.error(f'Could not sent slack message {msg} to '
-                      f'{config.slack_channel}')
+        logging.error(
+            f'Could not sent slack message {msg} to ' f'{config.slack_channel}'
+        )
         logging.debug(sae)

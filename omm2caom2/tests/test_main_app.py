@@ -84,8 +84,11 @@ PLUGIN = os.path.join(os.path.dirname(THIS_DIR), f'{APPLICATION}.py')
 
 
 def pytest_generate_tests(metafunc):
-    files = [os.path.join(TEST_DATA_DIR, name) for name in
-             os.listdir(TEST_DATA_DIR) if name.endswith('header')]
+    files = [
+        os.path.join(TEST_DATA_DIR, name)
+        for name in os.listdir(TEST_DATA_DIR)
+        if name.endswith('header')
+    ]
     metafunc.parametrize('test_name', files)
 
 
@@ -105,13 +108,15 @@ def test_main_app(test_name):
     else:
         input_param = f'--observation OMM {omm_name.obs_id}'
     with patch('caom2utils.fits2caom2.CadcDataClient') as data_client_mock:
-        data_client_mock.return_value.get_file_info.side_effect = \
+        data_client_mock.return_value.get_file_info.side_effect = (
             _mock_get_file_info
+        )
 
-        sys.argv = \
-            (f'{APPLICATION} --no_validate --local {local}  --plugin {plugin} '
-             f'--module {plugin} {input_param} -o {output_file} --lineage '
-             f'{lineage}').split()
+        sys.argv = (
+            f'{APPLICATION} --no_validate --local {local}  --plugin {plugin} '
+            f'--module {plugin} {input_param} -o {output_file} --lineage '
+            f'{lineage}'
+        ).split()
         print(sys.argv)
         main_app.to_caom2()
     obs_path = test_name.replace('.fits.header', '.expected.xml')
@@ -133,8 +138,6 @@ def _get_lineage(product_id, basename):
 
 def _mock_get_file_info(archive, file_id):
     if '_prev' in file_id:
-        return {'type': 'image/jpeg',
-                'name': file_id}
+        return {'type': 'image/jpeg', 'name': file_id}
     else:
-        return {'type': 'application/fits',
-                'name': file_id}
+        return {'type': 'application/fits', 'name': file_id}

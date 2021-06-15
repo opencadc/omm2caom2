@@ -102,28 +102,47 @@ from caom2pipe import manage_composable as mc
 from caom2pipe import name_builder_composable as nbc
 
 
-__all__ = ['to_caom2', 'update', 'OmmName', 'COLLECTION', 'APPLICATION',
-           '_update_cal_provenance', '_update_science_provenance',
-           'OmmBuilder', 'OmmChooser']
+__all__ = [
+    'to_caom2',
+    'update',
+    'OmmName',
+    'COLLECTION',
+    'APPLICATION',
+    '_update_cal_provenance',
+    '_update_science_provenance',
+    'OmmBuilder',
+    'OmmChooser',
+]
 
 
 APPLICATION = 'omm2caom2'
 COLLECTION = 'OMM'
 
 # map the fits file values to the DataProductType enums
-DATATYPE_LOOKUP = {'CALIB': 'flat',
-                   'SCIENCE': 'object',
-                   'FOCUS': 'focus',
-                   'REDUC': 'reduc',
-                   'TEST': 'test',
-                   'REJECT': 'reject',
-                   'CALRED': 'flat'}
+DATATYPE_LOOKUP = {
+    'CALIB': 'flat',
+    'SCIENCE': 'object',
+    'FOCUS': 'focus',
+    'REDUC': 'reduc',
+    'TEST': 'test',
+    'REJECT': 'reject',
+    'CALRED': 'flat',
+}
 
 DEFAULT_GEOCENTRIC = {
-    'OMM': {'x': 1448045.773, 'y': -4242075.462, 'z': 4523808.146,
-            'elevation': 1108.},
-    'CTIO': {'x': 1814303.745, 'y': -5214365.744, 'z': -3187340.566,
-             'elevation': 2200.}}
+    'OMM': {
+        'x': 1448045.773,
+        'y': -4242075.462,
+        'z': 4523808.146,
+        'elevation': 1108.0,
+    },
+    'CTIO': {
+        'x': 1814303.745,
+        'y': -5214365.744,
+        'z': -3187340.566,
+        'elevation': 2200.0,
+    },
+}
 
 
 class OmmBuilder(nbc.StorageNameBuilder):
@@ -152,13 +171,23 @@ class OmmName(mc.StorageName):
 
     OMM_NAME_PATTERN = 'C[\\w+-.]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
 
-    def __init__(self, obs_id=None, fname_on_disk=None, file_name=None,
-                 artifact_uri=None, entry=None):
+    def __init__(
+        self,
+        obs_id=None,
+        fname_on_disk=None,
+        file_name=None,
+        artifact_uri=None,
+        entry=None,
+    ):
         if obs_id is None:
-            if (file_name is None and fname_on_disk is None and
-                    artifact_uri is None):
+            if (
+                file_name is None
+                and fname_on_disk is None
+                and artifact_uri is None
+            ):
                 raise mc.CadcException(
-                    f'Bad StorageName initialization for {obs_id}.')
+                    f'Bad StorageName initialization for {obs_id}.'
+                )
             elif file_name is not None:
                 self.fname_in_ad = OmmName._add_extensions(file_name)
             elif fname_on_disk is not None:
@@ -167,12 +196,17 @@ class OmmName(mc.StorageName):
                 self.fname_in_ad = mc.CaomName(artifact_uri).file_name
             self._file_name = self.fname_in_ad
             self._file_id = OmmName.remove_extensions(self.fname_in_ad)
-            self._product_id = self._file_id.replace(
-                '_prev_256', '').replace('_prev', '')
+            self._product_id = self._file_id.replace('_prev_256', '').replace(
+                '_prev', ''
+            )
             obs_id = OmmName.get_obs_id(self.fname_in_ad)
             super(OmmName, self).__init__(
-                obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, fname_on_disk,
-                entry=entry)
+                obs_id,
+                COLLECTION,
+                OmmName.OMM_NAME_PATTERN,
+                fname_on_disk,
+                entry=entry,
+            )
         else:
             self.obs_id = obs_id
             self.fname_in_ad = None
@@ -180,16 +214,18 @@ class OmmName(mc.StorageName):
             self._file_id = None
             self._product_id = None
             super(OmmName, self).__init__(
-                obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, None,
-                entry=entry)
+                obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, None, entry=entry
+            )
         self._logger = logging.getLogger(__name__)
         self._logger.debug(self)
 
     def __str__(self):
-        return f'obs_id {self.obs_id} file_name {self.file_name} ' \
-               f'fname_on_disk {self.fname_on_disk} fname_in_ad ' \
-               f'{self.fname_in_ad} file_id {self._file_id} product_id ' \
-               f'{self._product_id}'
+        return (
+            f'obs_id {self.obs_id} file_name {self.file_name} '
+            f'fname_on_disk {self.fname_on_disk} fname_in_ad '
+            f'{self.fname_in_ad} file_id {self._file_id} product_id '
+            f'{self._product_id}'
+        )
 
     @property
     def file_name(self):
@@ -229,14 +265,17 @@ class OmmName(mc.StorageName):
             pattern = re.compile(self.collection_pattern)
             result = pattern.match(self._file_id)
             if result:
-                if ('_SCIRED' in self._file_id
-                        or '_CALRED' in self._file_id):
+                if '_SCIRED' in self._file_id or '_CALRED' in self._file_id:
                     f_name_id_upper = self._file_id.upper()
                     # file names are mixed case in the middle
-                    if ('_DOMEFLAT_' in f_name_id_upper or
-                            '_DARK_' in f_name_id_upper):
-                        if ('_domeflat_' in self._file_id or
-                                '_dark_' in self._file_id):
+                    if (
+                        '_DOMEFLAT_' in f_name_id_upper
+                        or '_DARK_' in f_name_id_upper
+                    ):
+                        if (
+                            '_domeflat_' in self._file_id
+                            or '_dark_' in self._file_id
+                        ):
                             result = True
                         else:
                             result = False
@@ -262,8 +301,9 @@ class OmmName(mc.StorageName):
     @staticmethod
     def get_obs_id(f_name):
         temp = f_name.replace('_prev_256.jpg', '').replace('_prev.jpg', '')
-        return '_'.join(ii for ii in
-                        OmmName.remove_extensions(temp).split('_')[:-1])
+        return '_'.join(
+            ii for ii in OmmName.remove_extensions(temp).split('_')[:-1]
+        )
 
     @staticmethod
     def is_composite(uri):
@@ -279,7 +319,9 @@ class OmmChooser(ec.OrganizeChooser):
     will change type to CompositeObservation instances. Tell the
     execute_composable package about that case."""
 
-    def __init__(self,):
+    def __init__(
+        self,
+    ):
         super(OmmChooser, self).__init__()
 
     def needs_delete(self, observation):
@@ -331,8 +373,10 @@ def accumulate_obs(bp, uri):
     bp.set_default('Observation.target_position.equinox', '2000.0')
     bp.add_fits_attribute('Observation.telescope.name', 'TELESCOP')
     bp.set('Observation.telescope.keywords', 'get_telescope_keywords(header)')
-    bp.set('Observation.environment.ambientTemp',
-           'get_obs_env_ambient_temp(header)')
+    bp.set(
+        'Observation.environment.ambientTemp',
+        'get_obs_env_ambient_temp(header)',
+    )
     if OmmName.is_composite(uri):
         bp.set('CompositeObservation.members', {})
 
@@ -376,11 +420,13 @@ def accumulate_position(bp):
     logging.debug('Begin accumulate_position.')
     bp.configure_position_axes((1, 2))
     bp.set('Chunk.position.coordsys', 'ICRS')
-    bp.set('Chunk.position.axis.error1.rnder',
-           'get_position_resolution(header)')
+    bp.set(
+        'Chunk.position.axis.error1.rnder', 'get_position_resolution(header)'
+    )
     bp.set('Chunk.position.axis.error1.syser', 0.0)
-    bp.set('Chunk.position.axis.error2.rnder',
-           'get_position_resolution(header)')
+    bp.set(
+        'Chunk.position.axis.error2.rnder', 'get_position_resolution(header)'
+    )
     bp.set('Chunk.position.axis.error2.syser', 0.0)
     bp.set('Chunk.position.axis.axis1.ctype', 'RA---TAN')
     bp.set('Chunk.position.axis.axis2.ctype', 'DEC--TAN')
@@ -388,8 +434,9 @@ def accumulate_position(bp):
     bp.set('Chunk.position.axis.axis2.cunit', 'deg')
     bp.clear('Chunk.position.equinox')
     bp.add_fits_attribute('Chunk.position.equinox', 'EQUINOX')
-    bp.set('Chunk.position.resolution',
-           'get_chunk_position_resolution(header)')
+    bp.set(
+        'Chunk.position.resolution', 'get_chunk_position_resolution(header)'
+    )
 
 
 def get_chunk_position_resolution(header):
@@ -413,7 +460,7 @@ def get_end_ref_coord_val(header):
     wlen = header.get('WLEN')
     bandpass = header.get('BANDPASS')
     if wlen is not None and bandpass is not None:
-        return wlen + bandpass / 2.
+        return wlen + bandpass / 2.0
     else:
         return None
 
@@ -455,8 +502,9 @@ def get_obs_env_ambient_temp(header):
 
     :param header Array of astropy headers"""
     lookup = header.get('TEMP_WMO')
-    if ((isinstance(lookup, float) or isinstance(lookup,
-                                                 int)) and lookup < -99.):
+    if (
+        isinstance(lookup, float) or isinstance(lookup, int)
+    ) and lookup < -99.0:
         lookup = None
     return lookup
 
@@ -570,7 +618,7 @@ def get_start_ref_coord_val(header):
     wlen = header.get('WLEN')
     bandpass = header.get('BANDPASS')
     if wlen is not None and bandpass is not None:
-        return wlen - bandpass / 2.
+        return wlen - bandpass / 2.0
     else:
         return None
 
@@ -610,8 +658,7 @@ def update(observation, **kwargs):
                 for chunk in part.chunks:
                     chunk.product_type = get_product_type(headers[0])
                     _update_energy(chunk, headers)
-                    _update_time(
-                        chunk, headers, observation.observation_id)
+                    _update_time(chunk, headers, observation.observation_id)
                     _update_position(plane, observation.intent, chunk, headers)
                     if chunk.position is None:
                         # for WCS validation correctness
@@ -625,13 +672,17 @@ def update(observation, **kwargs):
         if OmmName.is_composite(plane.product_id):
             if OmmChooser().needs_delete(observation):
                 observation = _update_observation_type(observation)
-                logging.info(f'Changing from Simple to Composite for '
-                             f'{observation.observation_id}')
+                logging.info(
+                    f'Changing from Simple to Composite for '
+                    f'{observation.observation_id}'
+                )
             _update_provenance(observation, headers)
 
-    if (observation.instrument is None or
-            observation.instrument.name is None
-            or len(observation.instrument.name) == 0):
+    if (
+        observation.instrument is None
+        or observation.instrument.name is None
+        or len(observation.instrument.name) == 0
+    ):
         _update_instrument_name(observation)
 
     logging.debug('Done update.')
@@ -647,21 +698,25 @@ def _update_energy(chunk, headers):
 
     wlen = headers[0].get('WLEN')
     bandpass = headers[0].get('BANDPASS')
-    if (wlen is None or wlen < 0 or
-            bandpass is None or bandpass < 0):
+    if wlen is None or wlen < 0 or bandpass is None or bandpass < 0:
         chunk.energy = None
         chunk.energy_axis = None
         logging.debug(
             f'Setting chunk energy to None because WLEN {wlen} and '
-            f'BANDPASS {bandpass}')
+            f'BANDPASS {bandpass}'
+        )
     else:
         naxis = CoordAxis1D(Axis('WAVE', 'um'))
         start_ref_coord = RefCoord(0.5, get_start_ref_coord_val(headers[0]))
         end_ref_coord = RefCoord(1.5, get_end_ref_coord_val(headers[0]))
         naxis.range = CoordRange1D(start_ref_coord, end_ref_coord)
-        chunk.energy = SpectralWCS(naxis, specsys='TOPOCENT',
-                                   ssysobs='TOPOCENT', ssyssrc='TOPOCENT',
-                                   bandpass_name=headers[0].get('FILTER'))
+        chunk.energy = SpectralWCS(
+            naxis,
+            specsys='TOPOCENT',
+            ssysobs='TOPOCENT',
+            ssyssrc='TOPOCENT',
+            bandpass_name=headers[0].get('FILTER'),
+        )
         chunk.energy_axis = None
         logging.debug('Setting chunk energy range (CoordRange1D).')
 
@@ -675,29 +730,33 @@ def _update_instrument_name(observation):
     elif observation.observation_id.startswith('S'):
         name = 'SPIOMM'
     else:
-        raise mc.CadcException(f'Unexpected observation id format: '
-                               f'{observation.observation_id}')
+        raise mc.CadcException(
+            f'Unexpected observation id format: '
+            f'{observation.observation_id}'
+        )
     observation.instrument = Instrument(name)
 
 
 def _update_observation_type(observation):
     """For the case where a SimpleObservation needs to become a
     CompositeObservation."""
-    return DerivedObservation(observation.collection,
-                              observation.observation_id,
-                              Algorithm('composite'),
-                              observation.sequence_number,
-                              observation.intent,
-                              observation.type,
-                              observation.proposal,
-                              observation.telescope,
-                              observation.instrument,
-                              observation.target,
-                              observation.meta_release,
-                              observation.meta_read_groups,
-                              observation.planes,
-                              observation.environment,
-                              observation.target_position)
+    return DerivedObservation(
+        observation.collection,
+        observation.observation_id,
+        Algorithm('composite'),
+        observation.sequence_number,
+        observation.intent,
+        observation.type,
+        observation.proposal,
+        observation.telescope,
+        observation.instrument,
+        observation.target,
+        observation.meta_release,
+        observation.meta_read_groups,
+        observation.planes,
+        observation.environment,
+        observation.target_position,
+    )
 
 
 def _update_time(chunk, headers, obs_id):
@@ -712,15 +771,18 @@ def _update_time(chunk, headers, obs_id):
         mjd_start, mjd_end = ac.find_time_bounds(headers)
     if mjd_start is None or mjd_end is None:
         chunk.time = None
-        logging.debug(f'Cannot calculate MJD_STAR {mjd_start} or '
-                      f'MDJ_END {mjd_end}')
+        logging.debug(
+            f'Cannot calculate MJD_STAR {mjd_start} or ' f'MDJ_END {mjd_end}'
+        )
     elif mjd_start == 'NaN' or mjd_end == 'NaN':
         raise mc.CadcException(
             f'Invalid time values MJD_STAR {mjd_start} or MJD_END {mjd_end} '
-            f'for {obs_id}, stopping ingestion.')
+            f'for {obs_id}, stopping ingestion.'
+        )
     else:
         logging.debug(
-            f'Calculating range with start {mjd_start} and end {mjd_end}.')
+            f'Calculating range with start {mjd_start} and end {mjd_end}.'
+        )
         start = RefCoord(0.5, mjd_start)
         end = RefCoord(1.5, mjd_end)
         time_cf = CoordFunction1D(1, headers[0].get('TEFF'), start)
@@ -755,16 +817,22 @@ def _update_position(plane, intent, chunk, headers):
 
     w = wcs.WCS(headers[0])
 
-    if ((chunk.position is not None and chunk.position.axis is not None and
-         chunk.position.axis.function is None) or
-            (numpy.allclose(w.wcs.crval[0], 0.) and
-             numpy.allclose(w.wcs.crval[1], 0))):
+    if (
+        chunk.position is not None
+        and chunk.position.axis is not None
+        and chunk.position.axis.function is None
+    ) or (
+        numpy.allclose(w.wcs.crval[0], 0.0)
+        and numpy.allclose(w.wcs.crval[1], 0)
+    ):
         chunk.position = None
         chunk.position_axis_1 = None
         chunk.position_axis_2 = None
         if intent is ObservationIntentType.SCIENCE:
-            logging.warning(f'No spatial WCS. Classifying plane '
-                            f'{plane.product_id} as JUNK.')
+            logging.warning(
+                f'No spatial WCS. Classifying plane '
+                f'{plane.product_id} as JUNK.'
+            )
             plane.quality = DataQuality(Quality.JUNK)
         logging.debug('Removing the partial position record from the chunk.')
 
@@ -779,8 +847,10 @@ def _update_provenance(observation, headers):
     In the CALRED files, the provenance information is available via
     header keywords.
     """
-    logging.debug(f'Begin _update_provenance for {observation.observation_id} '
-                  f'with {observation.intent}.')
+    logging.debug(
+        f'Begin _update_provenance for {observation.observation_id} '
+        f'with {observation.intent}.'
+    )
 
     if observation.intent is ObservationIntentType.SCIENCE:
         _update_science_provenance(observation, headers)
@@ -791,8 +861,12 @@ def _update_provenance(observation, headers):
 
 
 def _update_science_provenance(observation, headers):
-    members_inputs = TypedSet(ObservationURI,)
-    plane_inputs = TypedSet(PlaneURI,)
+    members_inputs = TypedSet(
+        ObservationURI,
+    )
+    plane_inputs = TypedSet(
+        PlaneURI,
+    )
     # values look like:
     # IN_00010= 'S/data/cpapir/data/101116/101116_0088.fits.fits.gz'
     # or
@@ -824,10 +898,12 @@ def _update_science_provenance(observation, headers):
                 file_id = f'{base_name}_CAL'
             else:
                 raise mc.CadcException(
-                    f'Unknown file naming pattern {base_name}')
+                    f'Unknown file naming pattern {base_name}'
+                )
 
             obs_member_uri_str = mc.CaomName.make_obs_uri_from_obs_id(
-                COLLECTION, base_name)
+                COLLECTION, base_name
+            )
             obs_member_uri = ObservationURI(obs_member_uri_str)
             plane_uri = PlaneURI.get_plane_uri(obs_member_uri, file_id)
             plane_inputs.add(plane_uri)
@@ -839,16 +915,23 @@ def _update_science_provenance(observation, headers):
 
 
 def _update_cal_provenance(observation, headers):
-    plane_inputs = TypedSet(PlaneURI,)
-    members_inputs = TypedSet(ObservationURI,)
+    plane_inputs = TypedSet(
+        PlaneURI,
+    )
+    members_inputs = TypedSet(
+        ObservationURI,
+    )
     for keyword in headers[0]:
         if keyword.startswith('F_ON') or keyword.startswith('F_OFF'):
             value = headers[0].get(keyword)
-            base_name = f'C{OmmName.remove_extensions(os.path.basename(value))}'
+            base_name = (
+                f'C{OmmName.remove_extensions(os.path.basename(value))}'
+            )
             file_id = f'{base_name}_CAL'
 
             obs_member_uri_str = mc.CaomName.make_obs_uri_from_obs_id(
-                COLLECTION, base_name)
+                COLLECTION, base_name
+            )
             obs_member_uri = ObservationURI(obs_member_uri_str)
             plane_uri = PlaneURI.get_plane_uri(obs_member_uri, file_id)
             plane_inputs.add(plane_uri)
@@ -875,7 +958,7 @@ def _update_requirements(observation):
 
 def _update_time_bounds(observation, fqn):
     """Add chunk time bounds to the chunk from the first part, by
-     referencing information from the second header. """
+    referencing information from the second header."""
 
     lower_values = ''
     upper_values = ''
@@ -891,7 +974,8 @@ def _update_time_bounds(observation, fqn):
             raise mc.CadcException(
                 f'Opened a composite file that does not match the '
                 f'expected profile (XTENSION=BINTABLE/EXTNAME=PROVENANCE). '
-                f'{xtension} {extname}')
+                f'{xtension} {extname}'
+            )
 
     for plane in observation.planes:
         for artifact in observation.planes[plane].artifacts:
@@ -902,14 +986,15 @@ def _update_time_bounds(observation, fqn):
                     upper = upper_values.split()
                     if len(lower) != len(upper):
                         raise mc.CadcException(
-                            'Cannot make RefCoords with inconsistent values.')
+                            'Cannot make RefCoords with inconsistent values.'
+                        )
                     chunk = parts[p].chunks[0]
                     bounds = CoordBounds1D()
                     chunk.time.axis.bounds = bounds
                     for ii in range(len(lower)):
                         mjd_start, mjd_end = ac.convert_time(
-                            mc.to_float(lower[ii]),
-                            mc.to_float(upper[ii]))
+                            mc.to_float(lower[ii]), mc.to_float(upper[ii])
+                        )
                         lower_refcoord = RefCoord(0.5, mjd_start)
                         upper_refcoord = RefCoord(1.5, mjd_end)
                         r = CoordRange1D(lower_refcoord, upper_refcoord)
@@ -933,8 +1018,10 @@ def _update_telescope_location(observation, headers):
     telescope = headers[0].get('TELESCOP')
 
     if telescope is None:
-        logging.warning(f'No telescope name. Could not set telescope '
-                        f'location for {observation.observation_id}')
+        logging.warning(
+            f'No telescope name. Could not set telescope '
+            f'location for {observation.observation_id}'
+        )
         return
 
     telescope = telescope.upper()
@@ -949,18 +1036,23 @@ def _update_telescope_location(observation, headers):
             telescope = 'CTIO'
 
         if lat is None or long is None:
-            observation.telescope.geo_location_x = \
-                DEFAULT_GEOCENTRIC[telescope]['x']
-            observation.telescope.geo_location_y = \
-                DEFAULT_GEOCENTRIC[telescope]['y']
-            observation.telescope.geo_location_z = \
-                DEFAULT_GEOCENTRIC[telescope]['z']
+            observation.telescope.geo_location_x = DEFAULT_GEOCENTRIC[
+                telescope
+            ]['x']
+            observation.telescope.geo_location_y = DEFAULT_GEOCENTRIC[
+                telescope
+            ]['y']
+            observation.telescope.geo_location_z = DEFAULT_GEOCENTRIC[
+                telescope
+            ]['z']
         else:
-            observation.telescope.geo_location_x, \
-                observation.telescope.geo_location_y, \
-                observation.telescope.geo_location_z = \
-                ac.get_location(
-                    lat, long, DEFAULT_GEOCENTRIC[telescope]['elevation'])
+            (
+                observation.telescope.geo_location_x,
+                observation.telescope.geo_location_y,
+                observation.telescope.geo_location_z,
+            ) = ac.get_location(
+                lat, long, DEFAULT_GEOCENTRIC[telescope]['elevation']
+            )
     else:
         raise mc.CadcException(f'Unexpected telescope name {telescope}')
 
@@ -996,8 +1088,7 @@ def _get_uris(args):
         for ii in args.lineage:
             result.append(ii.split('/', 1)[1])
     else:
-        raise mc.CadcException(
-            f'Could not define uri from these args {args}')
+        raise mc.CadcException(f'Could not define uri from these args {args}')
     return result
 
 
