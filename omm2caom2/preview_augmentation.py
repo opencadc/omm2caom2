@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ***********************************************************************
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
@@ -79,7 +78,7 @@ __all__ = ['visit']
 
 class OMMPreview(mc.PreviewVisitor):
     def __init__(self, **kwargs):
-        super(OMMPreview, self).__init__(
+        super().__init__(
             COLLECTION, ReleaseType.DATA, **kwargs
         )
         self._unzip()

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ***********************************************************************
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
@@ -200,7 +199,7 @@ class OmmName(mc.StorageName):
                 '_prev', ''
             )
             obs_id = OmmName.get_obs_id(fname_in_ad)
-            super(OmmName, self).__init__(
+            super().__init__(
                 obs_id,
                 COLLECTION,
                 OmmName.OMM_NAME_PATTERN,
@@ -213,7 +212,7 @@ class OmmName(mc.StorageName):
             self._file_name = None
             self._file_id = None
             self._product_id = None
-            super(OmmName, self).__init__(
+            super().__init__(
                 obs_id,
                 COLLECTION,
                 OmmName.OMM_NAME_PATTERN,
@@ -327,7 +326,7 @@ class OmmChooser(ec.OrganizeChooser):
     def __init__(
         self,
     ):
-        super(OmmChooser, self).__init__()
+        super().__init__()
 
     def needs_delete(self, observation):
         result = False

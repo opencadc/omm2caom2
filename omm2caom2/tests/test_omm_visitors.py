@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ***********************************************************************
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
@@ -70,7 +69,7 @@
 import os
 import pytest
 
-from mock import Mock, patch
+from unittest.mock import Mock, patch
 
 from cadcdata import FileInfo
 from caom2 import ChecksumURI

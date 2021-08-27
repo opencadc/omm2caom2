@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ***********************************************************************
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
@@ -74,7 +73,7 @@ from caom2pipe import manage_composable as mc
 import os
 import sys
 
-from mock import patch
+from unittest.mock import patch
 
 TEST_URI = 'cadc:OMM/imm_file.fits'
 

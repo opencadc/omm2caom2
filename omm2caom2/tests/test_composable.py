@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ***********************************************************************
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
@@ -73,14 +72,14 @@ import sys
 from caom2 import SimpleObservation, Algorithm
 from caom2pipe import manage_composable as mc
 
-from mock import patch, Mock
+from unittest.mock import patch, Mock
 
 from omm2caom2 import composable, OmmName
 import test_main_app
 
 
 STATE_FILE = '/usr/src/app/state.yml'
-TODO_FILE = '{}/todo.txt'.format(test_main_app.TEST_DATA_DIR)
+TODO_FILE = f'{test_main_app.TEST_DATA_DIR}/todo.txt'
 PROGRESS_FILE = '/usr/src/app/logs/progress.txt'
 
 
