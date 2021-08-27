@@ -122,7 +122,9 @@ def test_run_rc_todo(client_mock, exec_mock):
     _write_todo('C121212_domeflat_K_CALRED.fits.gz')
     client_mock.return_value.metadata_client.read.side_effect = _mock_repo_read
     client_mock.return_value.metadata_client.create.side_effect = Mock()
-    client_mock.return_value.metadata_client.update.side_effect = _mock_repo_update
+    client_mock.return_value.metadata_client.update.side_effect = (
+        _mock_repo_update
+    )
     client_mock.return_value.data_client.info.side_effect = (
         test_main_app._mock_get_file_info
     )

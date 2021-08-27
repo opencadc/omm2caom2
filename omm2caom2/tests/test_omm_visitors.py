@@ -94,7 +94,9 @@ def test_footprint_aug_visit():
 def test_footprint_update_position():
     omm_name = OmmName(file_name=TEST_FILE)
     test_kwargs = {'storage_name': omm_name}
-    test_fqn = os.path.join(TEST_DATA_DIR, f'{omm_name.product_id}.expected.xml')
+    test_fqn = os.path.join(
+        TEST_DATA_DIR, f'{omm_name.product_id}.expected.xml'
+    )
     test_obs = mc.read_obs_from_file(test_fqn)
     test_chunk = (
         test_obs.planes[omm_name.product_id]
