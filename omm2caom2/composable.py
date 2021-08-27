@@ -101,13 +101,7 @@ def _run_single():
         config.proxy_fqn = temp.name
     else:
         config.proxy_fqn = sys.argv[2]
-    config.stream = 'raw'
-    if config.features.use_file_names:
-        storage_name = OmmName(file_name=sys.argv[1])
-    else:
-        raise mc.CadcException(
-            'May only run with Feature use_file_names = True'
-        )
+    storage_name = OmmName(file_name=sys.argv[1])
     return rc.run_single(
         config,
         storage_name,

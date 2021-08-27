@@ -117,7 +117,7 @@ def test_omm_name():
     test_builder = OmmBuilder(test_config)
     test_name = 'C121212_00001_SCI'
     test_subject = test_builder.build(f'{test_name}.fits')
-    assert f'ad:OMM/{test_name}.fits.gz' == test_subject.file_uri
+    assert f'cadc:OMM/{test_name}.fits.gz' == test_subject.file_uri
     test_name = 'C121212_sh2-132_J_old_SCIRED'
     file_name = f'{test_name}_prev_256.jpg'
     assert f'{test_name}_prev.jpg' == OmmName(file_name=file_name).prev

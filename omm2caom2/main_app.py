@@ -189,42 +189,47 @@ class OmmName(mc.StorageName):
                     f'Bad StorageName initialization for {obs_id}.'
                 )
             elif file_name is not None:
-                self.fname_in_ad = OmmName._add_extensions(file_name)
+                fname_in_ad = OmmName._add_extensions(file_name)
             elif fname_on_disk is not None:
-                self.fname_in_ad = OmmName._add_extensions(fname_on_disk)
+                fname_in_ad = OmmName._add_extensions(fname_on_disk)
             elif artifact_uri is not None:
-                self.fname_in_ad = mc.CaomName(artifact_uri).file_name
-            self._file_name = self.fname_in_ad
-            self._file_id = OmmName.remove_extensions(self.fname_in_ad)
+                fname_in_ad = mc.CaomName(artifact_uri).file_name
+            self._file_name = fname_in_ad
+            self._file_id = OmmName.remove_extensions(fname_in_ad)
             self._product_id = self._file_id.replace('_prev_256', '').replace(
                 '_prev', ''
             )
-            obs_id = OmmName.get_obs_id(self.fname_in_ad)
+            obs_id = OmmName.get_obs_id(fname_in_ad)
             super(OmmName, self).__init__(
                 obs_id,
                 COLLECTION,
                 OmmName.OMM_NAME_PATTERN,
                 fname_on_disk,
                 entry=entry,
+                scheme='cadc',
             )
         else:
             self.obs_id = obs_id
-            self.fname_in_ad = None
             self._file_name = None
             self._file_id = None
             self._product_id = None
             super(OmmName, self).__init__(
-                obs_id, COLLECTION, OmmName.OMM_NAME_PATTERN, None, entry=entry
+                obs_id,
+                COLLECTION,
+                OmmName.OMM_NAME_PATTERN,
+                entry=entry,
+                scheme='cadc',
             )
         self._logger = logging.getLogger(__name__)
         self._logger.debug(self)
 
     def __str__(self):
         return (
-            f'obs_id {self.obs_id} file_name {self.file_name} '
-            f'fname_on_disk {self.fname_on_disk} fname_in_ad '
-            f'{self.fname_in_ad} file_id {self._file_id} product_id '
-            f'{self._product_id}'
+            f'obs_id {self.obs_id}\n'
+            f'file_name {self.file_name}\n'
+            f'fname_on_disk {self.fname_on_disk}\n'
+            f'file_id {self._file_id}\n'
+            f'product_id {self._product_id}'
         )
 
     @property
@@ -252,7 +257,7 @@ class OmmName(mc.StorageName):
 
     @property
     def file_uri(self):
-        return f'ad:{self.collection}/{self.fname_in_ad}'
+        return f'cadc:{self.collection}/{self.file_name}'
 
     def is_rejected(self):
         return '_REJECT' in self._file_id
@@ -350,6 +355,11 @@ def accumulate_bp(blueprint, uri):
     accumulate_plane(blueprint)
     accumulate_artifact(blueprint)
     accumulate_part(blueprint)
+    meta_producer = mc.get_version(APPLICATION)
+    blueprint.set('Observation.metaProducer', meta_producer)
+    blueprint.set('Plane.metaProducer', meta_producer)
+    blueprint.set('Artifact.metaProducer', meta_producer)
+    blueprint.set('Chunk.metaProducer', meta_producer)
 
 
 def accumulate_obs(bp, uri):
@@ -644,11 +654,14 @@ def update(observation, **kwargs):
     _update_telescope_location(observation, headers)
 
     for plane in observation.planes.values():
-        if omm_name is not None and omm_name.product_id != plane.product_id:
-            continue
         for artifact in plane.artifacts.values():
             if omm_name is None:
                 omm_name = OmmName(artifact_uri=artifact.uri)
+            # Storage Inventory conversion
+            if artifact.uri.startswith('ad:'):
+                artifact.uri = artifact.uri.replace('ad:', 'cadc:')
+            if omm_name.product_id != plane.product_id:
+                continue
             for part in artifact.parts.values():
                 if len(part.chunks) == 0 and part.name == '0':
                     # always have a time axis, and usually an energy

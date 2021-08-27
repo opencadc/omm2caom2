@@ -1,15 +1,16 @@
-FROM opencadc/matplotlib:3.8-slim
+FROM opencadc/matplotlib:3.9-slim
 
-# these layers are the common layers for footprintfinder construction
-RUN apt-get update
-RUN apt-get install -y build-essential \
-    git \
-    wget
+RUN apt-get update --no-install-recommeands && \
+    apt-get install -y build-essential \
+                       git \
+                       libjpeg-dev \
+                       wget && \
+    rm -rf /var/lib/apt/lists /tmp/* /var/tmp/*
 
 RUN oldpath=`pwd` && cd /tmp && \
     wget http://www.eso.org/~fstoehr/footprintfinder.py && \
-    cp footprintfinder.py /usr/local/lib/python3.8/site-packages/footprintfinder.py && \
-    chmod 755 /usr/local/lib/python3.8/site-packages/footprintfinder.py && \
+    cp footprintfinder.py /usr/local/lib/python3.9/site-packages/footprintfinder.py && \
+    chmod 755 /usr/local/lib/python3.9/site-packages/footprintfinder.py && \
     cd $oldpath
 
 RUN pip install cadcdata \
@@ -18,14 +19,11 @@ RUN pip install cadcdata \
     caom2repo \
     caom2utils \
     importlib-metadata \
-    ftputil \
-    pytz \
+    python-dateutil \
     PyYAML \
     slackclient \
     spherical-geometry \
     vos
-
-RUN apt-get install -y libjpeg-dev
 
 RUN git clone https://github.com/HEASARC/cfitsio && \
   cd cfitsio && \

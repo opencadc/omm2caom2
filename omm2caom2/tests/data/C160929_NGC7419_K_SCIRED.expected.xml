@@ -189,7 +189,7 @@
       </caom2:provenance>
       <caom2:artifacts>
         <caom2:artifact caom2:id="00000000-0000-0000-86e0-75768f23872d">
-          <caom2:uri>ad:OMM/C160929_NGC7419_K_SCIRED.fits.gz</caom2:uri>
+          <caom2:uri>cadc:OMM/C160929_NGC7419_K_SCIRED.fits.gz</caom2:uri>
           <caom2:productType>science</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
           <caom2:contentType>application/fits</caom2:contentType>

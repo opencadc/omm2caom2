@@ -67,7 +67,7 @@
 # ***********************************************************************
 #
 
-
+from cadcdata import FileInfo
 from omm2caom2 import main_app, APPLICATION, OmmName
 from caom2pipe import manage_composable as mc
 
@@ -76,7 +76,7 @@ import sys
 
 from mock import patch
 
-TEST_URI = 'ad:OMM/imm_file.fits'
+TEST_URI = 'cadc:OMM/imm_file.fits'
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 TEST_DATA_DIR = os.path.join(THIS_DIR, 'data')
@@ -92,7 +92,8 @@ def pytest_generate_tests(metafunc):
     metafunc.parametrize('test_name', files)
 
 
-def test_main_app(test_name):
+@patch('caom2utils.data_util.StorageClientWrapper')
+def test_main_app(data_client_mock, test_name):
     basename = os.path.basename(test_name)
     omm_name = OmmName(file_name=basename)
     lineage = _get_lineage(omm_name.product_id, basename)
@@ -107,18 +108,14 @@ def test_main_app(test_name):
         input_param = f'--in {input_file}'
     else:
         input_param = f'--observation OMM {omm_name.obs_id}'
-    with patch('caom2utils.fits2caom2.CadcDataClient') as data_client_mock:
-        data_client_mock.return_value.get_file_info.side_effect = (
-            _mock_get_file_info
-        )
-
-        sys.argv = (
-            f'{APPLICATION} --no_validate --local {local}  --plugin {plugin} '
-            f'--module {plugin} {input_param} -o {output_file} --lineage '
-            f'{lineage}'
-        ).split()
-        print(sys.argv)
-        main_app.to_caom2()
+    data_client_mock.return_value.info.side_effect = _mock_get_file_info
+    sys.argv = (
+        f'{APPLICATION} --no_validate --local {local}  --plugin {plugin} '
+        f'--module {plugin} {input_param} -o {output_file} --lineage '
+        f'{lineage}'
+    ).split()
+    print(sys.argv)
+    main_app.to_caom2()
     obs_path = test_name.replace('.fits.header', '.expected.xml')
     result = mc.compare_observations(obs_path, output_file)
     if result is not None:
@@ -133,11 +130,11 @@ def _get_local(test_name):
 
 
 def _get_lineage(product_id, basename):
-    return f'{product_id}/ad:OMM/{product_id}.fits.gz'
+    return f'{product_id}/cadc:OMM/{product_id}.fits.gz'
 
 
-def _mock_get_file_info(archive, file_id):
-    if '_prev' in file_id:
-        return {'type': 'image/jpeg', 'name': file_id}
+def _mock_get_file_info(uri):
+    if '_prev' in uri:
+        return FileInfo(id=uri, file_type='image/jpeg')
     else:
-        return {'type': 'application/fits', 'name': file_id}
+        return FileInfo(id=uri, file_type='application/fits')

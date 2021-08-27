@@ -66,11 +66,13 @@
 #
 # ***********************************************************************
 #
+
 import os
 import pytest
 
 from mock import Mock, patch
 
+from cadcdata import FileInfo
 from caom2 import ChecksumURI
 from omm2caom2 import footprint_augmentation, preview_augmentation
 from omm2caom2 import OmmName, cleanup_augmentation
@@ -91,10 +93,8 @@ def test_footprint_aug_visit():
 
 def test_footprint_update_position():
     omm_name = OmmName(file_name=TEST_FILE)
-    test_kwargs = {'science_file': omm_name.file_name}
-    test_fqn = os.path.join(
-        TEST_DATA_DIR, f'{omm_name.product_id}.expected.xml'
-    )
+    test_kwargs = {'storage_name': omm_name}
+    test_fqn = os.path.join(TEST_DATA_DIR, f'{omm_name.product_id}.expected.xml')
     test_obs = mc.read_obs_from_file(test_fqn)
     test_chunk = (
         test_obs.planes[omm_name.product_id]
@@ -135,8 +135,8 @@ def test_preview_augment_plane():
     )
     test_obs = mc.read_obs_from_file(test_fqn)
     assert len(test_obs.planes[omm_name.product_id].artifacts) == 1
-    preva = 'ad:OMM/C170324_0054_SCI_prev.jpg'
-    thumba = 'ad:OMM/C170324_0054_SCI_prev_256.jpg'
+    preva = 'cadc:OMM/C170324_0054_SCI_prev.jpg'
+    thumba = 'cadc:OMM/C170324_0054_SCI_prev_256.jpg'
 
     test_config = mc.Config()
     test_config.observe_execution = True
@@ -147,8 +147,7 @@ def test_preview_augment_plane():
         'working_directory': TEST_FILES_DIR,
         'cadc_client': None,
         'observable': test_observable,
-        'stream': 'raw',
-        'science_file': 'C170324_0054_SCI.fits.gz',
+        'storage_name': omm_name,
     }
     test_result = preview_augmentation.visit(test_obs, **test_kwargs)
     assert test_result is not None, 'expected a visit return value'
@@ -158,10 +157,10 @@ def test_preview_augment_plane():
     assert os.path.exists(thumb)
     test_plane = test_obs.planes[omm_name.product_id]
     assert test_plane.artifacts[preva].content_checksum == ChecksumURI(
-        'md5:de9f39804f172682ea9b001f8ca11f15'
+        'md5:f37d21c53055498d1b5cb7753e1c6d6f'
     ), 'prev checksum failure'
     assert test_plane.artifacts[thumba].content_checksum == ChecksumURI(
-        'md5:cd118dae04391f6bea93ba4bf2711adf'
+        'md5:19661c3c2508ecc22425ee2a05881ed4'
     ), 'thumb checksum failure'
 
     # now do updates
@@ -179,22 +178,22 @@ def test_preview_augment_plane():
     assert os.path.exists(preview)
     assert os.path.exists(thumb)
     assert test_plane.artifacts[preva].content_checksum == ChecksumURI(
-        'md5:de9f39804f172682ea9b001f8ca11f15'
+        'md5:f37d21c53055498d1b5cb7753e1c6d6f'
     ), 'prev update failed'
     assert test_plane.artifacts[thumba].content_checksum == ChecksumURI(
-        'md5:cd118dae04391f6bea93ba4bf2711adf'
+        'md5:19661c3c2508ecc22425ee2a05881ed4'
     ), 'prev_256 update failed'
 
     assert len(test_metrics.history) == 0, 'wrong history, client is not None'
 
 
+@patch('caom2utils.data_util.StorageClientWrapper')
 @patch('omm2caom2.cleanup_augmentation._send_slack_message')
-def test_cleanup(slack_mock):
+def test_cleanup(slack_mock, cadc_client_mock):
     test_obs_id = 'C090219_0001'
     test_obs_fqn = f'{TEST_DATA_DIR}/{test_obs_id}_start.xml'
     test_obs = mc.read_obs_from_file(test_obs_fqn)
-    cadc_client_mock = Mock()
-    cadc_client_mock.get_file_info.side_effect = _mock_file_info
+    cadc_client_mock.info.side_effect = _mock_file_info
     kwargs = {'cadc_client': cadc_client_mock}
     test_result = cleanup_augmentation.visit(test_obs, **kwargs)
     assert test_result is not None, 'expect a result'
@@ -210,10 +209,10 @@ def test_cleanup(slack_mock):
     assert slack_mock.call_count == 1, 'should only be one deletion notice'
 
 
-def _mock_file_info(archive, f_name):
-    sci_result = {'lastmod': 'Fri, 28 Dec 2018 01:43:28 GMT'}
-    reject_result = {'lastmod': 'Thu, 14 May 2020 20:29:02 GMT'}
+def _mock_file_info(uri):
+    sci_result = FileInfo(id=uri, lastmod='Fri, 28 Dec 2018 01:43:28 GMT')
+    reject_result = FileInfo(id=uri, lastmod='Thu, 14 May 2020 20:29:02 GMT')
     result = reject_result
-    if '_SCI' in f_name:
+    if '_SCI' in uri:
         result = sci_result
     return result

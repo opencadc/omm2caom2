@@ -82,7 +82,6 @@ class OMMPreview(mc.PreviewVisitor):
         super(OMMPreview, self).__init__(
             COLLECTION, ReleaseType.DATA, **kwargs
         )
-        self._science_fqn = os.path.join(self._working_dir, self._science_file)
         self._unzip()
         self._storage_name = OmmName(file_name=self._science_file)
         self._preview_fqn = os.path.join(
@@ -142,5 +141,4 @@ class OMMPreview(mc.PreviewVisitor):
 
 
 def visit(observation, **kwargs):
-    previewer = OMMPreview(**kwargs)
-    return previewer.visit(observation, previewer.storage_name)
+    return OMMPreview(**kwargs).visit(observation)

@@ -74,7 +74,7 @@ from slack.errors import SlackApiError
 
 from caom2 import Observation
 from caom2pipe import manage_composable as mc
-from omm2caom2 import OmmName, COLLECTION
+from omm2caom2 import OmmName
 
 
 def visit(observation, **kwargs):
@@ -110,10 +110,7 @@ def visit(observation, **kwargs):
                 for artifact in plane.artifacts.values():
                     if OmmName.is_preview(artifact.uri):
                         continue
-                    omm_name = OmmName(artifact_uri=artifact.uri)
-                    meta = mc.get_cadc_meta_client(
-                        cadc_client, COLLECTION, omm_name.fname_in_ad
-                    )
+                    meta = cadc_client.info(artifact.uri)
                     if meta is None:
                         logging.warning(
                             f'Did not find {artifact.uri} in CADC storage.'
@@ -121,13 +118,9 @@ def visit(observation, **kwargs):
                     else:
                         if latest_plane_id is None:
                             latest_plane_id = plane.product_id
-                            latest_timestamp = mc.make_time(
-                                meta.get('lastmod')
-                            )
+                            latest_timestamp = mc.make_time(meta.lastmod)
                         else:
-                            current_timestamp = mc.make_time(
-                                meta.get('lastmod')
-                            )
+                            current_timestamp = mc.make_time(meta.lastmod)
                             if current_timestamp > latest_timestamp:
                                 latest_timestamp = current_timestamp
                                 temp.append(latest_plane_id)
