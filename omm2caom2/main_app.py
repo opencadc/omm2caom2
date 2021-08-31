@@ -188,17 +188,18 @@ class OmmName(mc.StorageName):
                     f'Bad StorageName initialization for {obs_id}.'
                 )
             elif file_name is not None:
-                fname_in_ad = OmmName._add_extensions(file_name)
+                self._file_name = OmmName._add_extensions(file_name)
             elif fname_on_disk is not None:
-                fname_in_ad = OmmName._add_extensions(fname_on_disk)
+                self._file_name = os.path.basename(
+                    OmmName._add_extensions(fname_on_disk)
+                )
             elif artifact_uri is not None:
-                fname_in_ad = mc.CaomName(artifact_uri).file_name
-            self._file_name = fname_in_ad
-            self._file_id = OmmName.remove_extensions(fname_in_ad)
+                self._file_name = mc.CaomName(artifact_uri).file_name
+            self._file_id = OmmName.remove_extensions(self._file_name)
             self._product_id = self._file_id.replace('_prev_256', '').replace(
                 '_prev', ''
             )
-            obs_id = OmmName.get_obs_id(fname_in_ad)
+            obs_id = OmmName.get_obs_id(self._file_name)
             super().__init__(
                 obs_id,
                 COLLECTION,
@@ -219,17 +220,10 @@ class OmmName(mc.StorageName):
                 entry=entry,
                 scheme='cadc',
             )
+        self._source_names = [entry]
+        self._destination_uris = [self.file_uri]
         self._logger = logging.getLogger(__name__)
         self._logger.debug(self)
-
-    def __str__(self):
-        return (
-            f'obs_id {self.obs_id}\n'
-            f'file_name {self.file_name}\n'
-            f'fname_on_disk {self.fname_on_disk}\n'
-            f'file_id {self._file_id}\n'
-            f'product_id {self._product_id}'
-        )
 
     @property
     def file_name(self):
@@ -647,15 +641,18 @@ def update(observation, **kwargs):
 
     omm_name = None
     if fqn is not None:
-        omm_name = OmmName(file_name=os.path.basename(fqn))
+        omm_name = OmmName(file_name=os.path.basename(fqn), entry=fqn)
     elif uri is not None:
-        omm_name = OmmName(artifact_uri=uri)
+        omm_name = OmmName(artifact_uri=uri, entry=uri)
     _update_telescope_location(observation, headers)
 
     for plane in observation.planes.values():
         for artifact in plane.artifacts.values():
             if omm_name is None:
-                omm_name = OmmName(artifact_uri=artifact.uri)
+                omm_name = OmmName(
+                    artifact_uri=artifact.uri,
+                    entry=artifact.uri,
+                )
             # Storage Inventory conversion
             if artifact.uri.startswith('ad:'):
                 artifact.uri = artifact.uri.replace('ad:', 'cadc:')

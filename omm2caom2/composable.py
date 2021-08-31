@@ -100,14 +100,14 @@ def _run_single():
         config.proxy_fqn = temp.name
     else:
         config.proxy_fqn = sys.argv[2]
-    storage_name = OmmName(file_name=sys.argv[1])
+    storage_name = OmmBuilder(config).build(sys.argv[1])
     return rc.run_single(
-        config,
-        storage_name,
-        APPLICATION,
-        META_VISITORS,
-        DATA_VISITORS,
-        OmmChooser(),
+        config=config,
+        storage_name=storage_name,
+        command_name=APPLICATION,
+        meta_visitors=META_VISITORS,
+        data_visitors=DATA_VISITORS,
+        chooser=OmmChooser(),
     )
 
 
