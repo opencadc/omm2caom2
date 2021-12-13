@@ -74,11 +74,12 @@ import traceback
 from caom2pipe import manage_composable as mc
 from caom2pipe import run_composable as rc
 from omm2caom2 import preview_augmentation, footprint_augmentation
+from omm2caom2 import fits2caom2_augmentation
 from omm2caom2 import cleanup_augmentation
-from omm2caom2 import OmmBuilder, OmmChooser, OmmName, APPLICATION, COLLECTION
+from omm2caom2 import OmmBuilder, OmmChooser, COLLECTION
 
 
-META_VISITORS = [cleanup_augmentation]
+META_VISITORS = [fits2caom2_augmentation, cleanup_augmentation]
 DATA_VISITORS = [preview_augmentation, footprint_augmentation]
 
 
@@ -104,7 +105,6 @@ def _run_single():
     return rc.run_single(
         config=config,
         storage_name=storage_name,
-        command_name=APPLICATION,
         meta_visitors=META_VISITORS,
         data_visitors=DATA_VISITORS,
         chooser=OmmChooser(),
@@ -130,7 +130,6 @@ def _run():
         config=config,
         name_builder=OmmBuilder(config),
         chooser=OmmChooser(),
-        command_name=APPLICATION,
         meta_visitors=META_VISITORS,
         data_visitors=DATA_VISITORS,
     )

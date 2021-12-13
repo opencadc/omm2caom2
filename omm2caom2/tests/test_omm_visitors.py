@@ -112,7 +112,6 @@ def test_footprint_update_position():
     test_kwargs['working_directory'] = TEST_FILES_DIR
     test_result = footprint_augmentation.visit(test_obs, **test_kwargs)
     assert test_result is not None, 'expected a visit return value'
-    assert test_result['chunks'] == 1
     assert (
         test_chunk.position.axis.bounds is not None
     ), 'bound calculation failed'
@@ -152,11 +151,9 @@ def test_preview_augment_plane():
     }
     test_result = preview_augmentation.visit(test_obs, **test_kwargs)
     assert test_result is not None, 'expected a visit return value'
-    assert test_result['artifacts'] == 2
-    assert len(test_obs.planes[omm_name.product_id].artifacts) == 3
     assert os.path.exists(preview)
     assert os.path.exists(thumb)
-    test_plane = test_obs.planes[omm_name.product_id]
+    test_plane = test_result.planes[omm_name.product_id]
     assert test_plane.artifacts[preva].content_checksum == ChecksumURI(
         'md5:f37d21c53055498d1b5cb7753e1c6d6f'
     ), 'prev checksum failure'
@@ -173,9 +170,7 @@ def test_preview_augment_plane():
     ].content_checksum = ChecksumURI('cd118dae04391f6bea93ba4bf2711adf')
     test_result = preview_augmentation.visit(test_obs, **test_kwargs)
     assert test_result is not None, 'expected update visit return value'
-    assert test_result['artifacts'] == 2
-    assert len(test_obs.planes) == 1
-    assert len(test_obs.planes[omm_name.product_id].artifacts) == 3
+    assert len(test_result.planes[omm_name.product_id].artifacts) == 3
     assert os.path.exists(preview)
     assert os.path.exists(thumb)
     assert test_plane.artifacts[preva].content_checksum == ChecksumURI(
@@ -198,13 +193,11 @@ def test_cleanup(slack_mock, cadc_client_mock):
     kwargs = {'cadc_client': cadc_client_mock}
     test_result = cleanup_augmentation.visit(test_obs, **kwargs)
     assert test_result is not None, 'expect a result'
-    assert 'planes' in test_result, 'wrong content'
-    assert test_result.get('planes') == 1, 'wrong plane modification count'
     assert (
-        f'{test_obs_id}_SCI' not in test_obs.planes.keys()
+        f'{test_obs_id}_SCI' not in test_result.planes.keys()
     ), 'deleted the wrong one'
     assert (
-        f'{test_obs_id}_REJECT' in test_obs.planes.keys()
+        f'{test_obs_id}_REJECT' in test_result.planes.keys()
     ), 'deleted the other wrong one'
     assert slack_mock.called, 'mock should be called'
     assert slack_mock.call_count == 1, 'should only be one deletion notice'

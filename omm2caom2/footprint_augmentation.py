@@ -123,7 +123,7 @@ def visit(observation, **kwargs):
         f'Completed footprint augmentation for '
         f'{observation.observation_id}'
     )
-    return {'chunks': count}
+    return observation
 
 
 def _unzip(science_fqn):

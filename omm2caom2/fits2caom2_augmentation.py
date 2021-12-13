@@ -1,8 +1,9 @@
+# -*- coding: utf-8 -*-
 # ***********************************************************************
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 #
-#  (c) 2018.                            (c) 2018.
+#  (c) 2021.                            (c) 2021.
 #  Government of Canada                 Gouvernement du Canada
 #  National Research Council            Conseil national de recherches
 #  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -61,68 +62,69 @@
 #  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 #                                       <http://www.gnu.org/licenses/>.
 #
-#  $Revision: 4 $
+#  : 4 $
 #
 # ***********************************************************************
 #
 
-from os import listdir
-from os.path import basename, dirname, exists, join, realpath
+import logging
 
-from cadcdata import FileInfo
-from caom2.diff import get_differences
-from omm2caom2 import APPLICATION, OmmName, fits2caom2_augmentation
-from caom2pipe import astro_composable as ac
-from caom2pipe import manage_composable as mc
-from caom2pipe import reader_composable as rdc
+from caom2 import SimpleObservation, DerivedObservation, Algorithm
+from caom2utils import ObsBlueprint, GenericParser, FitsParser
+from omm2caom2 import Telescope
 
 
-THIS_DIR = dirname(realpath(__file__))
-TEST_DATA_DIR = join(THIS_DIR, 'data')
-PLUGIN = join(dirname(THIS_DIR), f'{APPLICATION}.py')
+class Fits2caom2Visitor:
+    def __init__(self, observation, **kwargs):
+        self._observation = observation
+        self._storage_name = kwargs.get('storage_name')
+        self._metadata_reader = kwargs.get('metadata_reader')
+        self._dump_config = False
+        self._logger = logging.getLogger(self.__class__.__name__)
+
+    def visit(self):
+        for uri, file_info in self._metadata_reader.file_info.items():
+            headers = self._metadata_reader.headers.get(uri)
+            telescope_data = Telescope(uri, headers)
+            blueprint = ObsBlueprint(instantiated_class=telescope_data)
+            telescope_data.accumulate_bp(blueprint)
+
+            if len(headers) == 0:
+                parser = GenericParser(blueprint, uri)
+            else:
+                parser = FitsParser(headers, blueprint, uri)
+
+            if self._dump_config:
+                print(f'Blueprint for {uri}: {blueprint}')
+
+            if self._observation is None:
+                if blueprint._get('DerivedObservation.members') is None:
+                    self._logger.debug('Build a SimpleObservation')
+                    self._observation = SimpleObservation(
+                        collection=self._storage_name.collection,
+                        observation_id=self._storage_name.obs_id,
+                        algorithm=Algorithm('exposure'),
+                    )
+                else:
+                    self._logger.debug('Build a DerivedObservation')
+                    self._observation = DerivedObservation(
+                        collection=self._storage_name.collection,
+                        observation_id=self._storage_name.obs_id,
+                        algorithm=Algorithm('composite'),
+                    )
+
+            parser.augment_observation(
+                observation=self._observation,
+                artifact_uri=uri,
+                product_id=self._storage_name.product_id,
+            )
+
+            self._observation = telescope_data.update(
+                self._observation, self._storage_name, file_info
+            )
+        return self._observation
 
 
-def pytest_generate_tests(metafunc):
-    files = [
-        join(TEST_DATA_DIR, name)
-        for name in listdir(TEST_DATA_DIR)
-        if name.endswith('header')
-    ]
-    metafunc.parametrize('test_name', files)
-
-
-def test_visitor(test_name):
-    storage_name = OmmName(
-        file_name=basename(test_name).replace('.header', '.gz'),
-    )
-    file_info = FileInfo(
-        id=storage_name.file_uri, file_type='application/fits'
-    )
-    headers = ac.make_headers_from_file(test_name)
-    metadata_reader = rdc.FileMetadataReader()
-    metadata_reader._headers = {storage_name.file_uri: headers}
-    metadata_reader._file_info = {storage_name.file_uri: file_info}
-    kwargs = {
-        'storage_name': storage_name,
-        'metadata_reader': metadata_reader,
-    }
-    observation = None
-    input_file = f'{TEST_DATA_DIR}/in.{storage_name.product_id}.fits.xml'
-    if exists(input_file):
-        observation = mc.read_obs_from_file(input_file)
-    observation = fits2caom2_augmentation.visit(observation, **kwargs)
-
-    expected_fqn = (
-        f'{TEST_DATA_DIR}/{storage_name.file_id}.expected.xml'
-    )
-    expected = mc.read_obs_from_file(expected_fqn)
-    compare_result = get_differences(expected, observation)
-    if compare_result is not None:
-        actual_fqn = expected_fqn.replace('expected', 'actual')
-        mc.write_obs_to_file(observation, actual_fqn)
-        compare_text = '\n'.join([r for r in compare_result])
-        msg = (
-            f'Differences found in observation {expected.observation_id}\n'
-            f'{compare_text}'
-        )
-        raise AssertionError(msg)
+def visit(observation, **kwargs):
+    s = Fits2caom2Visitor(observation, **kwargs)
+    return s.visit()

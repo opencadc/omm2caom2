@@ -69,10 +69,11 @@
 import os
 import pytest
 
+from cadcdata import FileInfo
 from caom2utils import data_util
 from caom2pipe import manage_composable as mc
 
-import omm2caom2
+from omm2caom2 import Telescope, OmmName
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 TESTDATA_DIR = os.path.join(THIS_DIR, 'error_data')
@@ -81,10 +82,12 @@ TESTDATA_DIR = os.path.join(THIS_DIR, 'error_data')
 def test_time_nan():
     test_obs = 'C120712_NGC7790_H_SCIRED'
     test_file = f'file://{TESTDATA_DIR}/{test_obs}.fits.header'
+    omm_name = OmmName(file_name=f'{test_obs}.fits', entry=test_file)
+    test_file_info = FileInfo(id=omm_name.file_uri)
     test_xml = f'{TESTDATA_DIR}/{test_obs}.xml'
     obs = mc.read_obs_from_file(test_xml)
     headers = data_util.get_local_file_headers(test_file)
-    kwargs = {'headers': headers}
+    telescope = Telescope(omm_name.file_uri, headers)
     with pytest.raises(mc.CadcException):
-        result = omm2caom2.update(obs, **kwargs)
+        result = telescope.update(obs, omm_name, test_file_info)
         assert result is None, 'should have returned nothing'

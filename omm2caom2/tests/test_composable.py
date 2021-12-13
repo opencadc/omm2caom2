@@ -69,8 +69,8 @@
 import os
 import sys
 
+from cadcdata import FileInfo
 from caom2 import SimpleObservation, Algorithm
-from caom2pipe import manage_composable as mc
 
 from unittest.mock import patch, Mock
 
@@ -107,10 +107,6 @@ def test_run_single(run_mock, access_mock, client_mock):
         assert test_storage.file_name == test_f, 'wrong file name'
         assert test_storage.fname_on_disk is None, 'wrong fname on disk'
         assert test_storage.url is None, 'wrong url'
-        assert (
-            test_storage.lineage == f'{test_f_id}/cadc:OMM/{test_f}'
-        ), 'wrong lineage'
-        assert test_storage.external_urls is None, 'wrong external urls'
     finally:
         os.getcwd = getcwd_orig
 
@@ -125,7 +121,7 @@ def test_run_rc_todo(client_mock, exec_mock):
         _mock_repo_update
     )
     client_mock.return_value.data_client.info.side_effect = (
-        test_main_app._mock_get_file_info
+        _mock_get_file_info
     )
     exec_mock.side_effect = _mock_exec
     getcwd_orig = os.getcwd
@@ -161,17 +157,8 @@ def _mock_repo_update(ignore1):
     return None
 
 
-def _mock_exec(ignore1):
-    obs = _build_obs()
-    path = f'{test_main_app.TEST_DATA_DIR}/C121212_domeflat_K_CALRED'
-    if not os.path.exists(path):
-        os.mkdir(path)
-    mc.write_obs_to_file(
-        obs,
-        f'{test_main_app.TEST_DATA_DIR}/'
-        f'C121212_domeflat_K_CALRED/'
-        f'C121212_domeflat_K_CALRED.fits.xml',
-    )
+def _mock_exec():
+    return _build_obs()
 
 
 def _build_obs():
@@ -180,3 +167,7 @@ def _build_obs():
         observation_id='C121212_domeflat_K_CALRED',
         algorithm=Algorithm(name='test'),
     )
+
+
+def _mock_get_file_info(ign):
+    return FileInfo(id=ign)

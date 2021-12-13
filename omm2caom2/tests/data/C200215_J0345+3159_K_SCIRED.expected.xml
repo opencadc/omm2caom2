@@ -373,7 +373,7 @@
       </caom2:provenance>
       <caom2:artifacts>
         <caom2:artifact caom2:id="351ebb5e-5780-42cb-ae67-a73e72051d99" caom2:lastModified="2020-02-17T16:45:20.821" caom2:maxLastModified="2020-02-17T16:45:28.184" caom2:metaChecksum="md5:e823a07ebb66174979384ed5230f8db1" caom2:accMetaChecksum="md5:2ec362078efb4cf087088aaa531478bc">
-          <caom2:uri>cadc:OMM/C200215_J0345+3159_K_SCIRED.fits.gz</caom2:uri>
+          <caom2:uri>ad:OMM/C200215_J0345+3159_K_SCIRED.fits.gz</caom2:uri>
           <caom2:productType>science</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
           <caom2:contentType>application/fits</caom2:contentType>

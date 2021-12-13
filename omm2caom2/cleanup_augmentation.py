@@ -138,11 +138,10 @@ def visit(observation, **kwargs):
                 observation.planes.pop(entry)
                 _send_slack_message(entry)
 
-    result = {'planes': count}
     logging.info(
         f'Completed cleanup augmentation for ' f'{observation.observation_id}'
     )
-    return result
+    return observation
 
 
 def _send_slack_message(entry):

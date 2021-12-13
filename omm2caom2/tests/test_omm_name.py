@@ -101,6 +101,9 @@ def test_is_valid():
     )
     assert test_subject.is_valid()
     assert test_subject.obs_id == 'C121212_00001'
+    assert (
+        test_subject.file_uri == 'ad:OMM/C121212_00001_SCI.fits.gz'
+    ), 'wrong file uri'
 
     with pytest.raises(mc.CadcException):
         test_subject = OmmName(file_name='C121212_00001_SCI')
@@ -117,13 +120,12 @@ def test_omm_name():
     test_name = 'C121212_00001_SCI'
     for entry in [f'{test_name}', f'/tmp/{test_name}']:
         test_subject = test_builder.build(f'{entry}.fits')
-        assert f'cadc:OMM/{test_name}.fits.gz' == test_subject.file_uri
+        assert f'ad:OMM/{test_name}.fits.gz' == test_subject.file_uri
         assert (
             test_subject.source_names == [f'{entry}.fits']
         ), 'wrong source name'
         assert (
-            test_subject.destination_uris[0] ==
-            f'cadc:OMM/{test_name}.fits.gz'
+            test_subject.destination_uris[0] == f'ad:OMM/{test_name}.fits.gz'
         ), 'wrong source name'
 
     test_name = 'C121212_sh2-132_J_old_SCIRED'

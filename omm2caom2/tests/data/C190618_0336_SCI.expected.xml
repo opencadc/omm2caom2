@@ -51,7 +51,7 @@
       </caom2:provenance>
       <caom2:artifacts>
         <caom2:artifact caom2:id="edf99f08-1071-40f3-a4d5-53816ba16783">
-          <caom2:uri>cadc:OMM/C190618_0336_SCI.fits.gz</caom2:uri>
+          <caom2:uri>ad:OMM/C190618_0336_SCI.fits.gz</caom2:uri>
           <caom2:productType>science</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
           <caom2:contentType>application/fits</caom2:contentType>
