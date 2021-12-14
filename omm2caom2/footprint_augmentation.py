@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ***********************************************************************
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
@@ -80,18 +79,17 @@ __all__ = ['visit']
 
 def visit(observation, **kwargs):
     assert observation is not None, 'Input parameter must have a value.'
-    assert isinstance(observation, Observation), \
-        'Input parameter must be an Observation'
+    assert isinstance(
+        observation, Observation
+    ), 'Input parameter must be an Observation'
 
-    working_dir = './'
-    if 'working_directory' in kwargs:
-        working_dir = kwargs['working_directory']
-    if 'science_file' in kwargs:
-        science_file = kwargs['science_file']
-    else:
+    working_dir = kwargs.get('working_directory', './')
+    storage_name = kwargs.get('storage_name')
+    if storage_name is None:
         raise mc.CadcException(
-            f'No science_file parameter provided to vistor '
-            f'for obs {observation.observation_id}.')
+            f'No storage_name parameter provided to vistor '
+            f'for obs {observation.observation_id}.'
+        )
     # TODO - this moves location handling structures to other than the
     # main composable code - this could be MUCH better handled, just not
     # sure how right now
@@ -99,7 +97,7 @@ def visit(observation, **kwargs):
     if 'log_file_directory' in kwargs:
         log_file_directory = kwargs['log_file_directory']
 
-    science_fqn = os.path.join(working_dir, science_file)
+    science_fqn = storage_name.get_file_fqn(working_dir)
     if not os.path.exists(science_fqn):
         if science_fqn.endswith('.gz'):
             science_fqn = science_fqn.replace('.gz', '')
@@ -114,13 +112,18 @@ def visit(observation, **kwargs):
             for part in artifact.parts.values():
                 for chunk in part.chunks:
                     cc.exec_footprintfinder(
-                        chunk, science_fqn, log_file_directory,
-                        observation.observation_id)
+                        chunk,
+                        science_fqn,
+                        log_file_directory,
+                        observation.observation_id,
+                    )
                     count += 1
 
-    logging.info(f'Completed footprint augmentation for '
-                 f'{observation.observation_id}')
-    return {'chunks': count}
+    logging.info(
+        f'Completed footprint augmentation for '
+        f'{observation.observation_id}'
+    )
+    return observation
 
 
 def _unzip(science_fqn):
@@ -128,6 +131,7 @@ def _unzip(science_fqn):
         logging.debug(f'Unzipping {science_fqn} for footprintfinder.')
         unzipped_science_fqn = science_fqn.replace('.gz', '')
         import gzip
+
         with open(science_fqn, 'rb') as f_read:
             gz = gzip.GzipFile(fileobj=f_read)
             with open(unzipped_science_fqn, 'wb') as f_write:

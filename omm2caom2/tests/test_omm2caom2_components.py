@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ***********************************************************************
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
@@ -66,11 +65,12 @@
 #
 # ***********************************************************************
 #
+
 import os
 
-from caom2pipe import astro_composable as ac
+from caom2utils import data_util
 from caom2pipe import manage_composable as mc
-from omm2caom2 import _update_cal_provenance, _update_science_provenance
+from omm2caom2 import Telescope
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 TESTDATA_DIR = os.path.join(THIS_DIR, 'data')
@@ -81,9 +81,9 @@ def test_update_cal_provenance():
     test_obs_file = os.path.join(TESTDATA_DIR, f'{test_obs}.expected.xml')
     test_header_file = os.path.join(TESTDATA_DIR, f'{test_obs}.fits.header')
     test_obs = mc.read_obs_from_file(test_obs_file)
-    fits_header = open(test_header_file).read()
-    headers = ac.make_headers_from_string(fits_header)
-    _update_cal_provenance(test_obs, headers)
+    headers = data_util.get_local_file_headers(test_header_file)
+    telescope = Telescope(f'ad:OMM/{test_obs}.fits', headers)
+    telescope._update_cal_provenance(test_obs)
     assert test_obs is not None, 'no test_obs'
     assert test_obs.members is not None, 'no members'
     assert len(test_obs.members) == 22, 'wrong obs members length'
@@ -94,11 +94,13 @@ def test_update_cal_provenance():
         plane = test_obs.planes[ii]
         assert plane.provenance is not None, 'no provenance'
         assert plane.provenance.inputs is not None, 'no provenance inputs'
-        assert len(plane.provenance.inputs) == 22, \
-            'wrong provenance inputs length'
+        assert (
+            len(plane.provenance.inputs) == 22
+        ), 'wrong provenance inputs length'
         test_plane_input = plane.provenance.inputs.pop()
-        assert test_plane_input.uri.find(
-            'caom:OMM/C170323') == 0, 'wrong input value'
+        assert (
+            test_plane_input.uri.find('caom:OMM/C170323') == 0
+        ), 'wrong input value'
         assert test_plane_input.uri.endswith('_CAL'), 'wrong input value'
 
 
@@ -107,9 +109,9 @@ def test_update_sci_provenance():
     test_obs_file = os.path.join(TESTDATA_DIR, f'{test_obs}.expected.xml')
     test_header_file = os.path.join(TESTDATA_DIR, f'{test_obs}.fits.header')
     test_obs = mc.read_obs_from_file(test_obs_file)
-    fits_header = open(test_header_file).read()
-    headers = ac.make_headers_from_string(fits_header)
-    _update_science_provenance(test_obs, headers)
+    headers = data_util.get_local_file_headers(test_header_file)
+    telescope = Telescope(f'ad:OMM/{test_obs}.fits', headers)
+    telescope._update_science_provenance(test_obs)
     assert test_obs is not None, 'no test_obs'
     assert test_obs.members is not None, 'no members'
     assert len(test_obs.members) == 133, 'wrong obs members length'
@@ -120,9 +122,11 @@ def test_update_sci_provenance():
         plane = test_obs.planes[ii]
         assert plane.provenance is not None, 'no provenance'
         assert plane.provenance.inputs is not None, 'no provenance inputs'
-        assert len(plane.provenance.inputs) == 133, \
-            'wrong provenance inputs length'
+        assert (
+            len(plane.provenance.inputs) == 133
+        ), 'wrong provenance inputs length'
         test_plane_input = plane.provenance.inputs.pop()
-        assert test_plane_input.uri.find(
-            'caom:OMM/C160929') == 0, 'wrong input value'
+        assert (
+            test_plane_input.uri.find('caom:OMM/C160929') == 0
+        ), 'wrong input value'
         assert test_plane_input.uri.endswith('_SCI'), 'wrong input value'

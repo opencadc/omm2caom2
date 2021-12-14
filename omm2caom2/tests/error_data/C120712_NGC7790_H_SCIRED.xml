@@ -127,7 +127,7 @@
       <caom2:polarization/>
       <caom2:artifacts>
         <caom2:artifact caom2:id="00000000-0000-0000-9071-321327d4c006" caom2:lastModified="2019-02-12T17:09:44.702" caom2:maxLastModified="2019-02-12T17:09:44.702" caom2:metaChecksum="md5:b5629993154661c7d56759ef581e07dd" caom2:accMetaChecksum="md5:7c56f27bbd14ac87250b39374cb34a94">
-          <caom2:uri>ad:OMM/C120712_NGC7790_H_SCIRED.fits.gz</caom2:uri>
+          <caom2:uri>cadc:OMM/C120712_NGC7790_H_SCIRED.fits.gz</caom2:uri>
           <caom2:productType>science</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
           <caom2:contentType>application/fits</caom2:contentType>

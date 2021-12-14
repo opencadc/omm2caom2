@@ -1,15 +1,16 @@
-FROM opencadc/matplotlib:3.8-slim
+FROM opencadc/matplotlib:3.9-slim
 
-# these layers are the common layers for footprintfinder construction
-RUN apt-get update
-RUN apt-get install -y build-essential \
-    git \
-    wget
+RUN apt-get update --no-install-recommends && \
+    apt-get install -y build-essential \
+                       git \
+                       libjpeg-dev \
+                       wget && \
+    rm -rf /var/lib/apt/lists /tmp/* /var/tmp/*
 
 RUN oldpath=`pwd` && cd /tmp && \
     wget http://www.eso.org/~fstoehr/footprintfinder.py && \
-    cp footprintfinder.py /usr/local/lib/python3.8/site-packages/footprintfinder.py && \
-    chmod 755 /usr/local/lib/python3.8/site-packages/footprintfinder.py && \
+    cp footprintfinder.py /usr/local/lib/python3.9/site-packages/footprintfinder.py && \
+    chmod 755 /usr/local/lib/python3.9/site-packages/footprintfinder.py && \
     cd $oldpath
 
 RUN pip install cadcdata \
@@ -18,14 +19,11 @@ RUN pip install cadcdata \
     caom2repo \
     caom2utils \
     importlib-metadata \
-    ftputil \
-    pytz \
+    python-dateutil \
     PyYAML \
     slackclient \
     spherical-geometry \
     vos
-
-RUN apt-get install -y libjpeg-dev
 
 RUN git clone https://github.com/HEASARC/cfitsio && \
   cd cfitsio && \
@@ -54,12 +52,30 @@ RUN oldpath=`pwd` && cd /tmp \
 
 WORKDIR /usr/src/app
 
+ARG CAOM2_BRANCH=master
+ARG CAOM2_REPO=opencadc
+ARG OPENCADC_BRANCH=master
 ARG OPENCADC_REPO=opencadc
+ARG PIPE_BRANCH=master
+ARG PIPE_REPO=opencadc
 
-RUN git clone https://github.com/${OPENCADC_REPO}/caom2pipe.git && \
-  pip install ./caom2pipe
+RUN git clone https://github.com/opencadc/cadctools.git && \
+    cd cadctools && \
+    pip install ./cadcdata && \
+    cd ..
+
+RUN git clone https://github.com/${CAOM2_REPO}/caom2tools.git && \
+    cd caom2tools && \
+    git checkout ${CAOM2_BRANCH} && \
+    pip install ./caom2utils && \
+    cd ..
+
+RUN pip install git+https://github.com/${OPENCADC_REPO}/caom2pipe@${OPENCADC_BRANCH}#egg=caom2pipe
   
-RUN git clone https://github.com/${OPENCADC_REPO}/omm2caom2.git && \
+RUN git clone https://github.com/${PIPE_REPO}/omm2caom2.git && \
+  cd omm2caom2 && \
+  git checkout ${PIPE_BRANCH} && \
+  cd .. && \
   cp ./omm2caom2/omm2caom2/omm_docker_run_cleanup.py /usr/local/bin && \
   pip install ./omm2caom2 && \
   cp ./omm2caom2/docker-entrypoint.sh / && \

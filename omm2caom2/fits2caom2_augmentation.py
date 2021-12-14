@@ -1,8 +1,9 @@
+# -*- coding: utf-8 -*-
 # ***********************************************************************
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 #
-#  (c) 2016.                            (c) 2016.
+#  (c) 2021.                            (c) 2021.
 #  Government of Canada                 Gouvernement du Canada
 #  National Research Council            Conseil national de recherches
 #  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -61,92 +62,69 @@
 #  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 #                                       <http://www.gnu.org/licenses/>.
 #
+#  : 4 $
 #
 # ***********************************************************************
+#
+
 import logging
-import os
-import subprocess
 
-from argparse import ArgumentParser, RawDescriptionHelpFormatter
-
-from caom2 import get_differences, obs_reader_writer
-
-RESOURCE_ID = 'ivo://cadc.nrc.ca/sc2repo'
+from caom2 import SimpleObservation, DerivedObservation, Algorithm
+from caom2utils import ObsBlueprint, GenericParser, FitsParser
+from omm2caom2 import Telescope
 
 
-def compare_obs():
-    logging.getLogger().setLevel(logging.INFO)
-    parser = ArgumentParser(
-        add_help=False, formatter_class=RawDescriptionHelpFormatter
-    )
-    parser.description = (
-        'Call get_differences for an observation, '
-        'one from Operations, and one from the sandbox. '
-        'Assumes there is a $HOME/.netrc file for '
-        'access control. Cleans up after itself. '
-        'Expected is the operational version, actual '
-        'is the sandbox version.'
-    )
-    parser.add_argument('--collection', help='For example, OMM')
-    parser.add_argument(
-        '--observationID',
-        help=('The one that might contain ' 'words, not the UUID.'),
-    )
-    args = parser.parse_args()
-    logging.info(args)
-    cwd = os.getcwd()
-    sb_model_fqn = os.path.join(cwd, f'{args.observationID}.sb.xml')
-    ops_model_fqn = os.path.join(cwd, f'{args.observationID}.ops.xml')
-    sb_obs = _get_obs(
-        args.collection, args.observationID, sb_model_fqn, RESOURCE_ID
-    )
-    ops_obs = _get_obs(args.collection, args.observationID, ops_model_fqn)
-    result = get_differences(ops_obs, sb_obs, parent=None)
-    if result is not None:
-        logging.error('::')
-        logging.error('::')
-        logging.error(
-            'Expected is from the operational version, actual is '
-            'the sandbox version.'
-        )
-        logging.error('\n'.join(x for x in result))
-    else:
-        logging.info('The observations appear to be the same')
+class Fits2caom2Visitor:
+    def __init__(self, observation, **kwargs):
+        self._observation = observation
+        self._storage_name = kwargs.get('storage_name')
+        self._metadata_reader = kwargs.get('metadata_reader')
+        self._dump_config = False
+        self._logger = logging.getLogger(self.__class__.__name__)
+
+    def visit(self):
+        for uri, file_info in self._metadata_reader.file_info.items():
+            headers = self._metadata_reader.headers.get(uri)
+            telescope_data = Telescope(uri, headers)
+            blueprint = ObsBlueprint(instantiated_class=telescope_data)
+            telescope_data.accumulate_bp(blueprint)
+
+            if len(headers) == 0:
+                parser = GenericParser(blueprint, uri)
+            else:
+                parser = FitsParser(headers, blueprint, uri)
+
+            if self._dump_config:
+                print(f'Blueprint for {uri}: {blueprint}')
+
+            if self._observation is None:
+                if blueprint._get('DerivedObservation.members') is None:
+                    self._logger.debug('Build a SimpleObservation')
+                    self._observation = SimpleObservation(
+                        collection=self._storage_name.collection,
+                        observation_id=self._storage_name.obs_id,
+                        algorithm=Algorithm('exposure'),
+                    )
+                else:
+                    self._logger.debug('Build a DerivedObservation')
+                    self._observation = DerivedObservation(
+                        collection=self._storage_name.collection,
+                        observation_id=self._storage_name.obs_id,
+                        algorithm=Algorithm('composite'),
+                    )
+
+            parser.augment_observation(
+                observation=self._observation,
+                artifact_uri=uri,
+                product_id=self._storage_name.product_id,
+            )
+
+            self._observation = telescope_data.update(
+                self._observation, self._storage_name, file_info
+            )
+        return self._observation
 
 
-def _get_obs(collection, obs_id, model_fqn, rid=None):
-    _read_to_file(collection, obs_id, model_fqn, rid)
-    return _read_obs(model_fqn)
-
-
-def _read_to_file(collection, obs_id, model_fqn, rid):
-    """Retrieve the existing observaton model metadata."""
-    if rid is not None:
-        repo_cmd = (
-            f'caom2-repo read --resource-id {rid} -n '
-            f'{collection} {obs_id} -o {model_fqn}'.split()
-        )
-    else:
-        repo_cmd = (
-            f'caom2-repo read -n {collection} {obs_id} -o '
-            f'{model_fqn}'.split()
-        )
-
-    try:
-        output, outerr = subprocess.Popen(
-            repo_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        ).communicate()
-        logging.info(f'Command {repo_cmd} had output {output}')
-    except Exception as e:
-        logging.error(f'Error with command {repo_cmd}:: {e}')
-        raise RuntimeError('broken')
-
-
-def _read_obs(model_fqn):
-    reader = obs_reader_writer.ObservationReader(False)
-    result = reader.read(model_fqn)
-    return result
-
-
-if __name__ == "__main__":
-    compare_obs()
+def visit(observation, **kwargs):
+    s = Fits2caom2Visitor(observation, **kwargs)
+    return s.visit()

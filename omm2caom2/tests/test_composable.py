@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ***********************************************************************
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
@@ -70,22 +69,26 @@
 import os
 import sys
 
+from cadcdata import FileInfo
 from caom2 import SimpleObservation, Algorithm
-from caom2pipe import manage_composable as mc
 
-from mock import patch, Mock
+from unittest.mock import patch, Mock
 
 from omm2caom2 import composable, OmmName
 import test_main_app
 
 
 STATE_FILE = '/usr/src/app/state.yml'
-TODO_FILE = '{}/todo.txt'.format(test_main_app.TEST_DATA_DIR)
+TODO_FILE = f'{test_main_app.TEST_DATA_DIR}/todo.txt'
 PROGRESS_FILE = '/usr/src/app/logs/progress.txt'
 
 
-@patch('caom2pipe.execute_composable.OrganizeExecutesWithDoOne.do_one')
-def test_run_single(run_mock):
+@patch('caom2pipe.client_composable.ClientCollection')
+@patch('cadcutils.net.ws.WsCapabilities.get_access_url')
+@patch('caom2pipe.execute_composable.OrganizeExecutes.do_one')
+def test_run_single(run_mock, access_mock, client_mock):
+    access_mock.return_value = 'https://localhost'
+    client_mock.return_value.metadata_client.return_value = None
     test_obs_id = 'C121121_J024345.57-021326.4_K'
     test_f_id = f'{test_obs_id}_SCIRED'
     test_f = f'{test_f_id}.fits.gz'
@@ -104,23 +107,22 @@ def test_run_single(run_mock):
         assert test_storage.file_name == test_f, 'wrong file name'
         assert test_storage.fname_on_disk is None, 'wrong fname on disk'
         assert test_storage.url is None, 'wrong url'
-        assert test_storage.lineage == \
-            f'{test_f_id}/ad:OMM/{test_f}', 'wrong lineage'
-        assert test_storage.external_urls is None, 'wrong external urls'
     finally:
         os.getcwd = getcwd_orig
 
 
 @patch('caom2pipe.execute_composable.CaomExecute._visit_meta')
-@patch('caom2pipe.execute_composable.CAOM2RepoClient')
-@patch('caom2pipe.execute_composable.CadcDataClient')
-def test_run_rc_todo(data_client_mock, repo_mock, exec_mock):
+@patch('caom2pipe.client_composable.ClientCollection')
+def test_run_rc_todo(client_mock, exec_mock):
     _write_todo('C121212_domeflat_K_CALRED.fits.gz')
-    repo_mock.return_value.read.side_effect = _mock_repo_read
-    repo_mock.return_value.create.side_effect = Mock()
-    repo_mock.return_value.update.side_effect = _mock_repo_update
-    data_client_mock.return_value.get_file_info.side_effect = \
-        test_main_app._mock_get_file_info
+    client_mock.return_value.metadata_client.read.side_effect = _mock_repo_read
+    client_mock.return_value.metadata_client.create.side_effect = Mock()
+    client_mock.return_value.metadata_client.update.side_effect = (
+        _mock_repo_update
+    )
+    client_mock.return_value.data_client.info.side_effect = (
+        _mock_get_file_info
+    )
     exec_mock.side_effect = _mock_exec
     getcwd_orig = os.getcwd
     os.getcwd = Mock(return_value=test_main_app.TEST_DATA_DIR)
@@ -131,8 +133,12 @@ def test_run_rc_todo(data_client_mock, repo_mock, exec_mock):
     finally:
         os.getcwd = getcwd_orig
 
-    assert repo_mock.return_value.read.called, 'repo read not called'
-    assert repo_mock.return_value.update.called, 'repo update not called'
+    assert (
+        client_mock.return_value.metadata_client.read.called
+    ), 'repo read not called'
+    assert (
+        client_mock.return_value.metadata_client.update.called
+    ), 'repo update not called'
     # default config file says visit only, so it's a MetaVisit implementation,
     # so no data transfer
     assert exec_mock.called, 'expect to be called'
@@ -151,17 +157,17 @@ def _mock_repo_update(ignore1):
     return None
 
 
-def _mock_exec(ignore1):
-    obs = _build_obs()
-    path = f'{test_main_app.TEST_DATA_DIR}/C121212_domeflat_K_CALRED'
-    if not os.path.exists(path):
-        os.mkdir(path)
-    mc.write_obs_to_file(obs, f'{test_main_app.TEST_DATA_DIR}/'
-                         f'C121212_domeflat_K_CALRED/'
-                         f'C121212_domeflat_K_CALRED.fits.xml')
+def _mock_exec():
+    return _build_obs()
 
 
 def _build_obs():
-    return SimpleObservation(collection='TEST',
-                             observation_id='C121212_domeflat_K_CALRED',
-                             algorithm=Algorithm(name='test'))
+    return SimpleObservation(
+        collection='TEST',
+        observation_id='C121212_domeflat_K_CALRED',
+        algorithm=Algorithm(name='test'),
+    )
+
+
+def _mock_get_file_info(ign):
+    return FileInfo(id=ign)

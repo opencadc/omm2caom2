@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ***********************************************************************
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
@@ -80,13 +79,15 @@ def test_is_valid():
     assert not OmmName(file_name='c121212_00001_CAL.fits.gz').is_valid()
     assert OmmName(file_name='C121212_domeflat_K_CALRED.fits.gz').is_valid()
     assert not OmmName(
-        file_name='C121212_DOMEFLAT_K_CALRED.fits.gz').is_valid()
+        file_name='C121212_DOMEFLAT_K_CALRED.fits.gz'
+    ).is_valid()
     assert OmmName(file_name='C121212_sh2-132_J_old_SCIRED.fits.gz').is_valid()
     assert OmmName(file_name='C121212_J0454+8024_J_SCIRED.fits.gz').is_valid()
     assert OmmName(file_name='C121212_00001_TEST.fits.gz').is_valid()
     assert OmmName(file_name='C121212_00001_FOCUS.fits.gz').is_valid()
     assert OmmName(
-        file_name='C121121_J024345.57-021326.4_K_SCIRED.fits.gz').is_valid()
+        file_name='C121121_J024345.57-021326.4_K_SCIRED.fits.gz'
+    ).is_valid()
 
     test_subject = OmmName(file_name='C121212_00001_SCI.fits')
     assert test_subject.is_valid()
@@ -94,10 +95,15 @@ def test_is_valid():
     test_subject = OmmName(file_name='C121212_00001_SCI.fits.gz')
     assert test_subject.is_valid()
     assert test_subject.obs_id == 'C121212_00001'
-    test_subject = OmmName(fname_on_disk='C121212_00001_SCI.fits',
-                           file_name='C121212_00001_SCI.fits.gz')
+    test_subject = OmmName(
+        fname_on_disk='C121212_00001_SCI.fits',
+        file_name='C121212_00001_SCI.fits.gz',
+    )
     assert test_subject.is_valid()
     assert test_subject.obs_id == 'C121212_00001'
+    assert (
+        test_subject.file_uri == 'ad:OMM/C121212_00001_SCI.fits.gz'
+    ), 'wrong file uri'
 
     with pytest.raises(mc.CadcException):
         test_subject = OmmName(file_name='C121212_00001_SCI')
@@ -112,8 +118,16 @@ def test_omm_name():
     test_config.use_local_files = True
     test_builder = OmmBuilder(test_config)
     test_name = 'C121212_00001_SCI'
-    test_subject = test_builder.build(f'{test_name}.fits')
-    assert f'ad:OMM/{test_name}.fits.gz' == test_subject.file_uri
+    for entry in [f'{test_name}', f'/tmp/{test_name}']:
+        test_subject = test_builder.build(f'{entry}.fits')
+        assert f'ad:OMM/{test_name}.fits.gz' == test_subject.file_uri
+        assert (
+            test_subject.source_names == [f'{entry}.fits']
+        ), 'wrong source name'
+        assert (
+            test_subject.destination_uris[0] == f'ad:OMM/{test_name}.fits.gz'
+        ), 'wrong source name'
+
     test_name = 'C121212_sh2-132_J_old_SCIRED'
     file_name = f'{test_name}_prev_256.jpg'
     assert f'{test_name}_prev.jpg' == OmmName(file_name=file_name).prev

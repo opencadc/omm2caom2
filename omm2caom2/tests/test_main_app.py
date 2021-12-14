@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ***********************************************************************
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
@@ -67,74 +66,63 @@
 # ***********************************************************************
 #
 
+from os import listdir
+from os.path import basename, dirname, exists, join, realpath
 
-from omm2caom2 import main_app, APPLICATION, OmmName
+from cadcdata import FileInfo
+from caom2.diff import get_differences
+from omm2caom2 import APPLICATION, OmmName, fits2caom2_augmentation
+from caom2pipe import astro_composable as ac
 from caom2pipe import manage_composable as mc
+from caom2pipe import reader_composable as rdc
 
-import os
-import sys
 
-from mock import patch
-
-TEST_URI = 'ad:OMM/imm_file.fits'
-
-THIS_DIR = os.path.dirname(os.path.realpath(__file__))
-TEST_DATA_DIR = os.path.join(THIS_DIR, 'data')
-PLUGIN = os.path.join(os.path.dirname(THIS_DIR), f'{APPLICATION}.py')
+THIS_DIR = dirname(realpath(__file__))
+TEST_DATA_DIR = join(THIS_DIR, 'data')
+PLUGIN = join(dirname(THIS_DIR), f'{APPLICATION}.py')
 
 
 def pytest_generate_tests(metafunc):
-    files = [os.path.join(TEST_DATA_DIR, name) for name in
-             os.listdir(TEST_DATA_DIR) if name.endswith('header')]
+    files = [
+        join(TEST_DATA_DIR, name)
+        for name in listdir(TEST_DATA_DIR)
+        if name.endswith('header')
+    ]
     metafunc.parametrize('test_name', files)
 
 
-def test_main_app(test_name):
-    basename = os.path.basename(test_name)
-    omm_name = OmmName(file_name=basename)
-    lineage = _get_lineage(omm_name.product_id, basename)
-    output_file = f'{test_name}.actual.xml'
-    if os.path.exists(output_file):
-        os.unlink(output_file)
+def test_visitor(test_name):
+    storage_name = OmmName(
+        file_name=basename(test_name).replace('.header', '.gz'),
+    )
+    file_info = FileInfo(
+        id=storage_name.file_uri, file_type='application/fits'
+    )
+    headers = ac.make_headers_from_file(test_name)
+    metadata_reader = rdc.FileMetadataReader()
+    metadata_reader._headers = {storage_name.file_uri: headers}
+    metadata_reader._file_info = {storage_name.file_uri: file_info}
+    kwargs = {
+        'storage_name': storage_name,
+        'metadata_reader': metadata_reader,
+    }
+    observation = None
+    input_file = f'{TEST_DATA_DIR}/in.{storage_name.product_id}.fits.xml'
+    if exists(input_file):
+        observation = mc.read_obs_from_file(input_file)
+    observation = fits2caom2_augmentation.visit(observation, **kwargs)
 
-    local = _get_local(test_name)
-    plugin = PLUGIN
-    input_file = f'{TEST_DATA_DIR}/in.{omm_name.product_id}.fits.xml'
-    if os.path.exists(input_file):
-        input_param = f'--in {input_file}'
-    else:
-        input_param = f'--observation OMM {omm_name.obs_id}'
-    with patch('caom2utils.fits2caom2.CadcDataClient') as data_client_mock:
-        data_client_mock.return_value.get_file_info.side_effect = \
-            _mock_get_file_info
-
-        sys.argv = \
-            (f'{APPLICATION} --no_validate --local {local}  --plugin {plugin} '
-             f'--module {plugin} {input_param} -o {output_file} --lineage '
-             f'{lineage}').split()
-        print(sys.argv)
-        main_app.to_caom2()
-    obs_path = test_name.replace('.fits.header', '.expected.xml')
-    result = mc.compare_observations(obs_path, output_file)
-    if result is not None:
-        assert False, result
-    # assert False  # cause I want to see logging messages
-
-
-def _get_local(test_name):
-    prev_name = test_name.replace('.fits.header', '_prev.jpg')
-    prev_256_name = test_name.replace('.fits.header', '_prev_256.jpg')
-    return f'{test_name} {prev_name} {prev_256_name}'
-
-
-def _get_lineage(product_id, basename):
-    return f'{product_id}/ad:OMM/{product_id}.fits.gz'
-
-
-def _mock_get_file_info(archive, file_id):
-    if '_prev' in file_id:
-        return {'type': 'image/jpeg',
-                'name': file_id}
-    else:
-        return {'type': 'application/fits',
-                'name': file_id}
+    expected_fqn = (
+        f'{TEST_DATA_DIR}/{storage_name.file_id}.expected.xml'
+    )
+    expected = mc.read_obs_from_file(expected_fqn)
+    compare_result = get_differences(expected, observation)
+    if compare_result is not None:
+        actual_fqn = expected_fqn.replace('expected', 'actual')
+        mc.write_obs_to_file(observation, actual_fqn)
+        compare_text = '\n'.join([r for r in compare_result])
+        msg = (
+            f'Differences found in observation {expected.observation_id}\n'
+            f'{compare_text}'
+        )
+        raise AssertionError(msg)

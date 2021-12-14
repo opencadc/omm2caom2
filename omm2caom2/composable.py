@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ***********************************************************************
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
@@ -75,11 +74,12 @@ import traceback
 from caom2pipe import manage_composable as mc
 from caom2pipe import run_composable as rc
 from omm2caom2 import preview_augmentation, footprint_augmentation
+from omm2caom2 import fits2caom2_augmentation
 from omm2caom2 import cleanup_augmentation
-from omm2caom2 import OmmBuilder, OmmChooser, OmmName, APPLICATION, COLLECTION
+from omm2caom2 import OmmBuilder, OmmChooser, COLLECTION
 
 
-META_VISITORS = [cleanup_augmentation]
+META_VISITORS = [fits2caom2_augmentation, cleanup_augmentation]
 DATA_VISITORS = [preview_augmentation, footprint_augmentation]
 
 
@@ -93,8 +93,7 @@ def _run_single():
     config.get_executors()
     config.collection = COLLECTION
     config.working_directory = '/usr/src/app'
-    config.task_types = [mc.TaskType.INGEST,
-                         mc.TaskType.MODIFY]
+    config.task_types = [mc.TaskType.INGEST, mc.TaskType.MODIFY]
     config.resource_id = 'ivo://cadc.nrc.ca/sc2repo'
     if config.features.run_in_airflow:
         temp = tempfile.NamedTemporaryFile()
@@ -102,14 +101,14 @@ def _run_single():
         config.proxy_fqn = temp.name
     else:
         config.proxy_fqn = sys.argv[2]
-    config.stream = 'raw'
-    if config.features.use_file_names:
-        storage_name = OmmName(file_name=sys.argv[1])
-    else:
-        raise mc.CadcException(
-            'May only run with Feature use_file_names = True')
-    return rc.run_single(config, storage_name, APPLICATION, META_VISITORS,
-                         DATA_VISITORS, OmmChooser())
+    storage_name = OmmBuilder(config).build(sys.argv[1])
+    return rc.run_single(
+        config=config,
+        storage_name=storage_name,
+        meta_visitors=META_VISITORS,
+        data_visitors=DATA_VISITORS,
+        chooser=OmmChooser(),
+    )
 
 
 def run_single():
@@ -127,11 +126,13 @@ def run_single():
 def _run():
     config = mc.Config()
     config.get_executors()
-    return rc.run_by_todo(config=config, name_builder=OmmBuilder(config),
-                          chooser=OmmChooser(),
-                          command_name=APPLICATION,
-                          meta_visitors=META_VISITORS,
-                          data_visitors=DATA_VISITORS)
+    return rc.run_by_todo(
+        config=config,
+        name_builder=OmmBuilder(config),
+        chooser=OmmChooser(),
+        meta_visitors=META_VISITORS,
+        data_visitors=DATA_VISITORS,
+    )
 
 
 def run():
