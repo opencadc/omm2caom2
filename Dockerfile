@@ -72,10 +72,12 @@ RUN git clone https://github.com/${CAOM2_REPO}/caom2tools.git && \
 
 RUN pip install git+https://github.com/${OPENCADC_REPO}/caom2pipe@${OPENCADC_BRANCH}#egg=caom2pipe
   
-RUN git clone https://github.com/${PIPE_REPO}/omm2caom2.git@${PIPE_BRANCH} && \
-  cp ./omm2caom2/omm2caom2/omm_docker_run_cleanup.py /usr/local/bin && \
+RUN git clone https://github.com/${PIPE_REPO}/omm2caom2.git@ && \
+  cd omm2caom2 && \
+  git checkout ${PIPE_BRANCH} && \
+  cp ./omm2caom2/omm_docker_run_cleanup.py /usr/local/bin && \
   pip install ./omm2caom2 && \
-  cp ./omm2caom2/docker-entrypoint.sh / && \
-  cp ./omm2caom2/config.yml /
+  cp ./docker-entrypoint.sh / && \
+  cp ./config.yml /
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
