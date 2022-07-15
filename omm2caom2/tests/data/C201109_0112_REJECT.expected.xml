@@ -56,7 +56,7 @@
       <caom2:polarization/>
       <caom2:artifacts>
         <caom2:artifact caom2:id="78d04df7-bca8-4b13-bd4c-9afae46b0928" caom2:lastModified="2020-11-11T03:42:44.454" caom2:maxLastModified="2020-11-11T03:42:44.454" caom2:metaChecksum="md5:367ae89a9fe5826a89cbcc0702ec963e" caom2:accMetaChecksum="md5:e95f7ced685059d83814e78fd7b008af">
-          <caom2:uri>ad:OMM/C201109_0112_SCI.fits.gz</caom2:uri>
+          <caom2:uri>ad:OMM/C201109_0112_SCI.fits</caom2:uri>
           <caom2:productType>science</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
           <caom2:contentType>application/fits</caom2:contentType>
@@ -163,7 +163,7 @@
       </caom2:provenance>
       <caom2:artifacts>
         <caom2:artifact caom2:id="57f0e7cd-5616-4868-82f6-bd5d9a901b83" caom2:lastModified="2020-11-17T22:51:31.968" caom2:maxLastModified="2020-11-17T22:51:31.968" caom2:metaChecksum="md5:45e98732550db9f3bb13d9fafb1dd081" caom2:accMetaChecksum="md5:9b01f16eda1c0ac5ecfb565b7c7d02c1">
-          <caom2:uri>ad:OMM/C201109_0112_REJECT.fits.gz</caom2:uri>
+          <caom2:uri>ad:OMM/C201109_0112_REJECT.fits</caom2:uri>
           <caom2:productType>calibration</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
           <caom2:contentType>application/fits</caom2:contentType>

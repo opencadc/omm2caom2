@@ -85,17 +85,27 @@ import re
 from astropy.io import fits
 import astropy.wcs as wcs
 
-from caom2 import TargetType, ObservationIntentType, CalibrationLevel
-from caom2 import ProductType, Observation, Chunk, CoordRange1D, RefCoord
-from caom2 import CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS
-from caom2 import ObservationURI, PlaneURI, TypedSet, CoordBounds1D, Quality
-from caom2 import Requirements, Status, Instrument, Provenance, DataQuality
-from caom2 import SimpleObservation, DerivedObservation, Algorithm
-from caom2utils import fits2caom2
+from caom2 import (
+    TargetType, ObservationIntentType, CalibrationLevel,
+    ProductType, Observation, Chunk, CoordRange1D, RefCoord,
+    CoordFunction1D, CoordAxis1D, Axis, TemporalWCS, SpectralWCS,
+    ObservationURI, PlaneURI, TypedSet, CoordBounds1D, Quality,
+    Requirements, Status, Instrument, Provenance, DataQuality,
+    SimpleObservation, DerivedObservation, Algorithm,
+)
+from caom2utils.caom2blueprint import update_artifact_meta
 from caom2pipe import astro_composable as ac
-from caom2pipe import caom_composable as cc
+from caom2pipe.caom_composable import change_to_composite, TelescopeMapping
 from caom2pipe import execute_composable as ec
-from caom2pipe import manage_composable as mc
+from caom2pipe.manage_composable import (
+    CadcException,
+    CaomName,
+    check_param,
+    make_time,
+    StorageName,
+    to_float,
+    update_typed_set,
+)
 from caom2pipe import name_builder_composable as nbc
 
 
@@ -105,12 +115,14 @@ __all__ = [
     'APPLICATION',
     'OmmBuilder',
     'OmmChooser',
+    'SCHEME',
     'Telescope',
 ]
 
 
 APPLICATION = 'omm2caom2'
 COLLECTION = 'OMM'
+SCHEME = 'ad'
 
 # map the fits file values to the DataProductType enums
 DATATYPE_LOOKUP = {
@@ -145,14 +157,13 @@ class OmmBuilder(nbc.StorageNameBuilder):
         self._logger = logging.getLogger(__name__)
 
     def build(self, entry):
-        if self._config.use_local_files:
-            omm_name = OmmName(fname_on_disk=entry, entry=entry)
-        else:
-            omm_name = OmmName(file_name=entry, entry=entry)
-        return omm_name
+        return OmmName(
+            file_name=os.path.basename(entry),
+            source_names=[entry],
+        )
 
 
-class OmmName(mc.StorageName):
+class OmmName(StorageName):
     """OMM naming rules:
     - support mixed-case file name storage, and mixed-case obs id values
     - support gzipped file names in ad, and gzipped and unzipped file names
@@ -165,70 +176,11 @@ class OmmName(mc.StorageName):
     def __init__(
         self,
         obs_id=None,
-        fname_on_disk=None,
+        product_id=None,
         file_name=None,
-        artifact_uri=None,
-        entry=None,
+        source_names=[],
     ):
-        if obs_id is None:
-            if (
-                file_name is None
-                and fname_on_disk is None
-                and artifact_uri is None
-            ):
-                raise mc.CadcException(
-                    f'Bad StorageName initialization for {obs_id}.'
-                )
-            elif file_name is not None:
-                self._file_name = OmmName._add_extensions(file_name)
-            elif fname_on_disk is not None:
-                self._file_name = os.path.basename(
-                    OmmName._add_extensions(fname_on_disk)
-                )
-            elif artifact_uri is not None:
-                self._file_name = mc.CaomName(artifact_uri).file_name
-            self._file_id = OmmName.remove_extensions(self._file_name)
-            self._product_id = self._file_id.replace('_prev_256', '').replace(
-                '_prev', ''
-            )
-            obs_id = OmmName.get_obs_id(self._file_name)
-            super().__init__(
-                obs_id,
-                COLLECTION,
-                OmmName.OMM_NAME_PATTERN,
-                fname_on_disk,
-                entry=entry,
-                scheme='ad',
-            )
-        else:
-            self.obs_id = obs_id
-            self._file_name = None
-            self._file_id = None
-            self._product_id = None
-            super().__init__(
-                obs_id,
-                COLLECTION,
-                OmmName.OMM_NAME_PATTERN,
-                entry=entry,
-                scheme='ad',
-            )
-        self._source_names = [entry]
-        self._destination_uris = [self.file_uri]
-        self._logger = logging.getLogger(self.__class__.__name__)
-        self._logger.debug(self)
-
-    @property
-    def file_id(self):
-        return self._file_id
-
-    @property
-    def file_name(self):
-        """The file name."""
-        return self._file_name
-
-    @property
-    def mime_encoding(self):
-        return 'gzip'
+        super().__init__(obs_id, product_id, file_name, source_names)
 
     @property
     def prev(self):
@@ -236,17 +188,9 @@ class OmmName(mc.StorageName):
         return f'{self._product_id}_prev.jpg'
 
     @property
-    def product_id(self):
-        return self._product_id
-
-    @property
     def thumb(self):
         """The thumbnail file name for the file."""
         return f'{self._product_id}_prev_256.jpg'
-
-    @property
-    def file_uri(self):
-        return f'{self.scheme}:{self.collection}/{self.file_name}'
 
     def is_rejected(self):
         return '_REJECT' in self._file_id
@@ -290,12 +234,13 @@ class OmmName(mc.StorageName):
         elif fname.endswith('.jpg'):
             return fname
         else:
-            raise mc.CadcException(f'Unexpected file name {fname}')
+            raise CadcException(f'Unexpected file name {fname}')
 
-    @staticmethod
-    def get_obs_id(f_name):
-        temp = f_name.replace('_prev_256.jpg', '').replace('_prev.jpg', '')
-        return '_'.join(
+    def set_obs_id(self):
+        temp = self._file_name.replace('_prev_256.jpg', '').replace(
+            '_prev.jpg', ''
+        )
+        self._obs_id = '_'.join(
             ii for ii in OmmName.remove_extensions(temp).split('_')[:-1]
         )
 
@@ -305,7 +250,7 @@ class OmmName(mc.StorageName):
 
     @staticmethod
     def remove_extensions(f_name):
-        return mc.StorageName.remove_extensions(f_name).replace('.jpg', '')
+        return StorageName.remove_extensions(f_name).replace('.jpg', '')
 
 
 class OmmChooser(ec.OrganizeChooser):
@@ -342,24 +287,17 @@ class OmmChooser(ec.OrganizeChooser):
         return True
 
 
-class Telescope(object):
+class Telescope(TelescopeMapping):
+    def __init__(self, storage_name, headers):
+        super().__init__(storage_name, headers)
 
-    def __init__(self, uri, headers):
-        self._uri = uri
-        self._headers = headers
-        self._logger = logging.getLogger(self.__class__.__name__)
-
-    def accumulate_bp(self, blueprint):
-        self.accumulate_obs(blueprint)
-        self.accumulate_plane(blueprint)
-        self.accumulate_artifact(blueprint)
-        self.accumulate_position(blueprint)
-        self.accumulate_part(blueprint)
-        meta_producer = mc.get_version(APPLICATION)
-        blueprint.set('Observation.metaProducer', meta_producer)
-        blueprint.set('Plane.metaProducer', meta_producer)
-        blueprint.set('Artifact.metaProducer', meta_producer)
-        blueprint.set('Chunk.metaProducer', meta_producer)
+    def accumulate_blueprint(self, bp, application=None):
+        super().accumulate_blueprint(bp, APPLICATION)
+        self.accumulate_obs(bp)
+        self.accumulate_plane(bp)
+        self.accumulate_artifact(bp)
+        self.accumulate_position(bp)
+        self.accumulate_part(bp)
 
     def accumulate_obs(self, bp):
         """Configure the OMM-specific ObsBlueprint at the CAOM model
@@ -368,27 +306,29 @@ class Telescope(object):
         bp.clear('Observation.algorithm.name')
         bp.set('Observation.type', 'get_obs_type()')
         bp.set('Observation.intent', 'get_obs_intent()')
-        bp.add_fits_attribute('Observation.instrument.name', 'INSTRUME')
-        bp.add_fits_attribute('Observation.instrument.keywords', 'DETECTOR')
+        bp.add_attribute('Observation.instrument.name', 'INSTRUME')
+        bp.add_attribute('Observation.instrument.keywords', 'DETECTOR')
         bp.set('Observation.instrument.keywords', 'DETECTOR=CPAPIR-HAWAII-2')
-        bp.add_fits_attribute('Observation.target.name', 'OBJECT')
+        bp.add_attribute('Observation.target.name', 'OBJECT')
         bp.set('Observation.target.type', TargetType.OBJECT)
         bp.set('Observation.target.standard', False)
         bp.set('Observation.target.moving', False)
-        bp.add_fits_attribute('Observation.target_position.point.cval1', 'RA')
-        bp.add_fits_attribute('Observation.target_position.point.cval2', 'DEC')
-        bp.set('Observation.target_position.coordsys', 'ICRS')
-        bp.add_fits_attribute('Observation.target_position.equinox', 'EQUINOX')
-        bp.set_default('Observation.target_position.equinox', '2000.0')
-        bp.add_fits_attribute('Observation.telescope.name', 'TELESCOP')
-        bp.set(
-            'Observation.telescope.keywords', 'get_telescope_keywords()'
+        bp.add_attribute('Observation.target_position.point.cval1', 'RA')
+        bp.add_attribute(
+            'Observation.target_position.point.cval2', 'DEC'
         )
+        bp.set('Observation.target_position.coordsys', 'ICRS')
+        bp.add_attribute(
+            'Observation.target_position.equinox', 'EQUINOX'
+        )
+        bp.set_default('Observation.target_position.equinox', '2000.0')
+        bp.add_attribute('Observation.telescope.name', 'TELESCOP')
+        bp.set('Observation.telescope.keywords', 'get_telescope_keywords()')
         bp.set(
             'Observation.environment.ambientTemp',
             'get_obs_env_ambient_temp()',
         )
-        if OmmName.is_composite(self._uri):
+        if OmmName.is_composite(self._storage_name.file_uri):
             bp.set('CompositeObservation.members', {})
 
     def accumulate_plane(self, bp):
@@ -397,15 +337,15 @@ class Telescope(object):
         self._logger.debug('Begin accumulate_plane.')
         bp.set('Plane.dataProductType', 'image')
         bp.set('Plane.calibrationLevel', 'get_plane_cal_level()')
-        bp.add_fits_attribute('Plane.provenance.name', 'INSTRUME')
-        bp.add_fits_attribute('Plane.provenance.runID', 'NIGHTID')
+        bp.add_attribute('Plane.provenance.name', 'INSTRUME')
+        bp.add_attribute('Plane.provenance.runID', 'NIGHTID')
         bp.set('Plane.metaRelease', 'get_meta_release_date()')
         bp.set('Plane.dataRelease', 'get_data_release_date()')
         bp.clear('Plane.provenance.version')
-        bp.add_fits_attribute('Plane.provenance.version', 'DRS_VERS')
+        bp.add_attribute('Plane.provenance.version', 'DRS_VERS')
         bp.set_default('Plane.provenance.version', '1.0')
         bp.clear('Plane.provenance.lastExecuted')
-        bp.add_fits_attribute('Plane.provenance.lastExecuted', 'DRS_DATE')
+        bp.add_attribute('Plane.provenance.lastExecuted', 'DRS_DATE')
         bp.set('Plane.provenance.reference', 'http://omm-astro.ca')
         bp.set('Plane.provenance.project', 'Standard Pipeline')
 
@@ -443,7 +383,7 @@ class Telescope(object):
         bp.set('Chunk.position.axis.axis1.cunit', 'deg')
         bp.set('Chunk.position.axis.axis2.cunit', 'deg')
         bp.clear('Chunk.position.equinox')
-        bp.add_fits_attribute('Chunk.position.equinox', 'EQUINOX')
+        bp.add_attribute('Chunk.position.equinox', 'EQUINOX')
         bp.set(
             'Chunk.position.resolution',
             'get_chunk_position_resolution()',
@@ -537,10 +477,10 @@ class Telescope(object):
         Called to fill a blueprint value, must have a
         parameter named ext for import_module loading and execution."""
         temp = None
-        temp_astr = mc.to_float(self._headers[ext].get('RMSASTR'))
+        temp_astr = to_float(self._headers[ext].get('RMSASTR'))
         if temp_astr is not None and temp_astr != -1.0:
             temp = temp_astr
-        temp_mass = mc.to_float(self._headers[ext].get('RMS2MASS'))
+        temp_mass = to_float(self._headers[ext].get('RMS2MASS'))
         if temp_mass is not None and temp_mass != -1.0:
             temp = temp_mass
         return temp
@@ -573,7 +513,7 @@ class Telescope(object):
                 # DD, SB - slack - 19-03-20 - if release is not in the header
                 # observation date plus two years. This only applies to
                 # science observations.
-                temp = mc.make_time(rel_date)
+                temp = make_time(rel_date)
                 rel_date = temp.replace(year=temp.year + 2)
         return rel_date
 
@@ -603,22 +543,22 @@ class Telescope(object):
         else:
             return None
 
-    def update(self, observation, omm_name, file_info):
+    def update(self, observation, file_info, clients=None):
         """Called to fill multiple CAOM model elements and/or attributes, must
         have this signature for import_module loading and execution.
 
         :param observation A CAOM Observation model instance.
-        :param omm_name OmmName instance
         :param file_info cadcdata.FileInfo instance
+        :param clients ClientCollection instance
         """
         self._logger.debug('Begin update.')
         self._update_telescope_location(observation)
 
         for plane in observation.planes.values():
             for artifact in plane.artifacts.values():
-                if omm_name.product_id != plane.product_id:
+                if self._storage_name.file_uri != artifact.uri:
                     continue
-                fits2caom2.update_artifact_meta(artifact, file_info)
+                update_artifact_meta(artifact, file_info)
                 for part in artifact.parts.values():
                     if len(part.chunks) == 0 and part.name == '0':
                         # always have a time axis, and usually an energy
@@ -629,19 +569,21 @@ class Telescope(object):
                         chunk.product_type = self.get_product_type(0)
                         self._update_energy(chunk)
                         self._update_time(chunk, observation.observation_id)
-                        self._update_position(plane, observation.intent, chunk)
+                        self._update_position(
+                            plane, observation.intent, chunk
+                        )
                         if chunk.position is None:
                             # for WCS validation correctness
                             chunk.naxis = None
                             chunk.energy_axis = None
                             chunk.time_axis = None
 
-                if omm_name.is_rejected():
+                if self._storage_name.is_rejected():
                     self._update_requirements(observation)
 
             if OmmName.is_composite(plane.product_id):
                 if OmmChooser.change_type(observation):
-                    observation = cc.change_to_composite(observation)
+                    observation = change_to_composite(observation)
                     self._logger.info(
                         f'Changing from Simple to Composite for '
                         f'{observation.observation_id}'
@@ -663,7 +605,7 @@ class Telescope(object):
         the WLEN and BANDPASS keyword values are set to the defaults, there is
         no energy information."""
         self._logger.debug('Begin _update_energy')
-        mc.check_param(chunk, Chunk)
+        check_param(chunk, Chunk)
 
         wlen = self._headers[0].get('WLEN')
         bandpass = self._headers[0].get('BANDPASS')
@@ -699,7 +641,7 @@ class Telescope(object):
         elif observation.observation_id.startswith('S'):
             name = 'SPIOMM'
         else:
-            raise mc.CadcException(
+            raise CadcException(
                 f'Unexpected observation id format: '
                 f'{observation.observation_id}'
             )
@@ -730,7 +672,7 @@ class Telescope(object):
         """Create TemporalWCS information using FITS header information.
         This information should always be available from the file."""
         self._logger.debug('Begin _update_time.')
-        mc.check_param(chunk, Chunk)
+        check_param(chunk, Chunk)
 
         mjd_start = self._headers[0].get('MJD_STAR')
         mjd_end = self._headers[0].get('MJD_END')
@@ -739,11 +681,13 @@ class Telescope(object):
         if mjd_start is None or mjd_end is None:
             chunk.time = None
             self._logger.debug(
-                f'Cannot calculate MJD_STAR {mjd_start} or ' f'MDJ_END'
+                f'Cannot calculate MJD_STAR {mjd_start} or '
+                f'MDJ_END'
                 f' {mjd_end}'
             )
         elif mjd_start == 'NaN' or mjd_end == 'NaN':
-            raise mc.CadcException(
+            logging.error('am i here?')
+            raise CadcException(
                 f'Invalid time values MJD_STAR {mjd_start} or MJD_END '
                 f'{mjd_end} for {obs_id}, stopping ingestion.'
             )
@@ -780,7 +724,7 @@ class Telescope(object):
 
         """
         self._logger.debug('Begin _update_position')
-        mc.check_param(chunk, Chunk)
+        check_param(chunk, Chunk)
 
         w = wcs.WCS(self._headers[0])
 
@@ -801,7 +745,9 @@ class Telescope(object):
                     f'{plane.product_id} as JUNK.'
                 )
                 plane.quality = DataQuality(Quality.JUNK)
-            self._logger.debug('Removing the partial position record from the chunk.')
+            self._logger.debug(
+                'Removing the partial position record from the chunk.'
+            )
 
         self._logger.debug('End _update_position')
 
@@ -862,11 +808,11 @@ class Telescope(object):
                 elif base_name.startswith('C') or value.startswith('C'):
                     file_id = f'{base_name}_CAL'
                 else:
-                    raise mc.CadcException(
+                    raise CadcException(
                         f'Unknown file naming pattern {base_name}'
                     )
 
-                obs_member_uri_str = mc.CaomName.make_obs_uri_from_obs_id(
+                obs_member_uri_str = CaomName.make_obs_uri_from_obs_id(
                     COLLECTION, base_name
                 )
                 obs_member_uri = ObservationURI(obs_member_uri_str)
@@ -874,9 +820,9 @@ class Telescope(object):
                 plane_inputs.add(plane_uri)
                 members_inputs.add(obs_member_uri)
 
-        mc.update_typed_set(observation.members, members_inputs)
+        update_typed_set(observation.members, members_inputs)
         for plane in observation.planes.values():
-            mc.update_typed_set(plane.provenance.inputs, plane_inputs)
+            update_typed_set(plane.provenance.inputs, plane_inputs)
 
     def _update_cal_provenance(self, observation):
         plane_inputs = TypedSet(
@@ -893,7 +839,7 @@ class Telescope(object):
                 )
                 file_id = f'{base_name}_CAL'
 
-                obs_member_uri_str = mc.CaomName.make_obs_uri_from_obs_id(
+                obs_member_uri_str = CaomName.make_obs_uri_from_obs_id(
                     COLLECTION, base_name
                 )
                 obs_member_uri = ObservationURI(obs_member_uri_str)
@@ -904,9 +850,9 @@ class Telescope(object):
         for plane in observation.planes.values():
             if plane.provenance is None:
                 plane.provenance = Provenance('CPAPIR')
-            mc.update_typed_set(plane.provenance.inputs, plane_inputs)
+            update_typed_set(plane.provenance.inputs, plane_inputs)
 
-        mc.update_typed_set(observation.members, members_inputs)
+        update_typed_set(observation.members, members_inputs)
 
     def _update_requirements(self, observation):
         """
@@ -933,7 +879,7 @@ class Telescope(object):
                 for ii in fits_data[1].data[0]['DURATION']:
                     upper_values = f'{ii} {upper_values} '
             else:
-                raise mc.CadcException(
+                raise CadcException(
                     f'Opened a composite file that does not match the '
                     f'expected profile '
                     f'(XTENSION=BINTABLE/EXTNAME=PROVENANCE). '
@@ -948,7 +894,7 @@ class Telescope(object):
                         lower = lower_values.split()
                         upper = upper_values.split()
                         if len(lower) != len(upper):
-                            raise mc.CadcException(
+                            raise CadcException(
                                 'Cannot make RefCoords with inconsistent '
                                 'values.'
                             )
@@ -957,7 +903,7 @@ class Telescope(object):
                         chunk.time.axis.bounds = bounds
                         for ii in range(len(lower)):
                             mjd_start, mjd_end = ac.convert_time(
-                                mc.to_float(lower[ii]), mc.to_float(upper[ii])
+                                to_float(lower[ii]), to_float(upper[ii])
                             )
                             lower_refcoord = RefCoord(0.5, mjd_start)
                             upper_refcoord = RefCoord(1.5, mjd_end)
@@ -976,7 +922,7 @@ class Telescope(object):
 
         self._logger.debug('Begin _update_telescope_location')
         if not isinstance(observation, Observation):
-            raise mc.CadcException('Input type is Observation.')
+            raise CadcException('Input type is Observation.')
 
         telescope = self._headers[0].get('TELESCOP')
 
@@ -1017,6 +963,6 @@ class Telescope(object):
                     lat, long, DEFAULT_GEOCENTRIC[telescope]['elevation']
                 )
         else:
-            raise mc.CadcException(f'Unexpected telescope name {telescope}')
+            raise CadcException(f'Unexpected telescope name {telescope}')
 
         self._logger.debug('Done _update_telescope_location')

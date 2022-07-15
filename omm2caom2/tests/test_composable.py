@@ -105,8 +105,6 @@ def test_run_single(run_mock, access_mock, client_mock):
         assert isinstance(test_storage, OmmName), type(test_storage)
         assert test_storage.obs_id == test_obs_id, 'wrong obs id'
         assert test_storage.file_name == test_f, 'wrong file name'
-        assert test_storage.fname_on_disk is None, 'wrong fname on disk'
-        assert test_storage.url is None, 'wrong url'
     finally:
         os.getcwd = getcwd_orig
 

@@ -71,9 +71,13 @@ from os.path import basename, dirname, exists, join, realpath
 
 from cadcdata import FileInfo
 from caom2.diff import get_differences
-from omm2caom2 import APPLICATION, OmmName, fits2caom2_augmentation
+from omm2caom2 import APPLICATION, OmmName, fits2caom2_augmentation, SCHEME
 from caom2pipe import astro_composable as ac
-from caom2pipe import manage_composable as mc
+from caom2pipe.manage_composable import (
+    read_obs_from_file,
+    StorageName,
+    write_obs_to_file,
+)
 from caom2pipe import reader_composable as rdc
 
 
@@ -92,37 +96,52 @@ def pytest_generate_tests(metafunc):
 
 
 def test_visitor(test_name):
-    storage_name = OmmName(
-        file_name=basename(test_name).replace('.header', '.gz'),
-    )
-    file_info = FileInfo(
-        id=storage_name.file_uri, file_type='application/fits'
-    )
-    headers = ac.make_headers_from_file(test_name)
-    metadata_reader = rdc.FileMetadataReader()
-    metadata_reader._headers = {storage_name.file_uri: headers}
-    metadata_reader._file_info = {storage_name.file_uri: file_info}
-    kwargs = {
-        'storage_name': storage_name,
-        'metadata_reader': metadata_reader,
-    }
-    observation = None
-    input_file = f'{TEST_DATA_DIR}/in.{storage_name.product_id}.fits.xml'
-    if exists(input_file):
-        observation = mc.read_obs_from_file(input_file)
-    observation = fits2caom2_augmentation.visit(observation, **kwargs)
+    original_collection = StorageName.collection
+    original_pattern = StorageName.collection_pattern
+    original_scheme = StorageName.scheme
+    try:
+        StorageName.collection = 'OMM'
+        StorageName.collection_pattern = OmmName.OMM_NAME_PATTERN
+        StorageName.scheme = SCHEME
 
-    expected_fqn = (
-        f'{TEST_DATA_DIR}/{storage_name.file_id}.expected.xml'
-    )
-    expected = mc.read_obs_from_file(expected_fqn)
-    compare_result = get_differences(expected, observation)
-    if compare_result is not None:
-        actual_fqn = expected_fqn.replace('expected', 'actual')
-        mc.write_obs_to_file(observation, actual_fqn)
-        compare_text = '\n'.join([r for r in compare_result])
-        msg = (
-            f'Differences found in observation {expected.observation_id}\n'
-            f'{compare_text}'
+        storage_name = OmmName(
+            file_name=basename(test_name).replace('.header', '.gz'),
+            source_names=[test_name],
         )
-        raise AssertionError(msg)
+        storage_name.destination_uris[0] = storage_name.destination_uris[
+            0
+        ].replace('.header', '')
+        file_info = FileInfo(
+            id=storage_name.file_uri, file_type='application/fits'
+        )
+        headers = ac.make_headers_from_file(test_name)
+        metadata_reader = rdc.FileMetadataReader()
+        metadata_reader._headers = {storage_name.file_uri: headers}
+        metadata_reader._file_info = {storage_name.file_uri: file_info}
+        kwargs = {
+            'storage_name': storage_name,
+            'metadata_reader': metadata_reader,
+        }
+        observation = None
+        input_file = f'{TEST_DATA_DIR}/in.{storage_name.product_id}.fits.xml'
+        if exists(input_file):
+            observation = read_obs_from_file(input_file)
+
+        observation = fits2caom2_augmentation.visit(observation, **kwargs)
+
+        expected_fqn = f'{TEST_DATA_DIR}/{storage_name.file_id}.expected.xml'
+        expected = read_obs_from_file(expected_fqn)
+        compare_result = get_differences(expected, observation)
+        if compare_result is not None:
+            actual_fqn = expected_fqn.replace('expected', 'actual')
+            write_obs_to_file(observation, actual_fqn)
+            compare_text = '\n'.join([r for r in compare_result])
+            msg = (
+                f'Differences found in observation {expected.observation_id}\n'
+                f'{compare_text}'
+            )
+            raise AssertionError(msg)
+    finally:
+        StorageName.collection = original_collection
+        StorageName.collection_pattern = original_pattern
+        StorageName.scheme = original_scheme

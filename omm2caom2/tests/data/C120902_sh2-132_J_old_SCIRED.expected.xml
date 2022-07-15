@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<caom2:Observation xmlns:caom2="http://www.opencadc.org/caom2/xml/v2.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:CompositeObservation" caom2:id="00000000-0000-0000-85be-bcee46021ed1">
+<caom2:Observation xmlns:caom2="http://www.opencadc.org/caom2/xml/v2.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:DerivedObservation" caom2:id="00000000-0000-0000-85be-bcee46021ed1">
   <caom2:collection>OMM</caom2:collection>
   <caom2:observationID>C120902_sh2-132_J_old</caom2:observationID>
   <caom2:metaRelease>2012-09-02T21:04:44.000</caom2:metaRelease>
@@ -51,7 +51,7 @@
       </caom2:provenance>
       <caom2:artifacts>
         <caom2:artifact caom2:id="00000000-0000-0000-8649-5f4405c6ed1f">
-          <caom2:uri>ad:OMM/C120902_sh2-132_J_old_SCIRED.fits.gz</caom2:uri>
+          <caom2:uri>ad:OMM/C120902_sh2-132_J_old_SCIRED.fits</caom2:uri>
           <caom2:productType>science</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
           <caom2:contentType>application/fits</caom2:contentType>

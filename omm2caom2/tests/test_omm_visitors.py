@@ -74,8 +74,15 @@ from unittest.mock import Mock, patch
 from cadcdata import FileInfo
 from caom2 import ChecksumURI
 from omm2caom2 import footprint_augmentation, preview_augmentation
-from omm2caom2 import OmmName, cleanup_augmentation
-from caom2pipe import manage_composable as mc
+from omm2caom2 import OmmName, cleanup_augmentation, SCHEME
+from caom2pipe.manage_composable import (
+    CadcException,
+    Config,
+    Metrics,
+    Observable,
+    read_obs_from_file,
+    StorageName,
+)
 
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -91,96 +98,122 @@ def test_footprint_aug_visit():
 
 
 def test_footprint_update_position():
-    omm_name = OmmName(file_name=TEST_FILE, entry=TEST_FILE)
-    test_kwargs = {'storage_name': omm_name}
-    test_fqn = os.path.join(
-        TEST_DATA_DIR, f'{omm_name.product_id}.expected.xml'
-    )
-    test_obs = mc.read_obs_from_file(test_fqn)
-    test_chunk = (
-        test_obs.planes[omm_name.product_id]
-        .artifacts[omm_name.file_uri]
-        .parts['0']
-        .chunks[0]
-    )
-    assert test_chunk.position.axis.bounds is None
+    original_collection = StorageName.collection
+    original_pattern = StorageName.collection_pattern
+    original_scheme = StorageName.scheme
+    try:
+        StorageName.collection = 'OMM'
+        StorageName.collection_pattern = OmmName.OMM_NAME_PATTERN
+        StorageName.scheme = SCHEME
+        fqn = f'{TEST_FILES_DIR}/{TEST_FILE}'
+        omm_name = OmmName(file_name=TEST_FILE, source_names=[fqn])
+        test_kwargs = {'storage_name': omm_name}
+        test_fqn = os.path.join(
+            TEST_DATA_DIR, f'{omm_name.product_id}.expected.xml'
+        )
+        test_obs = read_obs_from_file(test_fqn)
+        test_chunk = (
+            test_obs.planes[omm_name.product_id]
+            .artifacts[omm_name.file_uri]
+            .parts['0']
+            .chunks[0]
+        )
+        assert test_chunk.position.axis.bounds is None
 
-    # expected failure due to required kwargs parameter
-    with pytest.raises(mc.CadcException):
-        test_result = footprint_augmentation.visit(test_obs)
+        # expected failure due to required kwargs parameter
+        with pytest.raises(CadcException):
+            test_result = footprint_augmentation.visit(test_obs)
 
-    test_kwargs['working_directory'] = TEST_FILES_DIR
-    test_result = footprint_augmentation.visit(test_obs, **test_kwargs)
-    assert test_result is not None, 'expected a visit return value'
-    assert (
-        test_chunk.position.axis.bounds is not None
-    ), 'bound calculation failed'
+        test_kwargs['working_directory'] = TEST_FILES_DIR
+        test_result = footprint_augmentation.visit(test_obs, **test_kwargs)
+        assert test_result is not None, 'expected a visit return value'
+        assert (
+            test_chunk.position.axis.bounds is not None
+        ), 'bound calculation failed'
+
+    finally:
+        StorageName.collection = original_collection
+        StorageName.collection_pattern = original_pattern
+        StorageName.scheme = original_scheme
 
 
 def test_preview_aug_visit():
-    with pytest.raises(mc.CadcException):
+    with pytest.raises(CadcException):
         preview_augmentation.visit(None)
 
 
 def test_preview_augment_plane():
-    omm_name = OmmName(file_name=TEST_FILE, entry=TEST_FILE)
-    preview = os.path.join(TEST_FILES_DIR, omm_name.prev)
-    thumb = os.path.join(TEST_FILES_DIR, omm_name.thumb)
-    if os.path.exists(preview):
-        os.remove(preview)
-    if os.path.exists(thumb):
-        os.remove(thumb)
-    test_fqn = os.path.join(
-        TEST_DATA_DIR, f'{omm_name.product_id}.expected.xml'
-    )
-    test_obs = mc.read_obs_from_file(test_fqn)
-    assert len(test_obs.planes[omm_name.product_id].artifacts) == 1
-    preva = 'cadc:OMM/C170324_0054_SCI_prev.jpg'
-    thumba = 'cadc:OMM/C170324_0054_SCI_prev_256.jpg'
+    original_collection = StorageName.collection
+    original_pattern = StorageName.collection_pattern
+    original_scheme = StorageName.scheme
+    try:
+        StorageName.collection = 'OMM'
+        StorageName.collection_pattern = OmmName.OMM_NAME_PATTERN
+        StorageName.scheme = SCHEME
+        fqn = f'{TEST_FILES_DIR}/{TEST_FILE}'
+        omm_name = OmmName(file_name=TEST_FILE, source_names=[fqn])
+        preview = os.path.join(TEST_FILES_DIR, omm_name.prev)
+        thumb = os.path.join(TEST_FILES_DIR, omm_name.thumb)
+        if os.path.exists(preview):
+            os.remove(preview)
+        if os.path.exists(thumb):
+            os.remove(thumb)
+        test_fqn = os.path.join(
+            TEST_DATA_DIR, f'{omm_name.product_id}.expected.xml'
+        )
+        test_obs = read_obs_from_file(test_fqn)
+        assert len(test_obs.planes[omm_name.product_id].artifacts) == 1
+        preva = f'{SCHEME}:OMM/C170324_0054_SCI_prev.jpg'
+        thumba = f'{SCHEME}:OMM/C170324_0054_SCI_prev_256.jpg'
 
-    test_config = mc.Config()
-    test_config.observe_execution = True
-    test_metrics = mc.Metrics(test_config)
-    test_observable = mc.Observable(rejected=None, metrics=test_metrics)
+        test_config = Config()
+        test_config.observe_execution = True
+        test_metrics = Metrics(test_config)
+        test_observable = Observable(rejected=None, metrics=test_metrics)
 
-    test_kwargs = {
-        'working_directory': TEST_FILES_DIR,
-        'cadc_client': None,
-        'observable': test_observable,
-        'storage_name': omm_name,
-    }
-    test_result = preview_augmentation.visit(test_obs, **test_kwargs)
-    assert test_result is not None, 'expected a visit return value'
-    assert os.path.exists(preview)
-    assert os.path.exists(thumb)
-    test_plane = test_result.planes[omm_name.product_id]
-    assert test_plane.artifacts[preva].content_checksum == ChecksumURI(
-        'md5:f37d21c53055498d1b5cb7753e1c6d6f'
-    ), 'prev checksum failure'
-    assert test_plane.artifacts[thumba].content_checksum == ChecksumURI(
-        'md5:19661c3c2508ecc22425ee2a05881ed4'
-    ), 'thumb checksum failure'
+        test_kwargs = {
+            'working_directory': TEST_FILES_DIR,
+            'cadc_client': None,
+            'observable': test_observable,
+            'storage_name': omm_name,
+        }
+        test_result = preview_augmentation.visit(test_obs, **test_kwargs)
+        assert test_result is not None, 'expected a visit return value'
+        assert os.path.exists(preview)
+        assert os.path.exists(thumb)
+        test_plane = test_result.planes[omm_name.product_id]
+        assert test_plane.artifacts[preva].content_checksum == ChecksumURI(
+            'md5:f37d21c53055498d1b5cb7753e1c6d6f'
+        ), 'prev checksum failure'
+        assert test_plane.artifacts[thumba].content_checksum == ChecksumURI(
+            'md5:19661c3c2508ecc22425ee2a05881ed4'
+        ), 'thumb checksum failure'
 
-    # now do updates
-    test_obs.planes[omm_name.product_id].artifacts[
-        preva
-    ].content_checksum = ChecksumURI('de9f39804f172682ea9b001f8ca11f15')
-    test_obs.planes[omm_name.product_id].artifacts[
-        thumba
-    ].content_checksum = ChecksumURI('cd118dae04391f6bea93ba4bf2711adf')
-    test_result = preview_augmentation.visit(test_obs, **test_kwargs)
-    assert test_result is not None, 'expected update visit return value'
-    assert len(test_result.planes[omm_name.product_id].artifacts) == 3
-    assert os.path.exists(preview)
-    assert os.path.exists(thumb)
-    assert test_plane.artifacts[preva].content_checksum == ChecksumURI(
-        'md5:f37d21c53055498d1b5cb7753e1c6d6f'
-    ), 'prev update failed'
-    assert test_plane.artifacts[thumba].content_checksum == ChecksumURI(
-        'md5:19661c3c2508ecc22425ee2a05881ed4'
-    ), 'prev_256 update failed'
+        # now do updates
+        test_obs.planes[omm_name.product_id].artifacts[
+            preva
+        ].content_checksum = ChecksumURI('de9f39804f172682ea9b001f8ca11f15')
+        test_obs.planes[omm_name.product_id].artifacts[
+            thumba
+        ].content_checksum = ChecksumURI('cd118dae04391f6bea93ba4bf2711adf')
+        test_result = preview_augmentation.visit(test_obs, **test_kwargs)
+        assert test_result is not None, 'expected update visit return value'
+        assert len(test_result.planes[omm_name.product_id].artifacts) == 3
+        assert os.path.exists(preview)
+        assert os.path.exists(thumb)
+        assert test_plane.artifacts[preva].content_checksum == ChecksumURI(
+            'md5:f37d21c53055498d1b5cb7753e1c6d6f'
+        ), 'prev update failed'
+        assert test_plane.artifacts[thumba].content_checksum == ChecksumURI(
+            'md5:19661c3c2508ecc22425ee2a05881ed4'
+        ), 'prev_256 update failed'
 
-    assert len(test_metrics.history) == 0, 'wrong history, client is not None'
+        assert len(test_metrics.history) == 0, 'wrong history, client is not None'
+
+    finally:
+        StorageName.collection = original_collection
+        StorageName.collection_pattern = original_pattern
+        StorageName.scheme = original_scheme
 
 
 @patch('caom2utils.data_util.StorageClientWrapper')
@@ -188,7 +221,7 @@ def test_preview_augment_plane():
 def test_cleanup(slack_mock, cadc_client_mock):
     test_obs_id = 'C090219_0001'
     test_obs_fqn = f'{TEST_DATA_DIR}/{test_obs_id}_start.xml'
-    test_obs = mc.read_obs_from_file(test_obs_fqn)
+    test_obs = read_obs_from_file(test_obs_fqn)
     cadc_client_mock.info.side_effect = _mock_file_info
     kwargs = {'cadc_client': cadc_client_mock}
     test_result = cleanup_augmentation.visit(test_obs, **kwargs)

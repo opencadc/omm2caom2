@@ -68,77 +68,113 @@
 
 import pytest
 
-from caom2pipe import manage_composable as mc
-from omm2caom2 import OmmName, OmmBuilder
+from caom2pipe.manage_composable import CadcException, Config, StorageName
+from omm2caom2 import OmmName, OmmBuilder, SCHEME
 
 
 def test_is_valid():
-    assert OmmName(file_name='C121212_00001_SCI.fits.gz').is_valid()
-    assert not OmmName(file_name='c121212_00001_SCI.fits.gz').is_valid()
-    assert OmmName(file_name='C121212_00001_CAL.fits.gz').is_valid()
-    assert not OmmName(file_name='c121212_00001_CAL.fits.gz').is_valid()
-    assert OmmName(file_name='C121212_domeflat_K_CALRED.fits.gz').is_valid()
-    assert not OmmName(
-        file_name='C121212_DOMEFLAT_K_CALRED.fits.gz'
-    ).is_valid()
-    assert OmmName(file_name='C121212_sh2-132_J_old_SCIRED.fits.gz').is_valid()
-    assert OmmName(file_name='C121212_J0454+8024_J_SCIRED.fits.gz').is_valid()
-    assert OmmName(file_name='C121212_00001_TEST.fits.gz').is_valid()
-    assert OmmName(file_name='C121212_00001_FOCUS.fits.gz').is_valid()
-    assert OmmName(
-        file_name='C121121_J024345.57-021326.4_K_SCIRED.fits.gz'
-    ).is_valid()
+    original_collection = StorageName.collection
+    original_pattern = StorageName.collection_pattern
+    original_scheme = StorageName.scheme
+    try:
+        StorageName.collection = 'OMM'
+        StorageName.collection_pattern = OmmName.OMM_NAME_PATTERN
+        StorageName.scheme = SCHEME
 
-    test_subject = OmmName(file_name='C121212_00001_SCI.fits')
-    assert test_subject.is_valid()
-    assert test_subject.obs_id == 'C121212_00001'
-    test_subject = OmmName(file_name='C121212_00001_SCI.fits.gz')
-    assert test_subject.is_valid()
-    assert test_subject.obs_id == 'C121212_00001'
-    test_subject = OmmName(
-        fname_on_disk='C121212_00001_SCI.fits',
-        file_name='C121212_00001_SCI.fits.gz',
-    )
-    assert test_subject.is_valid()
-    assert test_subject.obs_id == 'C121212_00001'
-    assert (
-        test_subject.file_uri == 'ad:OMM/C121212_00001_SCI.fits.gz'
-    ), 'wrong file uri'
+        assert OmmName(file_name='C121212_00001_SCI.fits.gz').is_valid()
+        assert not OmmName(file_name='c121212_00001_SCI.fits.gz').is_valid()
+        assert OmmName(file_name='C121212_00001_CAL.fits.gz').is_valid()
+        assert not OmmName(file_name='c121212_00001_CAL.fits.gz').is_valid()
+        assert OmmName(
+            file_name='C121212_domeflat_K_CALRED.fits.gz'
+        ).is_valid()
+        assert not OmmName(
+            file_name='C121212_DOMEFLAT_K_CALRED.fits.gz'
+        ).is_valid()
+        assert OmmName(
+            file_name='C121212_sh2-132_J_old_SCIRED.fits.gz'
+        ).is_valid()
+        assert OmmName(
+            file_name='C121212_J0454+8024_J_SCIRED.fits.gz'
+        ).is_valid()
+        assert OmmName(file_name='C121212_00001_TEST.fits.gz').is_valid()
+        assert OmmName(file_name='C121212_00001_FOCUS.fits.gz').is_valid()
+        assert OmmName(
+            file_name='C121121_J024345.57-021326.4_K_SCIRED.fits.gz'
+        ).is_valid()
 
-    with pytest.raises(mc.CadcException):
-        test_subject = OmmName(file_name='C121212_00001_SCI')
-        test_subject = OmmName(fname_on_disk='C121212_00001_FOCUS')
-        test_subject = OmmName('C121212_00001_FOCUS.fits')
-        test_subject = OmmName('C121212_00001_FOCUS.fits.gz')
+        test_subject = OmmName(file_name='C121212_00001_SCI.fits')
+        assert test_subject.is_valid()
+        assert test_subject.obs_id == 'C121212_00001'
+        test_subject = OmmName(file_name='C121212_00001_SCI.fits.gz')
+        assert test_subject.is_valid()
+        assert test_subject.obs_id == 'C121212_00001'
+        test_subject = OmmName(
+            file_name='C121212_00001_SCI.fits.gz',
+        )
+        assert test_subject.is_valid()
+        assert test_subject.obs_id == 'C121212_00001'
+        assert (
+            test_subject.file_uri == 'ad:OMM/C121212_00001_SCI.fits'
+        ), 'wrong file uri'
+
+        with pytest.raises(CadcException):
+            test_subject = OmmName._add_extensions('C121212_00001_SCI')
+            test_subject = OmmName._add_extensions('C121212_00001_FOCUS')
+            test_subject = OmmName._add_extensions('C121212_00001_FOCUS.fits')
+            test_subject = OmmName._add_extensions(
+                'C121212_00001_FOCUS.fits.gz'
+            )
+
+    finally:
+        StorageName.collection = original_collection
+        StorageName.collection_pattern = original_pattern
+        StorageName.scheme = original_scheme
 
 
 def test_omm_name():
-    test_config = mc.Config()
-    test_config.task_types = []
-    test_config.use_local_files = True
-    test_builder = OmmBuilder(test_config)
-    test_name = 'C121212_00001_SCI'
-    for entry in [f'{test_name}', f'/tmp/{test_name}']:
-        test_subject = test_builder.build(f'{entry}.fits')
-        assert f'ad:OMM/{test_name}.fits.gz' == test_subject.file_uri
-        assert (
-            test_subject.source_names == [f'{entry}.fits']
-        ), 'wrong source name'
-        assert (
-            test_subject.destination_uris[0] == f'ad:OMM/{test_name}.fits.gz'
-        ), 'wrong source name'
+    original_collection = StorageName.collection
+    original_pattern = StorageName.collection_pattern
+    original_scheme = StorageName.scheme
+    try:
+        StorageName.collection = 'OMM'
+        StorageName.collection_pattern = OmmName.OMM_NAME_PATTERN
+        StorageName.scheme = SCHEME
+        test_config = Config()
+        test_config.task_types = []
+        test_config.use_local_files = True
+        test_builder = OmmBuilder(test_config)
+        test_name = 'C121212_00001_SCI'
+        for entry in [f'{test_name}', f'/tmp/{test_name}']:
+            test_subject = test_builder.build(f'{entry}.fits')
+            assert f'ad:OMM/{test_name}.fits' == test_subject.file_uri
+            assert test_subject.source_names == [
+                f'{entry}.fits'
+            ], 'wrong source name'
+            assert (
+                test_subject.destination_uris[0] == f'ad:OMM/{test_name}.fits'
+            ), 'wrong source name'
 
-    test_name = 'C121212_sh2-132_J_old_SCIRED'
-    file_name = f'{test_name}_prev_256.jpg'
-    assert f'{test_name}_prev.jpg' == OmmName(file_name=file_name).prev
-    assert f'{test_name}_prev_256.jpg' == OmmName(file_name=file_name).thumb
-    test_name = 'C121212_sh2-132_J_old_SCIRED'
-    file_name = f'{test_name}_prev_256.jpg'
-    assert f'{test_name}_prev.jpg' == OmmName(file_name=file_name).prev
-    assert f'{test_name}_prev_256.jpg' == OmmName(file_name=file_name).thumb
-    test_obs_id = 'C121121_J024345.57-021326.4_K'
-    test_name = f'{test_obs_id}_SCIRED'
-    file_name = f'{test_name}.fits.gz'
-    assert f'{test_name}_prev.jpg' == OmmName(file_name=file_name).prev
-    assert f'{test_name}_prev_256.jpg' == OmmName(file_name=file_name).thumb
-    assert OmmName(file_name=file_name).obs_id == test_obs_id
+        test_name = 'C121212_sh2-132_J_old_SCIRED'
+        test_subject = OmmName(file_name=f'{test_name}.fits')
+        assert test_subject.product_id == test_name, 'product id'
+        assert f'{test_name}_prev.jpg' == test_subject.prev
+        assert f'{test_name}_prev_256.jpg' == test_subject.thumb
+
+        test_name = 'C121212_sh2-132_J_old_SCIRED'
+        test_subject = OmmName(file_name=f'{test_name}.fits')
+        assert f'{test_name}_prev.jpg' == test_subject.prev
+        assert f'{test_name}_prev_256.jpg' == test_subject.thumb
+
+        test_obs_id = 'C121121_J024345.57-021326.4_K'
+        test_name = f'{test_obs_id}_SCIRED'
+        file_name = f'{test_name}.fits.gz'
+        test_subject = OmmName(file_name=file_name)
+        assert f'{test_name}_prev.jpg' == test_subject.prev
+        assert f'{test_name}_prev_256.jpg' == test_subject.thumb
+        assert test_subject.obs_id == test_obs_id
+
+    finally:
+        StorageName.collection = original_collection
+        StorageName.collection_pattern = original_pattern
+        StorageName.scheme = original_scheme
