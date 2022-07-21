@@ -51,7 +51,7 @@
       </caom2:provenance>
       <caom2:artifacts>
         <caom2:artifact caom2:id="00000000-0000-0000-8649-5f4405c6ed1f">
-          <caom2:uri>ad:OMM/C120902_sh2-132_J_old_SCIRED.fits</caom2:uri>
+          <caom2:uri>cadc:OMM/C120902_sh2-132_J_old_SCIRED.fits</caom2:uri>
           <caom2:productType>science</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
           <caom2:contentType>application/fits</caom2:contentType>

@@ -66,6 +66,8 @@
 # ***********************************************************************
 #
 
+from os.path import basename
+
 import pytest
 
 from caom2pipe.manage_composable import CadcException, Config, StorageName
@@ -115,7 +117,7 @@ def test_is_valid():
         assert test_subject.is_valid()
         assert test_subject.obs_id == 'C121212_00001'
         assert (
-            test_subject.file_uri == 'ad:OMM/C121212_00001_SCI.fits'
+            test_subject.file_uri == f'{SCHEME}:OMM/C121212_00001_SCI.fits'
         ), 'wrong file uri'
 
         with pytest.raises(CadcException):
@@ -143,16 +145,19 @@ def test_omm_name():
         test_config = Config()
         test_config.task_types = []
         test_config.use_local_files = True
+        test_config.data_sources = ['/test_files']
         test_builder = OmmBuilder(test_config)
-        test_name = 'C121212_00001_SCI'
+        test_name = 'C170324_0054_SCI'
         for entry in [f'{test_name}', f'/tmp/{test_name}']:
             test_subject = test_builder.build(f'{entry}.fits')
-            assert f'ad:OMM/{test_name}.fits' == test_subject.file_uri
+            assert f'{SCHEME}:OMM/{test_name}.fits' == test_subject.file_uri
+            temp = basename(entry)
             assert test_subject.source_names == [
-                f'{entry}.fits'
+                f'/test_files/{temp}.fits'
             ], 'wrong source name'
             assert (
-                test_subject.destination_uris[0] == f'ad:OMM/{test_name}.fits'
+                test_subject.destination_uris[0]
+                == f'{SCHEME}:OMM/{test_name}.fits'
             ), 'wrong source name'
 
         test_name = 'C121212_sh2-132_J_old_SCIRED'

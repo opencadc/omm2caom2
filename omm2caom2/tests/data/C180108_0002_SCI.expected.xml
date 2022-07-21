@@ -46,7 +46,7 @@
       </caom2:quality>
       <caom2:artifacts>
         <caom2:artifact caom2:id="00000000-0000-0000-a044-f85a1913e3f9">
-          <caom2:uri>ad:OMM/C180108_0002_SCI.fits</caom2:uri>
+          <caom2:uri>cadc:OMM/C180108_0002_SCI.fits</caom2:uri>
           <caom2:productType>science</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
           <caom2:contentType>application/fits</caom2:contentType>

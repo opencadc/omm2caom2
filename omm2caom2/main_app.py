@@ -122,7 +122,7 @@ __all__ = [
 
 APPLICATION = 'omm2caom2'
 COLLECTION = 'OMM'
-SCHEME = 'ad'
+SCHEME = 'cadc'
 
 # map the fits file values to the DataProductType enums
 DATATYPE_LOOKUP = {
@@ -154,13 +154,36 @@ DEFAULT_GEOCENTRIC = {
 class OmmBuilder(nbc.StorageNameBuilder):
     def __init__(self, config):
         self._config = config
-        self._logger = logging.getLogger(__name__)
 
     def build(self, entry):
-        return OmmName(
-            file_name=os.path.basename(entry),
-            source_names=[entry],
-        )
+        """
+        OMM is the original pipeline, don't want to break any of the behaviour,
+        so set up the source names here.
+
+        :param entry: str - from an os.listdir call, so will have no notion
+            of 'source'
+        :return:
+        """
+        temp = os.path.basename(entry)
+        if self._config.use_local_files:
+            fqn = None
+            result = None
+            for entry in self._config.data_sources:
+                fqn = os.path.join(entry, temp)
+                if os.path.exists(fqn):
+                    result = OmmName(
+                        file_name=temp,
+                        source_names=[fqn],
+                    )
+                break
+            if result is None:
+                raise CadcException(f'Could not find local file {fqn}.')
+        else:
+            result = OmmName(
+                file_name=temp,
+                source_names=[entry],
+            )
+        return result
 
 
 class OmmName(StorageName):

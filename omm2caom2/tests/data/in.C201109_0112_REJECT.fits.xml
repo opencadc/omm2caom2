@@ -52,7 +52,7 @@
       <caom2:polarization/>
       <caom2:artifacts>
         <caom2:artifact caom2:id="78d04df7-bca8-4b13-bd4c-9afae46b0928" caom2:lastModified="2020-11-11T03:42:44.454" caom2:maxLastModified="2020-11-11T03:42:44.454" caom2:metaChecksum="md5:367ae89a9fe5826a89cbcc0702ec963e" caom2:accMetaChecksum="md5:e95f7ced685059d83814e78fd7b008af">
-          <caom2:uri>ad:OMM/C201109_0112_SCI.fits</caom2:uri>
+          <caom2:uri>cadc:OMM/C201109_0112_SCI.fits</caom2:uri>
           <caom2:productType>science</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
           <caom2:contentType>application/fits</caom2:contentType>
@@ -123,7 +123,7 @@
           </caom2:parts>
         </caom2:artifact>
         <caom2:artifact caom2:id="5426fdf0-012c-4aed-b27a-9c46f1521bd6" caom2:lastModified="2020-11-11T03:42:49.242" caom2:maxLastModified="2020-11-11T03:42:49.242" caom2:metaChecksum="md5:c949998610d6987783cdfb01488a283d" caom2:accMetaChecksum="md5:4bd04949aa5bcd9357b9b11ff3bb5735">
-          <caom2:uri>ad:OMM/C201109_0112_SCI_prev.jpg</caom2:uri>
+          <caom2:uri>cadc:OMM/C201109_0112_SCI_prev.jpg</caom2:uri>
           <caom2:productType>preview</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
           <caom2:contentType>image/jpeg</caom2:contentType>
@@ -132,7 +132,7 @@
           <caom2:parts/>
         </caom2:artifact>
         <caom2:artifact caom2:id="cfe08c4a-9ec2-4d77-8770-51a4ff6d0817" caom2:lastModified="2020-11-11T03:42:49.242" caom2:maxLastModified="2020-11-11T03:42:49.242" caom2:metaChecksum="md5:057703b6b7f1d35aea1bee272fa22e32" caom2:accMetaChecksum="md5:3315f5b3d574814606c0033c212887ea">
-          <caom2:uri>ad:OMM/C201109_0112_SCI_prev_256.jpg</caom2:uri>
+          <caom2:uri>cadc:OMM/C201109_0112_SCI_prev_256.jpg</caom2:uri>
           <caom2:productType>thumbnail</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
           <caom2:contentType>image/jpeg</caom2:contentType>
