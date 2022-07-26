@@ -276,12 +276,12 @@ def test_run_compression(
                 ),
                 call(
                     f'{tmp_dir_name}/C170324_0054',
-                    'cadc:OMM/C170324_0054_SCI_prev_256.jpg',
+                    'cadc:OMM/C170324_0054_SCI_prev.jpg',
                     None,
                 ),
                 call(
                     f'{tmp_dir_name}/C170324_0054',
-                    'cadc:OMM/C170324_0054_SCI_prev.jpg',
+                    'cadc:OMM/C170324_0054_SCI_prev_256.jpg',
                     None,
                 ),
             ]

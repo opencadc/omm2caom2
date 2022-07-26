@@ -183,10 +183,10 @@ def test_preview_augment_plane():
         assert os.path.exists(thumb)
         test_plane = test_result.planes[omm_name.product_id]
         assert test_plane.artifacts[preva].content_checksum == ChecksumURI(
-            'md5:f37d21c53055498d1b5cb7753e1c6d6f'
+            'md5:1c4370b57413adb059d0ef7bad538d54'
         ), 'prev checksum failure'
         assert test_plane.artifacts[thumba].content_checksum == ChecksumURI(
-            'md5:19661c3c2508ecc22425ee2a05881ed4'
+            'md5:86cf537f70f5dd6e1d572631f6d424b1'
         ), 'thumb checksum failure'
 
         # now do updates
@@ -202,13 +202,15 @@ def test_preview_augment_plane():
         assert os.path.exists(preview)
         assert os.path.exists(thumb)
         assert test_plane.artifacts[preva].content_checksum == ChecksumURI(
-            'md5:f37d21c53055498d1b5cb7753e1c6d6f'
+            'md5:1c4370b57413adb059d0ef7bad538d54'
         ), 'prev update failed'
         assert test_plane.artifacts[thumba].content_checksum == ChecksumURI(
-            'md5:19661c3c2508ecc22425ee2a05881ed4'
+            'md5:86cf537f70f5dd6e1d572631f6d424b1'
         ), 'prev_256 update failed'
 
-        assert len(test_metrics.history) == 0, 'wrong history, client is not None'
+        assert (
+            len(test_metrics.history) == 0
+        ), 'wrong history, client is not None'
 
     finally:
         StorageName.collection = original_collection

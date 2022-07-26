@@ -178,6 +178,10 @@ def test_omm_name():
         assert f'{test_name}_prev.jpg' == test_subject.prev
         assert f'{test_name}_prev_256.jpg' == test_subject.thumb
         assert test_subject.obs_id == test_obs_id
+        assert (
+            test_subject.get_file_fqn('/tmp')
+            == f'/tmp/{test_subject.file_id}.fits'
+        )
 
     finally:
         StorageName.collection = original_collection
