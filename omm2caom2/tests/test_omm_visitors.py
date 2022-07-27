@@ -173,7 +173,7 @@ def test_preview_augment_plane():
 
         test_kwargs = {
             'working_directory': TEST_FILES_DIR,
-            'cadc_client': None,
+            'clients': None,
             'observable': test_observable,
             'storage_name': omm_name,
         }
@@ -218,14 +218,14 @@ def test_preview_augment_plane():
         StorageName.scheme = original_scheme
 
 
-@patch('caom2utils.data_util.StorageClientWrapper')
+@patch('caom2pipe.client_composable.ClientCollection')
 @patch('omm2caom2.cleanup_augmentation._send_slack_message')
-def test_cleanup(slack_mock, cadc_client_mock):
+def test_cleanup(slack_mock, client_mock):
     test_obs_id = 'C090219_0001'
     test_obs_fqn = f'{TEST_DATA_DIR}/{test_obs_id}_start.xml'
     test_obs = read_obs_from_file(test_obs_fqn)
-    cadc_client_mock.info.side_effect = _mock_file_info
-    kwargs = {'cadc_client': cadc_client_mock}
+    client_mock.data_client.info.side_effect = _mock_file_info
+    kwargs = {'clients': client_mock}
     test_result = cleanup_augmentation.visit(test_obs, **kwargs)
     assert test_result is not None, 'expect a result'
     assert (

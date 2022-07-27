@@ -128,7 +128,9 @@ def _run():
     config = mc.Config()
     config.get_executors()
     chooser = OmmChooser()
-    data_source = ListDirDataSource(config, chooser)
+    data_source = None
+    if config.use_local_files:
+        data_source = ListDirDataSource(config, chooser)
     return rc.run_by_todo(
         config=config,
         name_builder=OmmBuilder(config),

@@ -66,12 +66,9 @@
 # ***********************************************************************
 #
 
-import logging
-import os
-
 from caom2 import ProductType, ReleaseType
 from caom2pipe import manage_composable as mc
-from omm2caom2 import OmmName, COLLECTION
+from omm2caom2 import COLLECTION
 from astropy.visualization import ImageNormalize, PowerStretch, ZScaleInterval
 import numpy as np
 import matplotlib.pyplot as plt

@@ -85,9 +85,9 @@ def visit(observation, **kwargs):
     logging.info(
         f'Begin cleanup augmentation for ' f'{observation.observation_id}'
     )
-    cadc_client = kwargs.get('cadc_client')
+    clients = kwargs.get('clients')
     count = 0
-    if cadc_client is None:
+    if clients is None or clients.data_client is None:
         logging.warning(
             'Stopping. Need a CADC Client for cleanup augmentation.'
         )
@@ -109,7 +109,7 @@ def visit(observation, **kwargs):
                 for artifact in plane.artifacts.values():
                     if OmmName.is_preview(artifact.uri):
                         continue
-                    meta = cadc_client.info(artifact.uri)
+                    meta = clients.data_client.info(artifact.uri)
                     if meta is None:
                         logging.warning(
                             f'Did not find {artifact.uri} in CADC storage.'

@@ -40,7 +40,6 @@ RUN git clone https://github.com/${PIPE_REPO}/omm2caom2.git && \
   cd .. && \
   cp ./omm2caom2/omm2caom2/omm_docker_run_cleanup.py /usr/local/bin && \
   pip install ./omm2caom2 && \
-  cp ./omm2caom2/docker-entrypoint.sh /usr/local/bin && \
   cp ./omm2caom2/config.yml /
 
 FROM python:3.10-slim
@@ -48,6 +47,7 @@ WORKDIR /usr/src/app
 
 COPY --from=builder /usr/local/lib/python3.10/site-packages/ /usr/local/lib/python3.10/site-packages/
 COPY --from=builder /usr/local/bin/* /usr/local/bin/
+COPY --from=builder /config.yml /
 
 COPY --from=builder /etc/magic /etc/magic
 COPY --from=builder /etc/magic.mime /etc/magic.mime
