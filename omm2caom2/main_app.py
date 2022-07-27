@@ -709,7 +709,6 @@ class Telescope(TelescopeMapping):
                 f' {mjd_end}'
             )
         elif mjd_start == 'NaN' or mjd_end == 'NaN':
-            logging.error('am i here?')
             raise CadcException(
                 f'Invalid time values MJD_STAR {mjd_start} or MJD_END '
                 f'{mjd_end} for {obs_id}, stopping ingestion.'
