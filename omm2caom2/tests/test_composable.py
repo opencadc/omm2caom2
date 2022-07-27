@@ -157,43 +157,47 @@ def test_run_rc_todo(client_mock, exec_mock):
     assert exec_mock.called, 'expect to be called'
 
 
+# common definitions for the next two tests
+uris = {
+    'C170324_0054': FileInfo(
+        f'{SCHEME}:OMM/C170324_0054_SCI.fits',
+        size=16799040,
+        file_type='application/fits',
+        md5sum='md5:420d1aa2279a6adbae2ed4fb6eb8cef7',
+    ),
+}
+
+
+def _check_uris(obs):
+    file_info = uris.get(obs.observation_id)
+    assert file_info is not None, 'wrong observation id'
+    for plane in obs.planes.values():
+        for artifact in plane.artifacts.values():
+            if artifact.uri == file_info.id:
+                assert (
+                    artifact.content_type == file_info.file_type
+                ), 'type'
+                assert artifact.content_length == file_info.size, 'size'
+                assert (
+                    artifact.content_checksum.uri == file_info.md5sum
+                ), 'md5'
+                return
+
+    assert False, f'observation id not found {obs.observation_id}'
+
+
+def _mock_dir_list():
+    result = deque()
+    result.append('C170324_0054_SCI.fits.gz')
+    return result
+
+
 @patch('caom2pipe.client_composable.ClientCollection')
 def test_run_compression(
     clients_mock,
 ):
     # this test works with FITS files, not header-only versions of FITS
     # files, because it's testing the decompression/recompression cycle
-
-    def _mock_dir_list():
-        result = deque()
-        result.append('C170324_0054_SCI.fits.gz')
-        return result
-
-    uris = {
-        'C170324_0054': FileInfo(
-            f'{SCHEME}:OMM/C170324_0054_SCI.fits',
-            size=16799040,
-            file_type='application/fits',
-            md5sum='md5:420d1aa2279a6adbae2ed4fb6eb8cef7',
-        ),
-    }
-
-    def _check_uris(obs):
-        file_info = uris.get(obs.observation_id)
-        assert file_info is not None, 'wrong observation id'
-        for plane in obs.planes.values():
-            for artifact in plane.artifacts.values():
-                if artifact.uri == file_info.id:
-                    assert (
-                        artifact.content_type == file_info.file_type
-                    ), 'type'
-                    assert artifact.content_length == file_info.size, 'size'
-                    assert (
-                        artifact.content_checksum.uri == file_info.md5sum
-                    ), 'md5'
-                    return
-
-        assert False, f'observation id not found {obs.observation_id}'
 
     cwd = os.getcwd()
     with TemporaryDirectory() as tmp_dir_name:
@@ -341,37 +345,6 @@ def test_run_compression_retry(
     # this test works with FITS files, not header-only versions of FITS
     # files, because it's testing the decompression/recompression cycle
 
-    def _mock_dir_list():
-        result = deque()
-        result.append('C170324_0054_SCI.fits.gz')
-        return result
-
-    uris = {
-        'C170324_0054': FileInfo(
-            f'{SCHEME}:OMM/C170324_0054_SCI.fits',
-            size=16799040,
-            file_type='application/fits',
-            md5sum='md5:420d1aa2279a6adbae2ed4fb6eb8cef7',
-        ),
-    }
-
-    def _check_uris(obs):
-        file_info = uris.get(obs.observation_id)
-        assert file_info is not None, 'wrong observation id'
-        for plane in obs.planes.values():
-            for artifact in plane.artifacts.values():
-                if artifact.uri == file_info.id:
-                    assert (
-                        artifact.content_type == file_info.file_type
-                    ), 'type'
-                    assert artifact.content_length == file_info.size, 'size'
-                    assert (
-                        artifact.content_checksum.uri == file_info.md5sum
-                    ), 'md5'
-                    return
-
-        assert False, f'observation id not found {obs.observation_id}'
-
     clients_mock.return_value.data_client.put.side_effect = [
         CadcException, None, None, None
     ]
@@ -380,20 +353,16 @@ def test_run_compression_retry(
         os.chdir(tmp_dir_name)
 
         def _mock_read(p1, p2):
-            import logging
             fqn = f'{tmp_dir_name}/logs/{p2}.xml'
             fqn_0 = f'{tmp_dir_name}/logs_0/{p2}.xml'
             if os.path.exists(fqn):
                 # mock the modify task
-                logging.error(f'mock_read call {p2} return record')
                 return read_obs_from_file(fqn)
             elif os.path.exists(fqn_0):
                 # mock the modify task
-                logging.error(f'mock_read call {p2} return record 0 ')
                 return read_obs_from_file(fqn_0)
             else:
                 # mock the ingest task
-                logging.error(f'mock_read call {p2} return None')
                 return None
 
         clients_mock.return_value.metadata_client.read.side_effect = (
