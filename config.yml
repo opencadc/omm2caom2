@@ -1,12 +1,10 @@
 working_directory: /usr/src/app
-data_sources:
-  - /usr/src/app
-data_source_extensions:
-  - .fits.gz
 # the netrc_filename value must be a fully-qualified name
 netrc_filename: /usr/src/app/netrc
 resource_id: ivo://cadc.nrc.ca/ams
 # resource_id: ivo://cadc.nrc.ca/sc2repo
+# tap_id: ivo://cadc.nrc.ca/sc2tap
+tap_id: ivo://cadc.nrc.ca/ams/omm
 todo_file_name: todo.txt
 # values True False
 use_local_files: True
@@ -31,6 +29,7 @@ failure_log_file_name: failure_log.txt
 retry_file_name: retries.txt
 retry_failures: True
 retry_count: 1
+retry_decay: 0.1
 collection: OMM
 observe_execution: True
 observable_directory: /usr/src/app/metrics
@@ -53,6 +52,10 @@ slack_token: TODO
 #
 # ingest, modify => with use_local_files set to False
 #
+data_sources:
+  - /usr/src/app
+data_source_extensions:
+  - fits.gz
 task_types: 
   - store
   - ingest
