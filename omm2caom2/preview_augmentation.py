@@ -66,12 +66,15 @@
 # ***********************************************************************
 #
 
-import logging
-import os
-
 from caom2 import ProductType, ReleaseType
 from caom2pipe import manage_composable as mc
-from omm2caom2 import OmmName, COLLECTION
+from omm2caom2 import COLLECTION
+from astropy.visualization import ImageNormalize, PowerStretch, ZScaleInterval
+import numpy as np
+import matplotlib.pyplot as plt
+from astropy.io.fits import open
+from astropy.wcs import WCS
+
 
 __all__ = ['visit']
 
@@ -79,64 +82,56 @@ __all__ = ['visit']
 class OMMPreview(mc.PreviewVisitor):
     def __init__(self, **kwargs):
         super().__init__(
-            COLLECTION, ReleaseType.DATA, **kwargs
+            COLLECTION, ReleaseType.DATA, mime_type='image/jpeg', **kwargs
         )
-        self._unzip()
-        self._storage_name = OmmName(file_name=self._science_file)
-        self._preview_fqn = os.path.join(
-            self._working_dir, self._storage_name.prev
-        )
-        self._thumb_fqn = os.path.join(
-            self._working_dir, self._storage_name.thumb
-        )
-        self._logger = logging.getLogger(__name__)
 
     def generate_plots(self, obs_id):
-        count = self._gen_prev()
-        self.add_preview(
-            self._storage_name.thumb_uri,
-            self._storage_name.thumb,
-            ProductType.THUMBNAIL,
+        self._logger.debug(f'Begin generate_plots for {obs_id}')
+        count = 0
+        # algorithm - @Nat1405, @dbohlender
+        # quality control and review - @dnarudd
+        hdus = open(self._science_fqn)
+        wcs = WCS(hdus[0].header)
+        data = hdus[0].data.copy()
+
+        # see https://docs.astropy.org/en/stable/io/
+        # fits/index.html#working-with-large-files
+        hdus.close(self._science_fqn)
+        del hdus[0].data
+        del hdus
+
+        plt.figure(figsize=(10.24, 10.24), dpi=200)
+        plt.grid(False)
+        plt.axis('off')
+        plt.subplot(projection=wcs)
+        interval = ZScaleInterval()
+        white_light_data = interval(np.flipud(data))
+        norm = ImageNormalize(
+            white_light_data,
+            interval=ZScaleInterval(),
+            stretch=PowerStretch(3),
         )
+        plt.imshow(white_light_data, cmap='binary', norm=norm)
+        plt.savefig(
+            self._preview_fqn, dpi=200, bbox_inches='tight', format='jpg'
+        )
+
+        count += 1
         self.add_preview(
             self._storage_name.prev_uri,
             self._storage_name.prev,
             ProductType.PREVIEW,
         )
-        self.add_to_delete(self._thumb_fqn)
         self.add_to_delete(self._preview_fqn)
+        count += self._gen_thumbnail()
+        self.add_preview(
+            self._storage_name.thumb_uri,
+            self._storage_name.thumb,
+            ProductType.THUMBNAIL,
+        )
+        self.add_to_delete(self._thumb_fqn)
+        self._logger.info(f'End generate_plots for {obs_id}.')
         return count
-
-    def _gen_prev(self):
-        if os.access(self._preview_fqn, 0):
-            os.remove(self._preview_fqn)
-        prev_cmd = (
-            f'fitscut --all --autoscale=99.5 --asinh-scale --jpg '
-            f'--invert --compass {self._science_fqn}'
-        )
-        mc.exec_cmd_redirect(prev_cmd, self._preview_fqn)
-
-        if os.access(self._thumb_fqn, 0):
-            os.remove(self._thumb_fqn)
-        prev_cmd = (
-            f'fitscut --all --output-size=256 --autoscale=99.5 '
-            f'--asinh-scale --jpg --invert --compass '
-            f'{self._science_fqn}'
-        )
-        mc.exec_cmd_redirect(prev_cmd, self._thumb_fqn)
-        return 2
-
-    def _unzip(self):
-        if self._science_fqn.endswith('.gz'):
-            self._logger.debug(f'Unzipping {self._science_fqn}.')
-            unzipped_science_fqn = self._science_fqn.replace('.gz', '')
-            import gzip
-
-            with open(self._science_fqn, 'rb') as f_read:
-                gz = gzip.GzipFile(fileobj=f_read)
-                with open(unzipped_science_fqn, 'wb') as f_write:
-                    f_write.write(gz.read())
-            self._science_fqn = unzipped_science_fqn
 
 
 def visit(observation, **kwargs):

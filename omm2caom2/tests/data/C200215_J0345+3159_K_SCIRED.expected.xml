@@ -1,4 +1,4 @@
-<caom2:Observation xmlns:caom2="http://www.opencadc.org/caom2/xml/v2.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:CompositeObservation" caom2:id="4cc57a43-0a43-4a0e-ad47-65f6ab47fa9b" caom2:lastModified="2020-02-17T16:45:20.821" caom2:maxLastModified="2020-02-17T16:45:28.184" caom2:metaChecksum="md5:dcb5a9561fe61afade4289f9a1e921cb" caom2:accMetaChecksum="md5:e0bb84600b4a874321db94e51eb17c19">
+<caom2:Observation xmlns:caom2="http://www.opencadc.org/caom2/xml/v2.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="caom2:DerivedObservation" caom2:id="4cc57a43-0a43-4a0e-ad47-65f6ab47fa9b" caom2:lastModified="2020-02-17T16:45:20.821" caom2:maxLastModified="2020-02-17T16:45:28.184" caom2:metaChecksum="md5:dcb5a9561fe61afade4289f9a1e921cb" caom2:accMetaChecksum="md5:e0bb84600b4a874321db94e51eb17c19">
   <caom2:collection>OMM</caom2:collection>
   <caom2:observationID>C200215_J0345+3159_K</caom2:observationID>
   <caom2:metaRelease>2020-02-15T19:22:07.000</caom2:metaRelease>
@@ -373,7 +373,7 @@
       </caom2:provenance>
       <caom2:artifacts>
         <caom2:artifact caom2:id="351ebb5e-5780-42cb-ae67-a73e72051d99" caom2:lastModified="2020-02-17T16:45:20.821" caom2:maxLastModified="2020-02-17T16:45:28.184" caom2:metaChecksum="md5:e823a07ebb66174979384ed5230f8db1" caom2:accMetaChecksum="md5:2ec362078efb4cf087088aaa531478bc">
-          <caom2:uri>ad:OMM/C200215_J0345+3159_K_SCIRED.fits.gz</caom2:uri>
+          <caom2:uri>cadc:OMM/C200215_J0345+3159_K_SCIRED.fits</caom2:uri>
           <caom2:productType>science</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
           <caom2:contentType>application/fits</caom2:contentType>

@@ -99,12 +99,7 @@ def visit(observation, **kwargs):
 
     science_fqn = storage_name.get_file_fqn(working_dir)
     if not os.path.exists(science_fqn):
-        if science_fqn.endswith('.gz'):
-            science_fqn = science_fqn.replace('.gz', '')
-            if not os.path.exists(science_fqn):
-                raise mc.CadcException(f'{science_fqn} visit file not found')
-
-    science_fqn = _unzip(science_fqn)
+        raise mc.CadcException(f'{science_fqn} visit file not found')
 
     count = 0
     for plane in observation.planes.values():
@@ -124,18 +119,3 @@ def visit(observation, **kwargs):
         f'{observation.observation_id}'
     )
     return observation
-
-
-def _unzip(science_fqn):
-    if science_fqn.endswith('.gz'):
-        logging.debug(f'Unzipping {science_fqn} for footprintfinder.')
-        unzipped_science_fqn = science_fqn.replace('.gz', '')
-        import gzip
-
-        with open(science_fqn, 'rb') as f_read:
-            gz = gzip.GzipFile(fileobj=f_read)
-            with open(unzipped_science_fqn, 'wb') as f_write:
-                f_write.write(gz.read())
-        return unzipped_science_fqn
-    else:
-        return science_fqn

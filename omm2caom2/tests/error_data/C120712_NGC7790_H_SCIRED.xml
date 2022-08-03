@@ -51,83 +51,9 @@
         <caom2:runID>120712</caom2:runID>
         <caom2:reference>http://genesis.astro.umontreal.ca</caom2:reference>
       </caom2:provenance>
-      <caom2:position>
-        <caom2:bounds xsi:type="caom2:Polygon">
-          <caom2:points>
-            <caom2:point>
-              <caom2:cval1>359.9504111444511</caom2:cval1>
-              <caom2:cval2>61.03843603354785</caom2:cval2>
-            </caom2:point>
-            <caom2:point>
-              <caom2:cval1>358.7910342745778</caom2:cval1>
-              <caom2:cval2>61.03141760333224</caom2:cval2>
-            </caom2:point>
-            <caom2:point>
-              <caom2:cval1>358.76382710852033</caom2:cval1>
-              <caom2:cval2>61.59932607057529</caom2:cval2>
-            </caom2:point>
-            <caom2:point>
-              <caom2:cval1>359.9443958435739</caom2:cval1>
-              <caom2:cval2>61.60648994810043</caom2:cval2>
-            </caom2:point>
-          </caom2:points>
-          <caom2:samples>
-            <caom2:vertices>
-              <caom2:vertex>
-                <caom2:cval1>359.95041114445115</caom2:cval1>
-                <caom2:cval2>61.03843603354785</caom2:cval2>
-                <caom2:type>2</caom2:type>
-              </caom2:vertex>
-              <caom2:vertex>
-                <caom2:cval1>358.7910342745778</caom2:cval1>
-                <caom2:cval2>61.03141760333222</caom2:cval2>
-                <caom2:type>1</caom2:type>
-              </caom2:vertex>
-              <caom2:vertex>
-                <caom2:cval1>358.7638271085203</caom2:cval1>
-                <caom2:cval2>61.599326070575295</caom2:cval2>
-                <caom2:type>1</caom2:type>
-              </caom2:vertex>
-              <caom2:vertex>
-                <caom2:cval1>359.9443958435738</caom2:cval1>
-                <caom2:cval2>61.60648994810043</caom2:cval2>
-                <caom2:type>1</caom2:type>
-              </caom2:vertex>
-              <caom2:vertex>
-                <caom2:cval1>0.0</caom2:cval1>
-                <caom2:cval2>0.0</caom2:cval2>
-                <caom2:type>0</caom2:type>
-              </caom2:vertex>
-            </caom2:vertices>
-          </caom2:samples>
-        </caom2:bounds>
-        <caom2:dimension>
-          <caom2:naxis1>2268</caom2:naxis1>
-          <caom2:naxis2>2294</caom2:naxis2>
-        </caom2:dimension>
-        <caom2:sampleSize>0.8913798461457328</caom2:sampleSize>
-      </caom2:position>
-      <caom2:energy>
-        <caom2:bounds>
-          <caom2:lower>1.5e-06</caom2:lower>
-          <caom2:upper>1.7999999999999997e-06</caom2:upper>
-          <caom2:samples>
-            <caom2:sample>
-              <caom2:lower>1.5e-06</caom2:lower>
-              <caom2:upper>1.7999999999999997e-06</caom2:upper>
-            </caom2:sample>
-          </caom2:samples>
-        </caom2:bounds>
-        <caom2:dimension>1</caom2:dimension>
-        <caom2:sampleSize>2.9999999999999967e-07</caom2:sampleSize>
-        <caom2:bandpassName>H</caom2:bandpassName>
-        <caom2:emBand>Infrared</caom2:emBand>
-      </caom2:energy>
-      <caom2:time/>
-      <caom2:polarization/>
       <caom2:artifacts>
         <caom2:artifact caom2:id="00000000-0000-0000-9071-321327d4c006" caom2:lastModified="2019-02-12T17:09:44.702" caom2:maxLastModified="2019-02-12T17:09:44.702" caom2:metaChecksum="md5:b5629993154661c7d56759ef581e07dd" caom2:accMetaChecksum="md5:7c56f27bbd14ac87250b39374cb34a94">
-          <caom2:uri>cadc:OMM/C120712_NGC7790_H_SCIRED.fits.gz</caom2:uri>
+          <caom2:uri>cadc:OMM/C120712_NGC7790_H_SCIRED.fits</caom2:uri>
           <caom2:productType>science</caom2:productType>
           <caom2:releaseType>data</caom2:releaseType>
           <caom2:contentType>application/fits</caom2:contentType>

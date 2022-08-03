@@ -71,6 +71,7 @@ import sys
 import tempfile
 import traceback
 
+from caom2pipe.data_source_composable import ListDirDataSource
 from caom2pipe import manage_composable as mc
 from caom2pipe import run_composable as rc
 from omm2caom2 import preview_augmentation, footprint_augmentation
@@ -126,12 +127,17 @@ def run_single():
 def _run():
     config = mc.Config()
     config.get_executors()
+    chooser = OmmChooser()
+    data_source = None
+    if config.use_local_files:
+        data_source = ListDirDataSource(config, chooser)
     return rc.run_by_todo(
         config=config,
         name_builder=OmmBuilder(config),
-        chooser=OmmChooser(),
+        chooser=chooser,
         meta_visitors=META_VISITORS,
         data_visitors=DATA_VISITORS,
+        source=data_source,
     )
 
 
