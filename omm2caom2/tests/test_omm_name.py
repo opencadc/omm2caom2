@@ -121,12 +121,16 @@ def test_is_valid():
         ), 'wrong file uri'
 
         with pytest.raises(CadcException):
-            test_subject = OmmName._add_extensions('C121212_00001_SCI')
-            test_subject = OmmName._add_extensions('C121212_00001_FOCUS')
-            test_subject = OmmName._add_extensions('C121212_00001_FOCUS.fits')
-            test_subject = OmmName._add_extensions(
-                'C121212_00001_FOCUS.fits.gz'
-            )
+            ignore = OmmName._add_extensions('C121212_00001_SCI')
+
+        with pytest.raises(CadcException):
+            ignore = OmmName._add_extensions('C121212_00001_FOCUS')
+
+        with pytest.raises(CadcException):
+            ignore = OmmName._add_extensions('C121212_00001_FOCUS_prev.png')
+
+        test_subject = OmmName(file_name='C121212_00001_FOCUS.fits.gz')
+        assert test_subject.is_valid()
 
     finally:
         StorageName.collection = original_collection
