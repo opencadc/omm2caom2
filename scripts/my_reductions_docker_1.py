@@ -65,16 +65,16 @@ def do_me( my_docker_template, my_docker, my_night ):
       except:
          red('Link already exists \n')
 
-   # generate the cadcproxy.pem file 
-   proxy_cmd = _DOCKER_RUN+" -v "+my_working_dir+":/usr/src/app --rm --name "+my_night+" -ti "+my_docker+" cadc-get-cert --days-valid 10 --cert-filename /usr/src/app/cadcproxy.pem -u beaulieusf"
-   print (proxy_cmd)
-   os.system( proxy_cmd )
-
    # Copy the docker template as specified on the cammand line
    cmd = "cp -p "+my_docker_template+"/config.yml "+" ."
    os.system( cmd )
    cmd = "cp -p "+my_docker_template+"/docker-entrypoint.sh "+" ."
    os.system( cmd )
+
+   # generate the cadcproxy.pem file 
+   proxy_cmd = _DOCKER_RUN+" -v "+my_working_dir+":/usr/src/app --rm --name "+my_night+" -ti "+my_docker+" cadc-get-cert --days-valid 10 --cert-filename /usr/src/app/cadcproxy.pem -u beaulieusf"
+   print (proxy_cmd)
+   os.system( proxy_cmd )
 
    # Change the log file to reflec the night number
    #cmd = "sed -i.tmp 's_/usr/src/app/logs_"+_LOGPATH+my_night+"-log_' config.yml"
