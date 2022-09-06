@@ -3,6 +3,7 @@ FROM opencadc/matplotlib:3.10-slim as builder
 RUN apt-get update --no-install-recommends && \
     apt-get install -y build-essential \
                        git \
+                       libcfitsio-bin \
                        wget && \
     rm -rf /var/lib/apt/lists /tmp/* /var/tmp/*
 
