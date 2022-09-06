@@ -60,7 +60,7 @@ def do_me( my_docker_template, my_docker, my_night ):
          red('Link already exists \n')
 
    # generate the cadcproxy.pem file 
-   proxy_cmd = _DOCKER_RUN+" -v "+my_working_dir+":/usr/src/app --rm --name "+my_night+" -ti "+my_docker+" cadc-get-cert --days-valid 10 -u beaulieusf"
+   proxy_cmd = _DOCKER_RUN+" -v "+my_working_dir+":/usr/src/app --rm --name "+my_night+" -ti "+my_docker+" cadc-get-cert --days-valid 10 --cert-filename /usr/src/app/cadcproxy.pem -u beaulieusf"
    print (proxy_cmd)
    os.system( proxy_cmd )
 
