@@ -77,7 +77,7 @@ from caom2pipe import run_composable as rc
 from omm2caom2 import preview_augmentation, footprint_augmentation
 from omm2caom2 import fits2caom2_augmentation
 from omm2caom2 import cleanup_augmentation
-from omm2caom2 import OmmBuilder, OmmChooser, COLLECTION
+from omm2caom2 import OmmBuilder, COLLECTION
 
 
 META_VISITORS = [fits2caom2_augmentation, cleanup_augmentation]
@@ -108,7 +108,6 @@ def _run_single():
         storage_name=storage_name,
         meta_visitors=META_VISITORS,
         data_visitors=DATA_VISITORS,
-        chooser=OmmChooser(),
     )
 
 
@@ -127,14 +126,12 @@ def run_single():
 def _run():
     config = mc.Config()
     config.get_executors()
-    chooser = OmmChooser()
     data_source = None
     if config.use_local_files:
-        data_source = ListDirDataSource(config, chooser)
+        data_source = ListDirDataSource(config, chooser=None)
     return rc.run_by_todo(
         config=config,
         name_builder=OmmBuilder(config),
-        chooser=chooser,
         meta_visitors=META_VISITORS,
         data_visitors=DATA_VISITORS,
         source=data_source,
