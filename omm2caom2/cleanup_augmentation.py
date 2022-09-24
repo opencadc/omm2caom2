@@ -68,6 +68,7 @@
 
 import logging
 
+from datetime import datetime
 from slack import WebClient
 from slack.errors import SlackApiError
 
@@ -117,9 +118,15 @@ def visit(observation, **kwargs):
                     else:
                         if latest_plane_id is None:
                             latest_plane_id = plane.product_id
-                            latest_timestamp = mc.make_time(meta.lastmod)
+                            if isinstance(meta.lastmod, datetime):
+                                latest_timestamp = meta.lastmod.timestamp()
+                            else:
+                                latest_timestamp = mc.make_time(meta.lastmod)
                         else:
-                            current_timestamp = mc.make_time(meta.lastmod)
+                            if isinstance(meta.lastmod, datetime):
+                                current_timestamp = meta.lastmod.timestamp()
+                            else:
+                                current_timestamp = mc.make_time(meta.lastmod)
                             if current_timestamp > latest_timestamp:
                                 latest_timestamp = current_timestamp
                                 temp.append(latest_plane_id)

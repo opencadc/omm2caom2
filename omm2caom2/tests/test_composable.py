@@ -87,7 +87,7 @@ from caom2pipe.run_composable import run_by_todo
 
 from unittest.mock import ANY, call, patch, Mock
 
-from omm2caom2 import composable, OmmBuilder, OmmChooser, OmmName, SCHEME
+from omm2caom2 import composable, OmmBuilder, OmmName, SCHEME
 import test_main_app
 
 
@@ -249,12 +249,10 @@ def test_run_compression(
         try:
             # execution
             try:
-                test_chooser = OmmChooser()
-                test_source = ListDirDataSource(test_config, test_chooser)
+                test_source = ListDirDataSource(test_config, chooser=None)
                 test_source.get_work = Mock(side_effect=_mock_dir_list)
                 test_result = run_by_todo(
                     config=test_config,
-                    chooser=OmmChooser(),
                     name_builder=OmmBuilder(test_config),
                     meta_visitors=composable.META_VISITORS,
                     data_visitors=composable.DATA_VISITORS,
@@ -404,12 +402,10 @@ def test_run_compression_retry(
         try:
             # execution
             try:
-                test_chooser = OmmChooser()
-                test_source = ListDirDataSource(test_config, test_chooser)
+                test_source = ListDirDataSource(test_config, chooser=None)
                 test_source.get_work = Mock(side_effect=_mock_dir_list)
                 test_result = run_by_todo(
                     config=test_config,
-                    chooser=OmmChooser(),
                     name_builder=OmmBuilder(test_config),
                     meta_visitors=composable.META_VISITORS,
                     data_visitors=composable.DATA_VISITORS,
@@ -426,72 +422,32 @@ def test_run_compression_retry(
                 clients_mock.return_value.data_client.put.call_count == 4
             ), 'put call count, including the previews'
             put_calls = [
-                call(
-                    f'{tmp_dir_name}/C170324_0054',
-                    'cadc:OMM/C170324_0054_SCI.fits',
-                    None,
-                ),
-                call(
-                    f'{tmp_dir_name}/C170324_0054',
-                    'cadc:OMM/C170324_0054_SCI.fits',
-                    None,
-                ),
-                call(
-                    f'{tmp_dir_name}/C170324_0054',
-                    'cadc:OMM/C170324_0054_SCI_prev.jpg',
-                    None,
-                ),
-                call(
-                    f'{tmp_dir_name}/C170324_0054',
-                    'cadc:OMM/C170324_0054_SCI_prev_256.jpg',
-                    None,
-                ),
+                call(f'{tmp_dir_name}/C170324_0054', 'cadc:OMM/C170324_0054_SCI.fits', None),
+                call(f'{tmp_dir_name}/C170324_0054', 'cadc:OMM/C170324_0054_SCI.fits', None),
+                call(f'{tmp_dir_name}/C170324_0054', 'cadc:OMM/C170324_0054_SCI_prev.jpg', None),
+                call(f'{tmp_dir_name}/C170324_0054', 'cadc:OMM/C170324_0054_SCI_prev_256.jpg', None),
             ]
-            clients_mock.return_value.data_client.put.assert_has_calls(
-                put_calls
-            ), 'wrong put args'
+            clients_mock.return_value.data_client.put.assert_has_calls(put_calls), 'wrong put args'
 
-            assert (
-                not clients_mock.return_value.data_client.info.called
-            ), 'info'
+            assert not clients_mock.return_value.data_client.info.called, 'info'
             assert (
                 not clients_mock.return_value.data_client.get_head.called
             ), 'LocalStore, get_head should not be called'
-            assert (
-                not clients_mock.return_value.data_client.get.called
-            ), 'LocalStore, get should not be called'
+            assert not clients_mock.return_value.data_client.get.called, 'LocalStore, get should not be called'
 
-            assert (
-                clients_mock.return_value.metadata_client.read.called
-            ), 'read'
+            assert clients_mock.return_value.metadata_client.read.called, 'read'
             assert (
                 clients_mock.return_value.metadata_client.read.call_count == 2
             ), 'meta read call count, ingest + modify'
-            read_calls = [
-                call('OMM', 'C170324_0054'),
-                call('OMM', 'C170324_0054'),
-            ]
-            clients_mock.return_value.metadata_client.read.assert_has_calls(
-                read_calls,
-            ), 'wrong read args'
+            read_calls = [call('OMM', 'C170324_0054'), call('OMM', 'C170324_0054')]
+            clients_mock.return_value.metadata_client.read.assert_has_calls(read_calls), 'wrong read args'
 
-            assert (
-                clients_mock.return_value.metadata_client.create.called
-            ), 'create'
-            assert (
-                clients_mock.return_value.metadata_client.create.call_count
-                == 1
-            ), 'meta create call count'
-            create_calls = [
-                call(ANY),
-            ]
-            clients_mock.return_value.metadata_client.create.assert_has_calls(
-                create_calls,
-            ), 'wrong create args'
+            assert clients_mock.return_value.metadata_client.create.called, 'create'
+            assert clients_mock.return_value.metadata_client.create.call_count == 1, 'meta create call count'
+            create_calls = [call(ANY)]
+            clients_mock.return_value.metadata_client.create.assert_has_calls(create_calls), 'wrong create args'
 
-            test_obs = read_obs_from_file(
-                f'{test_config.working_directory}/logs_0/C170324_0054.xml'
-            )
+            test_obs = read_obs_from_file(f'{test_config.working_directory}/logs_0/C170324_0054.xml')
             _check_uris(test_obs)
         finally:
             os.chdir(cwd)

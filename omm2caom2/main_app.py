@@ -77,7 +77,6 @@ to https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/argus/
 
 """
 
-import logging
 import numpy
 import os
 import re
@@ -96,7 +95,6 @@ from caom2 import (
 from caom2utils.caom2blueprint import update_artifact_meta
 from caom2pipe import astro_composable as ac
 from caom2pipe.caom_composable import change_to_composite, TelescopeMapping
-from caom2pipe import execute_composable as ec
 from caom2pipe.manage_composable import (
     CadcException,
     CaomName,
@@ -114,7 +112,6 @@ __all__ = [
     'COLLECTION',
     'APPLICATION',
     'OmmBuilder',
-    'OmmChooser',
     'SCHEME',
     'Telescope',
 ]
@@ -157,11 +154,9 @@ class OmmBuilder(nbc.StorageNameBuilder):
 
     def build(self, entry):
         """
-        OMM is the original pipeline, don't want to break any of the behaviour,
-        so set up the source names here.
+        OMM is the original pipeline, don't want to break any of the behaviour, so set up the source names here.
 
-        :param entry: str - from an os.listdir call, so will have no notion
-            of 'source'
+        :param entry: str - from an os.listdir call, so will have no notion of 'source'
         :return:
         """
         temp = os.path.basename(entry)
@@ -171,18 +166,12 @@ class OmmBuilder(nbc.StorageNameBuilder):
             for entry in self._config.data_sources:
                 fqn = os.path.join(entry, temp)
                 if os.path.exists(fqn):
-                    result = OmmName(
-                        file_name=temp,
-                        source_names=[fqn],
-                    )
+                    result = OmmName(file_name=temp, source_names=[fqn])
                 break
             if result is None:
                 raise CadcException(f'Could not find local file {fqn}.')
         else:
-            result = OmmName(
-                file_name=temp,
-                source_names=[entry],
-            )
+            result = OmmName(file_name=temp, source_names=[entry])
         return result
 
 
@@ -274,40 +263,6 @@ class OmmName(StorageName):
     @staticmethod
     def remove_extensions(f_name):
         return StorageName.remove_extensions(f_name).replace('.jpg', '')
-
-
-class OmmChooser(ec.OrganizeChooser):
-    """OMM has the case where there are SimpleObservation instances that
-    will change type to CompositeObservation instances. Tell the
-    execute_composable package about that case."""
-
-    def __init__(
-        self,
-    ):
-        super().__init__()
-
-    def needs_delete(self):
-        return False
-
-    @staticmethod
-    def change_type(observation):
-        result = False
-        if isinstance(observation, SimpleObservation):
-            if len(observation.planes) > 1:
-                # even if there is no need for delete, it just takes longer,
-                # the Observation won't end up in an in-correct state, so
-                # be more lenient than less in determining whether or not an
-                # observation needs deleting
-                result = True
-            else:
-                for plane in observation.planes.values():
-                    if OmmName.is_composite(plane.product_id):
-                        result = True
-                        break
-        return result
-
-    def use_compressed(self, ignore):
-        return True
 
 
 class Telescope(TelescopeMapping):
@@ -605,7 +560,7 @@ class Telescope(TelescopeMapping):
                     self._update_requirements(observation)
 
             if OmmName.is_composite(plane.product_id):
-                if OmmChooser.change_type(observation):
+                if Telescope.change_type(observation):
                     observation = change_to_composite(observation)
                     self._logger.info(
                         f'Changing from Simple to Composite for '
@@ -988,3 +943,21 @@ class Telescope(TelescopeMapping):
             raise CadcException(f'Unexpected telescope name {telescope}')
 
         self._logger.debug('Done _update_telescope_location')
+
+    @staticmethod
+    def change_type(observation):
+        """OMM has the case where there are SimpleObservation instances that will change type to CompositeObservation
+        instances. This methods finds those cases."""
+        result = False
+        if isinstance(observation, SimpleObservation):
+            if len(observation.planes) > 1:
+                # even if there is no need for delete, it just takes longer, the Observation won't end up in an
+                # in-correct state, so be more lenient than less in determining whether or not an observation needs
+                # deleting
+                result = True
+            else:
+                for plane in observation.planes.values():
+                    if OmmName.is_composite(plane.product_id):
+                        result = True
+                        break
+        return result
