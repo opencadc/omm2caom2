@@ -77,34 +77,23 @@ from caom2pipe.manage_composable import (
     StorageName,
 )
 
-from omm2caom2 import Telescope, OmmName, SCHEME
+from omm2caom2 import Telescope, OmmName
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 TESTDATA_DIR = os.path.join(THIS_DIR, 'error_data')
 
 
-def test_time_nan():
-    original_collection = StorageName.collection
-    original_pattern = StorageName.collection_pattern
-    original_scheme = StorageName.scheme
-    try:
-        StorageName.collection = 'OMM'
-        StorageName.collection_pattern = OmmName.OMM_NAME_PATTERN
-        StorageName.scheme = SCHEME
-        test_obs = 'C120712_NGC7790_H_SCIRED'
-        test_file = f'file://{TESTDATA_DIR}/{test_obs}.fits.header'
-        omm_name = OmmName(
-            file_name=f'{test_obs}.fits', source_names=[test_file]
-        )
-        test_file_info = FileInfo(id=omm_name.file_uri)
-        test_xml = f'{TESTDATA_DIR}/{test_obs}.xml'
-        obs = read_obs_from_file(test_xml)
-        headers = data_util.get_local_file_headers(test_file)
-        telescope = Telescope(omm_name, headers)
-        with pytest.raises(CadcException):
-            result = telescope.update(obs, test_file_info)
-            assert result is None, 'should have returned nothing'
-    finally:
-        StorageName.collection = original_collection
-        StorageName.collection_pattern = original_pattern
-        StorageName.scheme = original_scheme
+def test_time_nan(test_config):
+    test_obs = 'C120712_NGC7790_H_SCIRED'
+    test_file = f'file://{TESTDATA_DIR}/{test_obs}.fits.header'
+    omm_name = OmmName(
+        file_name=f'{test_obs}.fits', source_names=[test_file]
+    )
+    test_file_info = FileInfo(id=omm_name.file_uri)
+    test_xml = f'{TESTDATA_DIR}/{test_obs}.xml'
+    obs = read_obs_from_file(test_xml)
+    headers = data_util.get_local_file_headers(test_file)
+    telescope = Telescope(omm_name, headers, None)
+    with pytest.raises(CadcException):
+        result = telescope.update(obs, test_file_info)
+        assert result is None, 'should have returned nothing'

@@ -70,19 +70,20 @@ import os
 
 from caom2utils import data_util
 from caom2pipe import manage_composable as mc
-from omm2caom2 import Telescope
+from omm2caom2 import Telescope, OmmName
 
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 TESTDATA_DIR = os.path.join(THIS_DIR, 'data')
 
 
-def test_update_cal_provenance():
+def test_update_cal_provenance(test_config):
     test_obs = 'C170323_domeflat_K_CALRED'
     test_obs_file = os.path.join(TESTDATA_DIR, f'{test_obs}.expected.xml')
     test_header_file = os.path.join(TESTDATA_DIR, f'{test_obs}.fits.header')
     test_obs = mc.read_obs_from_file(test_obs_file)
     headers = data_util.get_local_file_headers(test_header_file)
-    telescope = Telescope(f'ad:OMM/{test_obs}.fits', headers)
+    test_storage_name = OmmName(file_name=f'{test_obs}.fits')
+    telescope = Telescope(test_storage_name, headers, None)
     telescope._update_cal_provenance(test_obs)
     assert test_obs is not None, 'no test_obs'
     assert test_obs.members is not None, 'no members'
@@ -104,13 +105,14 @@ def test_update_cal_provenance():
         assert test_plane_input.uri.endswith('_CAL'), 'wrong input value'
 
 
-def test_update_sci_provenance():
+def test_update_sci_provenance(test_config):
     test_obs = 'C160929_NGC7419_K_SCIRED'
     test_obs_file = os.path.join(TESTDATA_DIR, f'{test_obs}.expected.xml')
     test_header_file = os.path.join(TESTDATA_DIR, f'{test_obs}.fits.header')
     test_obs = mc.read_obs_from_file(test_obs_file)
     headers = data_util.get_local_file_headers(test_header_file)
-    telescope = Telescope(f'ad:OMM/{test_obs}.fits', headers)
+    test_storage_name = OmmName(file_name=f'{test_obs}.fits')
+    telescope = Telescope(test_storage_name, headers, None)
     telescope._update_science_provenance(test_obs)
     assert test_obs is not None, 'no test_obs'
     assert test_obs.members is not None, 'no members'
