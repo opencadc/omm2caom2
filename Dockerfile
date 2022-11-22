@@ -3,7 +3,7 @@ FROM opencadc/matplotlib:3.10-slim as builder
 RUN apt-get update --no-install-recommends && \
     apt-get install -y build-essential \
                        git \
-                       libcfitsio-bin \
+                       libcfitsio-bin && \
     rm -rf /var/lib/apt/lists /tmp/* /var/tmp/*
 
 ADD http://www.eso.org/~fstoehr/footprintfinder.py /usr/local/lib/python3.10/site-packages/
