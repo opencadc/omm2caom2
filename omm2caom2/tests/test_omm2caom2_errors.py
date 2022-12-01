@@ -96,4 +96,3 @@ def test_time_nan(test_config):
     telescope = Telescope(omm_name, headers, None)
     with pytest.raises(CadcException):
         result = telescope.update(obs, test_file_info)
-        assert result is None, 'should have returned nothing'
