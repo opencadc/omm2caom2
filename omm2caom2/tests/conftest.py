@@ -1,8 +1,9 @@
+# -*- coding: utf-8 -*-
 # ***********************************************************************
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 #
-#  (c) 2018.                            (c) 2018.
+#  (c) 2022.                            (c) 2022.
 #  Government of Canada                 Gouvernement du Canada
 #  National Research Council            Conseil national de recherches
 #  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -61,95 +62,27 @@
 #  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 #                                       <http://www.gnu.org/licenses/>.
 #
-#  $Revision: 4 $
+#  : 4 $
 #
 # ***********************************************************************
 #
 
-import logging
-import sys
-import tempfile
-import traceback
+from caom2pipe.manage_composable import Config, StorageName
+import pytest
 
-from caom2pipe.data_source_composable import ListDirDataSource
-from caom2pipe import manage_composable as mc
-from caom2pipe import run_composable as rc
-from omm2caom2 import preview_augmentation, footprint_augmentation
-from omm2caom2 import fits2caom2_augmentation
-from omm2caom2 import cleanup_augmentation
-from omm2caom2 import OmmBuilder
+COLLECTION = 'OMM'
+SCHEME = 'cadc'
+PREVIEW_SCHEME = 'cadc'
 
 
-META_VISITORS = [fits2caom2_augmentation, cleanup_augmentation]
-DATA_VISITORS = [preview_augmentation, footprint_augmentation]
-
-
-def _run_single():
-    """Run the processing for a single file.
-
-    :return 0 if successful, -1 if there's any sort of failure. Return status
-        is used by airflow for task instance management and reporting.
-    """
-    config = mc.Config()
-    config.get_executors()
-    mc.StorageName.collection = config.collection
-    mc.StorageName.preview_scheme = config.preview_scheme
-    mc.StorageName.scheme = config.scheme
-    config.working_directory = '/usr/src/app'
-    config.task_types = [mc.TaskType.INGEST, mc.TaskType.MODIFY]
-    config.resource_id = 'ivo://cadc.nrc.ca/sc2repo'
-    if config.features.run_in_airflow:
-        temp = tempfile.NamedTemporaryFile()
-        mc.write_to_file(temp.name, sys.argv[2])
-        config.proxy_fqn = temp.name
-    else:
-        config.proxy_fqn = sys.argv[2]
-    storage_name = OmmBuilder(config).build(sys.argv[1])
-    return rc.run_single(
-        config=config,
-        storage_name=storage_name,
-        meta_visitors=META_VISITORS,
-        data_visitors=DATA_VISITORS,
-    )
-
-
-def run_single():
-    """Wraps _omm_run_single in exception handling, with sys.exit calls."""
-    try:
-        result = _run_single()
-        sys.exit(result)
-    except Exception as e:
-        logging.error(e)
-        tb = traceback.format_exc()
-        logging.debug(tb)
-        sys.exit(-1)
-
-
-def _run():
-    config = mc.Config()
-    config.get_executors()
-    mc.StorageName.collection = config.collection
-    mc.StorageName.preview_scheme = config.preview_scheme
-    mc.StorageName.scheme = config.scheme
-    data_source = None
-    if config.use_local_files:
-        data_source = ListDirDataSource(config, chooser=None)
-    return rc.run_by_todo(
-        config=config,
-        name_builder=OmmBuilder(config),
-        meta_visitors=META_VISITORS,
-        data_visitors=DATA_VISITORS,
-        source=data_source,
-    )
-
-
-def run():
-    """Wraps _run in exception handling, with sys.exit calls."""
-    try:
-        result = _run()
-        sys.exit(result)
-    except Exception as e:
-        logging.error(e)
-        tb = traceback.format_exc()
-        logging.debug(tb)
-        sys.exit(-1)
+@pytest.fixture()
+def test_config():
+    config = Config()
+    config.collection = COLLECTION
+    config.preview_scheme = PREVIEW_SCHEME
+    config.scheme = SCHEME
+    config.logging_level = 'INFO'
+    StorageName.collection = config.collection
+    StorageName.preview_scheme = config.preview_scheme
+    StorageName.scheme = config.scheme
+    return config

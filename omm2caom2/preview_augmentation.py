@@ -68,7 +68,6 @@
 
 from caom2 import ProductType, ReleaseType
 from caom2pipe import manage_composable as mc
-from omm2caom2 import COLLECTION
 from astropy.visualization import ImageNormalize, PowerStretch, ZScaleInterval
 import numpy as np
 import matplotlib.pyplot as plt
@@ -81,9 +80,7 @@ __all__ = ['visit']
 
 class OMMPreview(mc.PreviewVisitor):
     def __init__(self, **kwargs):
-        super().__init__(
-            COLLECTION, ReleaseType.DATA, mime_type='image/jpeg', **kwargs
-        )
+        super().__init__(ReleaseType.DATA, mime_type='image/jpeg', **kwargs)
 
     def generate_plots(self, obs_id):
         self._logger.debug(f'Begin generate_plots for {obs_id}')

@@ -76,7 +76,7 @@ class OMMFits2caom2Visitor(Fits2caom2Visitor):
         super().__init__(observation, **kwargs)
 
     def _get_mapping(self, headers):
-        return Telescope(self._storage_name, headers)
+        return Telescope(self._storage_name, headers, self._clients)
 
 
 def visit(observation, **kwargs):

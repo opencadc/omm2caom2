@@ -107,19 +107,10 @@ from caom2pipe.manage_composable import (
 from caom2pipe import name_builder_composable as nbc
 
 
-__all__ = [
-    'OmmName',
-    'COLLECTION',
-    'APPLICATION',
-    'OmmBuilder',
-    'SCHEME',
-    'Telescope',
-]
+__all__ = ['OmmName', 'APPLICATION', 'OmmBuilder', 'Telescope']
 
 
 APPLICATION = 'omm2caom2'
-COLLECTION = 'OMM'
-SCHEME = 'cadc'
 
 # map the fits file values to the DataProductType enums
 DATATYPE_LOOKUP = {
@@ -184,6 +175,7 @@ class OmmName(StorageName):
     """
 
     OMM_NAME_PATTERN = 'C[\\w+-.]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
+    StorageName.collection_pattern = OMM_NAME_PATTERN
 
     def __init__(
         self,
@@ -266,8 +258,8 @@ class OmmName(StorageName):
 
 
 class Telescope(TelescopeMapping):
-    def __init__(self, storage_name, headers):
-        super().__init__(storage_name, headers)
+    def __init__(self, storage_name, headers, clients):
+        super().__init__(storage_name, headers, clients)
 
     def accumulate_blueprint(self, bp, application=None):
         super().accumulate_blueprint(bp, APPLICATION)
@@ -521,7 +513,7 @@ class Telescope(TelescopeMapping):
         else:
             return None
 
-    def update(self, observation, file_info, clients=None):
+    def update(self, observation, file_info):
         """Called to fill multiple CAOM model elements and/or attributes, must
         have this signature for import_module loading and execution.
 
@@ -789,9 +781,7 @@ class Telescope(TelescopeMapping):
                         f'Unknown file naming pattern {base_name}'
                     )
 
-                obs_member_uri_str = CaomName.make_obs_uri_from_obs_id(
-                    COLLECTION, base_name
-                )
+                obs_member_uri_str = CaomName.make_obs_uri_from_obs_id(self._storage_name.collection, base_name)
                 obs_member_uri = ObservationURI(obs_member_uri_str)
                 plane_uri = PlaneURI.get_plane_uri(obs_member_uri, file_id)
                 plane_inputs.add(plane_uri)
@@ -816,9 +806,7 @@ class Telescope(TelescopeMapping):
                 )
                 file_id = f'{base_name}_CAL'
 
-                obs_member_uri_str = CaomName.make_obs_uri_from_obs_id(
-                    COLLECTION, base_name
-                )
+                obs_member_uri_str = CaomName.make_obs_uri_from_obs_id(self._storage_name.collection, base_name)
                 obs_member_uri = ObservationURI(obs_member_uri_str)
                 plane_uri = PlaneURI.get_plane_uri(obs_member_uri, file_id)
                 plane_inputs.add(plane_uri)
@@ -911,13 +899,13 @@ class Telescope(TelescopeMapping):
             return
 
         telescope = telescope.upper()
-        if COLLECTION in telescope or 'CTIO' in telescope:
+        if self._storage_name.collection in telescope or 'CTIO' in telescope:
             lat = self._headers[0].get('OBS_LAT')
             long = self._headers[0].get('OBS_LON')
 
             # make a reliable lookup value
-            if COLLECTION in telescope:
-                telescope = COLLECTION
+            if self._storage_name.collection in telescope:
+                telescope = self._storage_name.collection
             if 'CTIO' in telescope:
                 telescope = 'CTIO'
 
