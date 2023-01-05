@@ -1,0 +1,139 @@
+SIMPLE  =                    T / Written by IDL:  Sat Jun  6 08:14:18 2020      
+BITPIX  =                  -32 / array data type                                
+NAXIS   =                    2 / number of array dimensions                     
+NAXIS1  =                 2048                                                  
+NAXIS2  =                 2048                                                  
+COMMENT ***********************************************************             
+COMMENT * All paper using CPAPIR data must include the following  *             
+COMMENT * note in the "Acknowledgement" section :                 *             
+COMMENT * Based on observations obtained with CPAPIR at the       *             
+COMMENT * CTIO 1.5-m telescope.                                   *             
+COMMENT *                                                         *             
+COMMENT * Please consider contacting the PI before publication    *             
+COMMENT * of this dataset.                                        *             
+COMMENT *                                                         *             
+COMMENT * Please refer to the following paper in any publication  *             
+COMMENT * making use of CPAPIR dataset :                          *             
+COMMENT *  Artigau, E., Doyon, R., Vallee, P., Riopel, M.,        *             
+COMMENT * & Nadeau, D. 2004, Proc. SPIE, 5492, 1479               *             
+COMMENT *                                                         *             
+COMMENT * Visit : www.astro.umontreal.ca/cpapir for more details. *             
+COMMENT ***********************************************************             
+EQUINOX =                 2000 / Reference                                      
+ORIGIN  = 'LAE     '           / Laboratoire d'Astrophysique Experimentale      
+TELESCOP= 'CTIO-1.5m'          / CTIO 1.5-m telescope                           
+OBS_LAT =       -30.1687583334 / Latitude of the telescope                      
+OBS_LON =      -70.8066250001 / Longitude of the telescope (Negative=West of Gre
+INSTRUME= 'CPAPIR  '           / Instrument name                                
+OBSERVER= 'none    '           / Observer name                                  
+OBJECT  = 'TARGET_RA74_DEC-69' / Nom de l'objet observe                         
+DATATYPE= 'SCIENCE '           / Data type, SCIENCE/CALIB/REJECT/FOCUS/TEST     
+FILE_INI= '/data/cpapir/data/071202/071202_0756.fits' / Initial file name       
+NIGHTID = '071202  '           / YYMMDD of the local start of night date        
+DATE-OBS= '2007-12-03T06:49:09' / Universal date and time                       
+DATE    = '2007-12-03T03:49:09' / Local date and time                           
+TEXP    =              10.0000 / Exposure time asked for                        
+NLEC    =                    1 / Number of reads per coaddition                 
+NCOA    =                    1 / Number of coadditions per file                 
+NFIC    =                    1 / Number of files to be written                  
+NATOD   =                   32 / Number of A/D converters                       
+T1      = '/       '           / Temperature 1 = Detector                       
+T2      = '/       '           / Temperature 2 = Lens #8                        
+T3      = '/       '           / Temperature 3 = Nitrogen                       
+T4      = '/       '           / Temperature 4 =                                
+F1      = 'H       '           / Wheel 1 (X), position 3                        
+F2      = 'open    '           / Wheel 2 (Y), position 0                        
+F1NOM   = 'Wheel R ='          / Identification F1                              
+F2NOM   = 'Wheel B ='          / Identification F2                              
+HA      =        1.83513888889 / Hour angle, always expressed in HOURS          
+RA      =        75.0110882118 / RA always expressed in DECIMAL DEGREE (0-360)  
+RATXT   = ' 5:00:02.66'        / RA expressed as text                           
+DEC     =       -68.8349002823 / Declination                                    
+DECTXT  = '-68:50:05.6'        / DEC expressed as text                          
+AIRMASS =              1.34000 / Airmass                                        
+ST      =        6.83411111110 / Sidereal time                                  
+UT      =        6.77286111090 / Universal time                                 
+YEAR    =        2007.91723013 / YEAR, same as the EPOCH keyword                
+FOCUS   =                    0 / Telescope focus                                
+DOME    =              190.000 / Dome azimuth                                   
+ROTATOR =                    0 / Instrument rotator                             
+NLECMAX =                    4 / Maximum number of reads as a function of TEXP  
+TINT    =              9.47100 / integration time per COADD                     
+TEFF    =              9.47100 / integration time per COADD                     
+T_TOT   =              9.47100 / total integration time for all COADDS          
+T1LEC   =              1.35300 / Read time for the detector                     
+TCOA    =              4.05900 / Time for one coaddition                        
+TLEC    =              2.70600 / Time for two reads                             
+TSEQ    =                    0 / Time for the last sequence                     
+TUS     =             16037080 / Acquisition time in us                         
+TEC     =              9.47100 / Time elapsed                                   
+FEC     =                    1 / File in progress                               
+LEC     = '1f      '           / Read in progress                               
+CEC     =                    1 / Coaddition in progress                         
+PEC     =                  100 / Percentage in progress                         
+DS9FIC  = '/home/cpapir/071202/071202_0756.fits' / 071202/071202_0756.fits' /120
+DECALE1 =                    0 / Flip quadrant 1                                
+DECALE2 =                    1 / Flip quadrant 2                                
+DECALE3 =                    1 / Flip quadrant 3                                
+DECALE4 =                    0 / Flip quadrant 4                                
+MIRPAT  = 'tim10.lod'          / Read pattern filename                          
+MIRMSG1 = 'seq 10.0000 1 1 1'                                                   
+MIRMSG2 = '/home/cpapir/071202/071202_0756.fits in 16.037 s, efficiency of 59/1'
+MIRMSG5 = '        '                                                            
+FILTER  = 'H       '                                                            
+WLEN    =              1.65000 / central wavelength in micron                   
+BANDPASS=       0.300000000000 / bandpass in micron                             
+SCAN    = '-       '                                                            
+MEDIMAGE=              20891.0 / Image median                                   
+MEDDEVIM=              1115.00 / Median absolute deviation                      
+MJDATE  =        54437.2841319 / Julian day - 2 400 000.5                       
+NORTHUP =                    1 / north is up and east is left                   
+PARSED  =                    1 / if 1, then image has been parsed               
+GOODASTR=                    1                                                  
+CTYPE1  = 'RA---TAN'           / Coordinate Type                                
+CTYPE2  = 'DEC--TAN'           / Coordinate Type                                
+CD1_1   =    0.000273057231608 / Degrees / Pixel                                
+CD2_1   =    1.79603096263E-07 / Degrees / Pixel                                
+CD1_2   =    1.06905895711E-06 / Degrees / Pixel                                
+CD2_2   =   -0.000273405254727 / Degrees / Pixel                                
+CRPIX1  =                 1024 / Reference Pixel in X                           
+CRPIX2  =                 1024 / Reference Pixel in Y                           
+CRVAL1  =        75.0103289782 / R.A. (degrees) of reference pixel              
+CRVAL2  =       -68.8346270583 / Declination of reference pixel                 
+LONPOLE =        180.000000000 / Native longitude of Celestial pole             
+LATPOLE =              0.00000 / Celestial latitude of native pole              
+PV2_1   =        0.00000000000 / Projection parameter 1                         
+RELEASE = '2009-06-02'         / End of proprietary period YYYY-MM-DD           
+PV2_2   =        0.00000000000 / Projection parameter 2                         
+THETA   =        89.8690749330 / Rotation of WCS relative to NS (deg)           
+DITHER  = '-       '                                                            
+CDELT1  =                    1                                                  
+CDELT2  =                    1                                                  
+RMSASTR =      0.296791470892 / astrometry from solve-field. Assumed to be about
+ASTRGAIA=                    1 / astrometry anchored to GAIA catalog            
+PIXSCALE=       0.983633540827 / Pixel scale in arcsec                          
+TARGET_R= 'no_name_ra85_dec-71'                                                 
+DRS_VERS= '3.1.1   '           / DRS version                                    
+DRS_DATE= '2020-05-29'         / DRS update date                                
+ROT_EW  =       0.224320201915 / WCS rotation E/W (deg)                         
+ROT_NS  =     -0.0376382594892 / WCS rotation N/S (deg)                         
+_V2_1   =              0.00000                                                  
+_V2_2   =              0.00000                                                  
+_DELT1  =                    1                                                  
+_DELT2  =                    1                                                  
+SFIELD  =                    1 / success/failure in fitting astrometry          
+CUNIT1  = 'deg     '                                                            
+CUNIT2  = 'deg     '                                                            
+IMAGEW  =                 2048                                                  
+IMAGEH  =                 2048                                                  
+A_0_0   =                    0                                                  
+A_0_1   =                    0                                                  
+A_1_0   =                    0                                                  
+B_0_0   =                    0                                                  
+B_0_1   =                    0                                                  
+B_1_0   =                    0                                                  
+ZP      =                   99 / zero point RAPER = FWHM (99 = Fail)            
+ZP1S    =                   99 / zero point for texp = 1s  (99 = Fail)          
+PIXFWHM = '2.264123623131348'  / FWHM in pixels                                 
+FWHM    = '2.226596845830298'  / FWHM in arcsec                                 
+END                                                                             

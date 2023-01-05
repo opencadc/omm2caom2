@@ -777,9 +777,10 @@ class Telescope(TelescopeMapping):
                 elif base_name.startswith('C') or value.startswith('C'):
                     file_id = f'{base_name}_CAL'
                 else:
-                    raise CadcException(
-                        f'Unknown file naming pattern {base_name}'
-                    )
+                    # don't fail when values look like this:
+                    # ID_00001= ' S      '           / raw input file
+                    self._logger.warning(f'Unknown provenance file naming pattern {base_name}')
+                    continue
 
                 obs_member_uri_str = CaomName.make_obs_uri_from_obs_id(self._storage_name.collection, base_name)
                 obs_member_uri = ObservationURI(obs_member_uri_str)
