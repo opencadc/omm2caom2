@@ -69,24 +69,19 @@
 import warnings
 
 from astropy.wcs import FITSFixedWarning
-from os import listdir
+from os import listdir, unlink
 from os.path import basename, dirname, exists, join, realpath
 
 from cadcdata import FileInfo
 from caom2.diff import get_differences
-from omm2caom2 import APPLICATION, OmmName, fits2caom2_augmentation
+from omm2caom2 import OmmName, fits2caom2_augmentation
 from caom2pipe import astro_composable as ac
-from caom2pipe.manage_composable import (
-    read_obs_from_file,
-    StorageName,
-    write_obs_to_file,
-)
+from caom2pipe.manage_composable import read_obs_from_file, write_obs_to_file
 from caom2pipe import reader_composable as rdc
 
 
 THIS_DIR = dirname(realpath(__file__))
 TEST_DATA_DIR = join(THIS_DIR, 'data')
-PLUGIN = join(dirname(THIS_DIR), f'{APPLICATION}.py')
 
 
 def pytest_generate_tests(metafunc):
@@ -117,6 +112,7 @@ def test_visitor(test_name, test_config):
     kwargs = {
         'storage_name': storage_name,
         'metadata_reader': metadata_reader,
+        'config': test_config,
     }
     observation = None
     input_file = f'{TEST_DATA_DIR}/in.{storage_name.product_id}.fits.xml'
@@ -128,8 +124,11 @@ def test_visitor(test_name, test_config):
     expected_fqn = f'{TEST_DATA_DIR}/{storage_name.file_id}.expected.xml'
     expected = read_obs_from_file(expected_fqn)
     compare_result = get_differences(expected, observation)
+    actual_fqn = expected_fqn.replace('expected', 'actual')
+    if exists(actual_fqn):
+        unlink(actual_fqn)
+
     if compare_result is not None:
-        actual_fqn = expected_fqn.replace('expected', 'actual')
         write_obs_to_file(observation, actual_fqn)
         compare_text = '\n'.join([r for r in compare_result])
         msg = (

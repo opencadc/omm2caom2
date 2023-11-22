@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ***********************************************************************
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
@@ -76,7 +75,9 @@ class OMMFits2caom2Visitor(Fits2caom2Visitor):
         super().__init__(observation, **kwargs)
 
     def _get_mapping(self, headers):
-        return Telescope(self._storage_name, headers, self._clients)
+        return Telescope(
+            self._storage_name, headers, self._clients, self._observable, self._observation, self._config
+        )
 
 
 def visit(observation, **kwargs):

@@ -75,18 +75,9 @@ from cadcdata import FileInfo
 from caom2 import ChecksumURI
 from omm2caom2 import footprint_augmentation, preview_augmentation
 from omm2caom2 import OmmName, cleanup_augmentation
-from caom2pipe.manage_composable import (
-    CadcException,
-    Config,
-    Metrics,
-    Observable,
-    read_obs_from_file,
-    StorageName,
-)
+from caom2pipe.manage_composable import CadcException, Observable, read_obs_from_file
 
 
-THIS_DIR = os.path.dirname(os.path.realpath(__file__))
-TEST_DATA_DIR = os.path.join(THIS_DIR, 'data')
 TEST_OBS = 'C170324_0054'
 TEST_FILE = f'{TEST_OBS}_SCI.fits.gz'
 TEST_FILES_DIR = '/test_files'
@@ -97,13 +88,11 @@ def test_footprint_aug_visit():
         footprint_augmentation.visit(None)
 
 
-def test_footprint_update_position(test_config):
+def test_footprint_update_position(test_config, test_data_dir):
     fqn = f'{TEST_FILES_DIR}/{TEST_FILE}'
     omm_name = OmmName(file_name=TEST_FILE, source_names=[fqn])
     test_kwargs = {'storage_name': omm_name}
-    test_fqn = os.path.join(
-        TEST_DATA_DIR, f'{omm_name.product_id}.expected.xml'
-    )
+    test_fqn = os.path.join(test_data_dir, f'{omm_name.product_id}.expected.xml')
     test_obs = read_obs_from_file(test_fqn)
     test_chunk = (
         test_obs.planes[omm_name.product_id]
@@ -130,7 +119,7 @@ def test_preview_aug_visit():
         preview_augmentation.visit(None)
 
 
-def test_preview_augment_plane(test_config):
+def test_preview_augment_plane(test_config, test_data_dir):
     fqn = f'{TEST_FILES_DIR}/{TEST_FILE}'
     omm_name = OmmName(file_name=TEST_FILE, source_names=[fqn])
     preview = os.path.join(TEST_FILES_DIR, omm_name.prev)
@@ -139,17 +128,18 @@ def test_preview_augment_plane(test_config):
         os.remove(preview)
     if os.path.exists(thumb):
         os.remove(thumb)
-    test_fqn = os.path.join(
-        TEST_DATA_DIR, f'{omm_name.product_id}.expected.xml'
-    )
+    test_fqn = os.path.join(test_data_dir, f'{omm_name.product_id}.expected.xml')
     test_obs = read_obs_from_file(test_fqn)
     assert len(test_obs.planes[omm_name.product_id].artifacts) == 1
     preva = f'{test_config.scheme}:{test_config.collection}/C170324_0054_SCI_prev.jpg'
     thumba = f'{test_config.scheme}:{test_config.collection}/C170324_0054_SCI_prev_256.jpg'
 
     test_config.observe_execution = True
-    test_metrics = Metrics(test_config)
-    test_observable = Observable(rejected=None, metrics=test_metrics)
+    test_config.rejected_directory = test_data_dir
+    test_config.rejected_file_name = 'rejected.yml'
+    if os.path.exists(test_config.rejected_fqn):
+        os.unlink(test_config.rejected_fqn)
+    test_observable = Observable(test_config)
 
     test_kwargs = {
         'working_directory': TEST_FILES_DIR,
@@ -188,16 +178,14 @@ def test_preview_augment_plane(test_config):
         'md5:86cf537f70f5dd6e1d572631f6d424b1'
     ), 'prev_256 update failed'
 
-    assert (
-        len(test_metrics.history) == 0
-    ), 'wrong history, client is not None'
+    assert len(test_observable.metrics.history) == 0, 'wrong history, client is not None'
 
 
 @patch('caom2pipe.client_composable.ClientCollection')
 @patch('omm2caom2.cleanup_augmentation._send_slack_message')
-def test_cleanup(slack_mock, client_mock):
+def test_cleanup(slack_mock, client_mock, test_data_dir):
     test_obs_id = 'C090219_0001'
-    test_obs_fqn = f'{TEST_DATA_DIR}/{test_obs_id}_start.xml'
+    test_obs_fqn = f'{test_data_dir}/{test_obs_id}_start.xml'
     test_obs = read_obs_from_file(test_obs_fqn)
     client_mock.data_client.info.side_effect = _mock_file_info
     kwargs = {'clients': client_mock}

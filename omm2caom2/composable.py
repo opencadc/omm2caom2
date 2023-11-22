@@ -131,15 +131,15 @@ def _run():
     mc.StorageName.collection = config.collection
     mc.StorageName.preview_scheme = config.preview_scheme
     mc.StorageName.scheme = config.scheme
-    data_source = None
+    sources = list()
     if config.use_local_files:
-        data_source = ListDirDataSource(config, chooser=None)
+        sources.append(ListDirDataSource(config, chooser=None))
     return rc.run_by_todo(
         config=config,
         name_builder=OmmBuilder(config),
         meta_visitors=META_VISITORS,
         data_visitors=DATA_VISITORS,
-        source=data_source,
+        sources=sources,
     )
 
 

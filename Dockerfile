@@ -1,15 +1,16 @@
-FROM opencadc/matplotlib:3.11-slim as builder
+ARG OPENCADC_PYTHON_VERSION=3.12
+FROM opencadc/matplotlib:${OPENCADC_PYTHON_VERSION}-slim as builder
 
 RUN apt-get update --no-install-recommends && \
     apt-get install -y build-essential git && \
     rm -rf /var/lib/apt/lists /tmp/* /var/tmp/*
 
-ADD http://www.eso.org/~fstoehr/footprintfinder.py /usr/local/lib/python3.11/site-packages/
-RUN chmod 755 /usr/local/lib/python3.11/site-packages/footprintfinder.py
+ADD http://www.eso.org/~fstoehr/footprintfinder.py /usr/local/lib/python${OPENCADC_PYTHON_VERSION}/site-packages/
+RUN chmod 755 /usr/local/lib/python${OPENCADC_PYTHON_VERSION}/site-packages/footprintfinder.py
 
 WORKDIR /usr/src/app
 
-ARG OPENCADC_BRANCH=master
+ARG OPENCADC_BRANCH=main
 ARG OPENCADC_REPO=opencadc
 
 RUN git clone https://github.com/opencadc/cadctools.git && \
@@ -33,10 +34,11 @@ RUN git clone https://github.com/${OPENCADC_REPO}/omm2caom2.git && \
   pip install ./omm2caom2 && \
   cp ./omm2caom2/config.yml /
 
-FROM python:3.11-slim
+FROM python:${OPENCADC_PYTHON_VERSION}-slim
 WORKDIR /usr/src/app
+ARG OPENCADC_PYTHON_VERSION
 
-COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/lib/python${OPENCADC_PYTHON_VERSION}/site-packages/ /usr/local/lib/python${OPENCADC_PYTHON_VERSION}/site-packages/
 COPY --from=builder /usr/local/bin/* /usr/local/bin/
 COPY --from=builder /config.yml /
 

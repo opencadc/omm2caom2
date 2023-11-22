@@ -121,12 +121,12 @@ def visit(observation, **kwargs):
                             if isinstance(meta.lastmod, datetime):
                                 latest_timestamp = meta.lastmod.timestamp()
                             else:
-                                latest_timestamp = mc.make_time(meta.lastmod)
+                                latest_timestamp = mc.make_datetime(meta.lastmod)
                         else:
                             if isinstance(meta.lastmod, datetime):
                                 current_timestamp = meta.lastmod.timestamp()
                             else:
-                                current_timestamp = mc.make_time(meta.lastmod)
+                                current_timestamp = mc.make_datetime(meta.lastmod)
                             if current_timestamp > latest_timestamp:
                                 latest_timestamp = current_timestamp
                                 temp.append(latest_plane_id)

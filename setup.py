@@ -4,15 +4,10 @@
 import glob
 import os
 import sys
-import imp
 from setuptools.command.test import test as TestCommand
 from setuptools import find_packages
 
 from setuptools import setup
-
-import distutils.cmd
-import distutils.log
-import subprocess
 
 # read the README.md file and return as string.
 def readme():
@@ -90,14 +85,14 @@ setup(name=PACKAGENAME,
       use_2to3=False,
       setup_requires=['pytest-runner'],
       entry_points=entry_points,
-      python_requires='>=3.10',
+      python_requires='>=3.12',
       packages=find_packages(),
       package_data={PACKAGENAME: ['data/*']},
       classifiers=[
         'Natural Language :: English',
         'License :: OSI Approved :: GNU Affero General Public License v3',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.10'
+        'Programming Language :: Python :: 3.12'
       ],
       cmdclass = {
           'coverage': PyTest,
