@@ -14,11 +14,6 @@ ARG OPENCADC_MASTER_BRANCH=master
 ARG OPENCADC_BRANCH=main
 ARG OPENCADC_REPO=opencadc
 
-RUN git clone https://github.com/opencadc/cadctools.git && \
-    cd cadctools && \
-    pip install ./cadcdata && \
-    cd ..
-
 RUN git clone https://github.com/${OPENCADC_REPO}/caom2tools.git && \
     cd caom2tools && \
     git checkout ${OPENCADC_BRANCH} && \
