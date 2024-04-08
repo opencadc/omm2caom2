@@ -99,7 +99,7 @@ from caom2pipe.manage_composable import (
     CadcException,
     CaomName,
     check_param,
-    make_time,
+    make_datetime,
     StorageName,
     to_float,
     update_typed_set,
@@ -107,10 +107,8 @@ from caom2pipe.manage_composable import (
 from caom2pipe import name_builder_composable as nbc
 
 
-__all__ = ['OmmName', 'APPLICATION', 'OmmBuilder', 'Telescope']
+__all__ = ['OmmName', 'OmmBuilder', 'Telescope']
 
-
-APPLICATION = 'omm2caom2'
 
 # map the fits file values to the DataProductType enums
 DATATYPE_LOOKUP = {
@@ -258,11 +256,11 @@ class OmmName(StorageName):
 
 
 class Telescope(TelescopeMapping):
-    def __init__(self, storage_name, headers, clients):
-        super().__init__(storage_name, headers, clients)
+    def __init__(self, storage_name, headers, clients, observable, observation, config):
+        super().__init__(storage_name, headers, clients, observable, observation, config)
 
-    def accumulate_blueprint(self, bp, application=None):
-        super().accumulate_blueprint(bp, APPLICATION)
+    def accumulate_blueprint(self, bp):
+        super().accumulate_blueprint(bp)
         self.accumulate_obs(bp)
         self.accumulate_plane(bp)
         self.accumulate_artifact(bp)
@@ -363,10 +361,7 @@ class Telescope(TelescopeMapping):
         # DD - slack - 11-02-20
         # FWHM meaning is Full width Half Maximum, is a measurement of the
         # stellar profile on the image. So I suspect IQ being that FWHM value.
-        resolution = self._headers[ext].get('FWHM')
-        if resolution is not None and isinstance(resolution, int):
-            resolution = float(resolution)
-        return resolution
+        return to_float(self._headers[ext].get('FWHM'))
 
     def get_end_ref_coord_val(self, ext):
         """Calculate the upper bound of the spectral energy coordinate from
@@ -483,7 +478,7 @@ class Telescope(TelescopeMapping):
                 # DD, SB - slack - 19-03-20 - if release is not in the header
                 # observation date plus two years. This only applies to
                 # science observations.
-                temp = make_time(rel_date)
+                temp = make_datetime(rel_date)
                 rel_date = temp.replace(year=temp.year + 2)
         return rel_date
 
@@ -513,7 +508,7 @@ class Telescope(TelescopeMapping):
         else:
             return None
 
-    def update(self, observation, file_info):
+    def update(self, file_info):
         """Called to fill multiple CAOM model elements and/or attributes, must
         have this signature for import_module loading and execution.
 
@@ -522,9 +517,9 @@ class Telescope(TelescopeMapping):
         :param clients ClientCollection instance
         """
         self._logger.debug('Begin update.')
-        self._update_telescope_location(observation)
+        self._update_telescope_location(self._observation)
 
-        for plane in observation.planes.values():
+        for plane in self._observation.planes.values():
             for artifact in plane.artifacts.values():
                 if self._storage_name.file_uri != artifact.uri:
                     continue
@@ -538,10 +533,8 @@ class Telescope(TelescopeMapping):
                     for chunk in part.chunks:
                         chunk.product_type = self.get_product_type(0)
                         self._update_energy(chunk)
-                        self._update_time(chunk, observation.observation_id)
-                        self._update_position(
-                            plane, observation.intent, chunk
-                        )
+                        self._update_time(chunk, self._observation.observation_id)
+                        self._update_position(plane, self._observation.intent, chunk)
                         if chunk.position is None:
                             # for WCS validation correctness
                             chunk.naxis = None
@@ -549,26 +542,23 @@ class Telescope(TelescopeMapping):
                             chunk.time_axis = None
 
                 if self._storage_name.is_rejected():
-                    self._update_requirements(observation)
+                    self._update_requirements(self._observation)
 
             if OmmName.is_composite(plane.product_id):
-                if Telescope.change_type(observation):
-                    observation = change_to_composite(observation)
-                    self._logger.info(
-                        f'Changing from Simple to Composite for '
-                        f'{observation.observation_id}'
-                    )
-                self._update_provenance(observation)
+                if Telescope.change_type(self._observation):
+                    self._observation = change_to_composite(self._observation)
+                    self._logger.info('Changing from Simple to Composite for {self._observation.observation_id}')
+                self._update_provenance(self._observation)
 
         if (
-            observation.instrument is None
-            or observation.instrument.name is None
-            or len(observation.instrument.name) == 0
+            self._observation.instrument is None
+            or self._observation.instrument.name is None
+            or len(self._observation.instrument.name) == 0
         ):
-            self._update_instrument_name(observation)
+            self._update_instrument_name(self._observation)
 
         self._logger.debug('Done update.')
-        return observation
+        return self._observation
 
     def _update_energy(self, chunk):
         """Create SpectralWCS information using FITS headers, if available. If

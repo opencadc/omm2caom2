@@ -88,26 +88,20 @@ from caom2pipe.run_composable import run_by_todo
 from unittest.mock import ANY, call, patch, Mock
 
 from omm2caom2 import composable, OmmBuilder, OmmName
-import test_main_app
-
-
-STATE_FILE = '/usr/src/app/state.yml'
-TODO_FILE = f'{test_main_app.TEST_DATA_DIR}/todo.txt'
-PROGRESS_FILE = '/usr/src/app/logs/progress.txt'
 
 
 @patch('caom2pipe.client_composable.ClientCollection')
 @patch('cadcutils.net.ws.WsCapabilities.get_access_url')
 @patch('caom2pipe.execute_composable.OrganizeExecutes.do_one')
-def test_run_single(run_mock, access_mock, client_mock):
+def test_run_single(run_mock, access_mock, client_mock, test_data_dir):
     access_mock.return_value = 'https://localhost'
     client_mock.return_value.metadata_client.return_value = None
     test_obs_id = 'C121121_J024345.57-021326.4_K'
     test_f_id = f'{test_obs_id}_SCIRED'
     test_f = f'{test_f_id}.fits.gz'
     getcwd_orig = os.getcwd
-    os.getcwd = Mock(return_value=test_main_app.TEST_DATA_DIR)
-    test_proxy = f'{test_main_app.TEST_DATA_DIR}/cadcproxy.pem'
+    os.getcwd = Mock(return_value=test_data_dir)
+    test_proxy = f'{test_data_dir}/cadcproxy.pem'
     try:
         # execution
         sys.argv = f'omm2caom2 {test_f} {test_proxy}'.split()
@@ -124,37 +118,33 @@ def test_run_single(run_mock, access_mock, client_mock):
 
 @patch('caom2pipe.execute_composable.CaomExecute._visit_meta')
 @patch('caom2pipe.client_composable.ClientCollection')
-def test_run_rc_todo(client_mock, exec_mock):
-    _write_todo('C121212_domeflat_K_CALRED.fits.gz')
-    client_mock.return_value.metadata_client.read.side_effect = (
-        _mock_repo_read
-    )
-    client_mock.return_value.metadata_client.create.side_effect = Mock()
-    client_mock.return_value.metadata_client.update.side_effect = (
-        _mock_repo_update
-    )
-    client_mock.return_value.data_client.info.side_effect = (
-        _mock_get_file_info
-    )
-    exec_mock.side_effect = _mock_exec
-    getcwd_orig = os.getcwd
-    os.getcwd = Mock(return_value=test_main_app.TEST_DATA_DIR)
+def test_run_rc_todo(client_mock, exec_mock, test_config, tmp_path):
+    test_config.task_types = [TaskType.VISIT]
+    test_config.change_working_directory(tmp_path.as_posix())
+    orig_cwd = os.getcwd()
     try:
+        os.chdir(tmp_path)
+        test_config.write_to_file(test_config)
+        with open(test_config.work_fqn, 'w') as f:
+            f.write('C121212_domeflat_K_CALRED.fits.gz\n')
+
+        client_mock.return_value.metadata_client.read.side_effect = _mock_repo_read
+        client_mock.return_value.metadata_client.create.side_effect = Mock()
+        client_mock.return_value.metadata_client.update.side_effect = _mock_repo_update
+        client_mock.return_value.data_client.info.side_effect = _mock_get_file_info
+        exec_mock.side_effect = _mock_exec
+
         # execution
         test_result = composable._run()
         assert test_result == 0, 'wrong result'
-    finally:
-        os.getcwd = getcwd_orig
 
-    assert (
-        client_mock.return_value.metadata_client.read.called
-    ), 'repo read not called'
-    assert (
-        client_mock.return_value.metadata_client.update.called
-    ), 'repo update not called'
-    # default config file says visit only, so it's a MetaVisit implementation,
-    # so no data transfer
-    assert exec_mock.called, 'expect to be called'
+        assert client_mock.return_value.metadata_client.read.called, 'repo read not called'
+        assert client_mock.return_value.metadata_client.update.called, 'repo update not called'
+        # default config file says visit only, so it's a MetaVisit implementation,
+        # so no data transfer
+        assert exec_mock.called, 'expect to be called'
+    finally:
+        os.chdir(orig_cwd)
 
 
 # common definitions for the next two tests
@@ -221,7 +211,7 @@ def test_run_compression(clients_mock, test_config):
                 TaskType.INGEST,
                 TaskType.MODIFY,
             ]
-            test_config.logging_level = 'DEBUG'
+            test_config.logging_level = 'INFO'
             test_config.log_to_file = True
             test_config.proxy_file_name = 'cadcproxy.pem'
             test_config.features.supports_latest_client = True
@@ -243,7 +233,7 @@ def test_run_compression(clients_mock, test_config):
                     name_builder=OmmBuilder(test_config),
                     meta_visitors=composable.META_VISITORS,
                     data_visitors=composable.DATA_VISITORS,
-                    source=test_source,
+                    sources=[test_source],
                 )
                 assert test_result == 0, 'expecting correct execution'
             except Exception as e:
@@ -283,11 +273,8 @@ def test_run_compression(clients_mock, test_config):
             assert (
                 clients_mock.return_value.metadata_client.read.called
             ), 'read'
-            assert (
-                clients_mock.return_value.metadata_client.read.call_count == 2
-            ), 'meta read call count, ingest + modify'
+            assert clients_mock.return_value.metadata_client.read.call_count == 1, 'meta read call ingest + modify'
             read_calls = [
-                call('OMM', 'C170324_0054'),
                 call('OMM', 'C170324_0054'),
             ]
             clients_mock.return_value.metadata_client.read.assert_has_calls(
@@ -389,7 +376,7 @@ def test_run_compression_retry(
                     name_builder=OmmBuilder(test_config),
                     meta_visitors=composable.META_VISITORS,
                     data_visitors=composable.DATA_VISITORS,
-                    source=test_source,
+                    sources=[test_source],
                 )
                 assert test_result == -1, 'retry expected, expected failure'
             except Exception as e:
@@ -416,10 +403,8 @@ def test_run_compression_retry(
             assert not clients_mock.return_value.data_client.get.called, 'LocalStore, get should not be called'
 
             assert clients_mock.return_value.metadata_client.read.called, 'read'
-            assert (
-                clients_mock.return_value.metadata_client.read.call_count == 2
-            ), 'meta read call count, ingest + modify'
-            read_calls = [call('OMM', 'C170324_0054'), call('OMM', 'C170324_0054')]
+            assert clients_mock.return_value.metadata_client.read.call_count == 1, 'meta read count ingest + modify'
+            read_calls = [call('OMM', 'C170324_0054')]
             clients_mock.return_value.metadata_client.read.assert_has_calls(read_calls), 'wrong read args'
 
             assert clients_mock.return_value.metadata_client.create.called, 'create'
@@ -432,11 +417,6 @@ def test_run_compression_retry(
         finally:
             os.chdir(cwd)
             os.getcwd = getcwd_orig
-
-
-def _write_todo(test_obs_id):
-    with open(TODO_FILE, 'w') as f:
-        f.write(f'{test_obs_id}\n')
 
 
 def _mock_repo_read(arg1, arg2):

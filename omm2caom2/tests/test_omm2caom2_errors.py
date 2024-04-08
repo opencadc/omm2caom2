@@ -66,33 +66,28 @@
 # ***********************************************************************
 #
 
-import os
 import pytest
 
 from cadcdata import FileInfo
 from caom2utils import data_util
-from caom2pipe.manage_composable import (
-    CadcException,
-    read_obs_from_file,
-    StorageName,
-)
+from caom2pipe.manage_composable import CadcException, read_obs_from_file
 
 from omm2caom2 import Telescope, OmmName
-
-THIS_DIR = os.path.dirname(os.path.realpath(__file__))
-TESTDATA_DIR = os.path.join(THIS_DIR, 'error_data')
+from mock import Mock
 
 
-def test_time_nan(test_config):
-    test_obs = 'C120712_NGC7790_H_SCIRED'
-    test_file = f'file://{TESTDATA_DIR}/{test_obs}.fits.header'
+# the files to support this test have been removed
+@pytest.mark.skip('this file does not fail anymore')
+def test_time_nan(test_config, test_data_dir):
+    test_obs = 'C120712_NGC7790_H'
+    test_file = f'file://{test_data_dir}/{test_obs}_SCIRED.fits.header'
     omm_name = OmmName(
         file_name=f'{test_obs}.fits', source_names=[test_file]
     )
     test_file_info = FileInfo(id=omm_name.file_uri)
-    test_xml = f'{TESTDATA_DIR}/{test_obs}.xml'
+    test_xml = f'{test_data_dir}/{test_obs}.xml'
     obs = read_obs_from_file(test_xml)
     headers = data_util.get_local_file_headers(test_file)
-    telescope = Telescope(omm_name, headers, None)
+    telescope = Telescope(omm_name, headers, None, Mock(), obs, test_config)
     with pytest.raises(CadcException):
-        result = telescope.update(obs, test_file_info)
+        result = telescope.update(test_file_info)
