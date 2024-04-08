@@ -152,8 +152,8 @@ class OmmBuilder(nbc.StorageNameBuilder):
         if self._config.use_local_files:
             fqn = None
             result = None
-            for entry in self._config.data_sources:
-                fqn = os.path.join(entry, temp)
+            for data_source in self._config.data_sources:
+                fqn = os.path.join(data_source, temp)
                 if os.path.exists(fqn):
                     result = OmmName(file_name=temp, source_names=[fqn])
                 break
