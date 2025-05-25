@@ -2,7 +2,7 @@
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 #
-#  (c) 2018.                            (c) 2018.
+#  (c) 2025.                            (c) 2025.
 #  Government of Canada                 Gouvernement du Canada
 #  National Research Council            Conseil national de recherches
 #  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -71,13 +71,13 @@ import sys
 import tempfile
 import traceback
 
-from caom2pipe.data_source_composable import ListDirDataSource
+from caom2pipe.data_source_composable import ListDirDataSourceRunnerMeta
 from caom2pipe import manage_composable as mc
 from caom2pipe import run_composable as rc
 from omm2caom2 import preview_augmentation, footprint_augmentation
 from omm2caom2 import fits2caom2_augmentation
 from omm2caom2 import cleanup_augmentation
-from omm2caom2 import OmmBuilder
+from omm2caom2.main_app import OmmName
 
 
 META_VISITORS = [fits2caom2_augmentation, cleanup_augmentation]
@@ -104,7 +104,7 @@ def _run_single():
         config.proxy_fqn = temp.name
     else:
         config.proxy_fqn = sys.argv[2]
-    storage_name = OmmBuilder(config).build(sys.argv[1])
+    storage_name = OmmName(source_names=[sys.argv[1]])
     return rc.run_single(
         config=config,
         storage_name=storage_name,
@@ -133,13 +133,13 @@ def _run():
     mc.StorageName.scheme = config.scheme
     sources = list()
     if config.use_local_files:
-        sources.append(ListDirDataSource(config, chooser=None))
-    return rc.run_by_todo(
+        sources.append(ListDirDataSourceRunnerMeta(config, chooser=None, storage_name_ctor=OmmName))
+    return rc.run_by_todo_runner_meta(
         config=config,
-        name_builder=OmmBuilder(config),
         meta_visitors=META_VISITORS,
         data_visitors=DATA_VISITORS,
         sources=sources,
+        storage_name_ctor=OmmName,
     )
 
 

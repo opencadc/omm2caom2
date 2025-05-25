@@ -2,7 +2,7 @@
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 #
-#  (c) 2018.                            (c) 2018.
+#  (c) 2025.                            (c) 2025.
 #  Government of Canada                 Gouvernement du Canada
 #  National Research Council            Conseil national de recherches
 #  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -94,7 +94,7 @@ from caom2 import (
 )
 from caom2utils.caom2blueprint import update_artifact_meta
 from caom2pipe import astro_composable as ac
-from caom2pipe.caom_composable import change_to_composite, TelescopeMapping
+from caom2pipe.caom_composable import change_to_composite, TelescopeMapping2
 from caom2pipe.manage_composable import (
     CadcException,
     CaomName,
@@ -104,10 +104,9 @@ from caom2pipe.manage_composable import (
     to_float,
     update_typed_set,
 )
-from caom2pipe import name_builder_composable as nbc
 
 
-__all__ = ['OmmName', 'OmmBuilder', 'Telescope']
+__all__ = ['OmmName', 'Telescope']
 
 
 # map the fits file values to the DataProductType enums
@@ -137,33 +136,6 @@ DEFAULT_GEOCENTRIC = {
 }
 
 
-class OmmBuilder(nbc.StorageNameBuilder):
-    def __init__(self, config):
-        self._config = config
-
-    def build(self, entry):
-        """
-        OMM is the original pipeline, don't want to break any of the behaviour, so set up the source names here.
-
-        :param entry: str - from an os.listdir call, so will have no notion of 'source'
-        :return:
-        """
-        temp = os.path.basename(entry)
-        if self._config.use_local_files:
-            fqn = None
-            result = None
-            for entry in self._config.data_sources:
-                fqn = os.path.join(entry, temp)
-                if os.path.exists(fqn):
-                    result = OmmName(file_name=temp, source_names=[fqn])
-                break
-            if result is None:
-                raise CadcException(f'Could not find local file {fqn}.')
-        else:
-            result = OmmName(file_name=temp, source_names=[entry])
-        return result
-
-
 class OmmName(StorageName):
     """OMM naming rules:
     - support mixed-case file name storage, and mixed-case obs id values
@@ -175,14 +147,8 @@ class OmmName(StorageName):
     OMM_NAME_PATTERN = 'C[\\w+-.]+[SCI|CAL|SCIRED|CALRED|TEST|FOCUS]'
     StorageName.collection_pattern = OMM_NAME_PATTERN
 
-    def __init__(
-        self,
-        obs_id=None,
-        product_id=None,
-        file_name=None,
-        source_names=[],
-    ):
-        super().__init__(obs_id, product_id, file_name, source_names)
+    def __init__(self, source_names):
+        super().__init__(source_names=source_names)
 
     @property
     def prev(self):
@@ -255,9 +221,7 @@ class OmmName(StorageName):
         return StorageName.remove_extensions(f_name).replace('.jpg', '')
 
 
-class Telescope(TelescopeMapping):
-    def __init__(self, storage_name, headers, clients, observable, observation, config):
-        super().__init__(storage_name, headers, clients, observable, observation, config)
+class Telescope(TelescopeMapping2):
 
     def accumulate_blueprint(self, bp):
         super().accumulate_blueprint(bp)
@@ -508,7 +472,7 @@ class Telescope(TelescopeMapping):
         else:
             return None
 
-    def update(self, file_info):
+    def update(self):
         """Called to fill multiple CAOM model elements and/or attributes, must
         have this signature for import_module loading and execution.
 
@@ -523,7 +487,7 @@ class Telescope(TelescopeMapping):
             for artifact in plane.artifacts.values():
                 if self._storage_name.file_uri != artifact.uri:
                     continue
-                update_artifact_meta(artifact, file_info)
+                update_artifact_meta(artifact, self._storage_name.file_info.get(self._storage_name.file_uri))
                 for part in artifact.parts.values():
                     if len(part.chunks) == 0 and part.name == '0':
                         # always have a time axis, and usually an energy

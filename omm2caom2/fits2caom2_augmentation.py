@@ -2,7 +2,7 @@
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 #
-#  (c) 2021.                            (c) 2021.
+#  (c) 2025.                            (c) 2025.
 #  Government of Canada                 Gouvernement du Canada
 #  National Research Council            Conseil national de recherches
 #  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -66,18 +66,16 @@
 # ***********************************************************************
 #
 
-from caom2pipe.caom_composable import Fits2caom2Visitor
+from caom2pipe.caom_composable import Fits2caom2VisitorRunnerMeta
 from omm2caom2 import Telescope
 
 
-class OMMFits2caom2Visitor(Fits2caom2Visitor):
+class OMMFits2caom2Visitor(Fits2caom2VisitorRunnerMeta):
     def __init__(self, observation, **kwargs):
         super().__init__(observation, **kwargs)
 
-    def _get_mapping(self, headers):
-        return Telescope(
-            self._storage_name, headers, self._clients, self._observable, self._observation, self._config
-        )
+    def _get_mappings(self, dest_uri):
+        return [Telescope(self._storage_name, self._clients, self._reporter, self._observation, self._config)]
 
 
 def visit(observation, **kwargs):

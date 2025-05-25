@@ -1,5 +1,5 @@
 ARG OPENCADC_PYTHON_VERSION=3.12
-FROM opencadc/matplotlib:${OPENCADC_PYTHON_VERSION}-slim as builder
+FROM opencadc/matplotlib:${OPENCADC_PYTHON_VERSION}-slim AS builder
 
 RUN apt-get update --no-install-recommends && \
     apt-get install -y build-essential git && \
@@ -10,7 +10,6 @@ RUN chmod 755 /usr/local/lib/python${OPENCADC_PYTHON_VERSION}/site-packages/foot
 
 WORKDIR /usr/src/app
 
-ARG OPENCADC_MASTER_BRANCH=master
 ARG OPENCADC_BRANCH=main
 ARG OPENCADC_REPO=opencadc
 
@@ -21,10 +20,10 @@ RUN git clone https://github.com/${OPENCADC_REPO}/caom2tools.git && \
     cd ..
 
 RUN pip install git+https://github.com/${OPENCADC_REPO}/caom2pipe@${OPENCADC_BRANCH}#egg=caom2pipe
-  
+
 RUN git clone https://github.com/${OPENCADC_REPO}/omm2caom2.git && \
   cd omm2caom2 && \
-  git checkout ${OPENCADC_MASTER_BRANCH} && \
+  git checkout ${OPENCADC_BRANCH} && \
   cd .. && \
   cp ./omm2caom2/omm2caom2/omm_docker_run_cleanup.py /usr/local/bin && \
   pip install ./omm2caom2 && \

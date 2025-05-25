@@ -2,7 +2,7 @@
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 #
-#  (c) 2018.                            (c) 2018.
+#  (c) 2025.                            (c) 2025.
 #  Government of Canada                 Gouvernement du Canada
 #  National Research Council            Conseil national de recherches
 #  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -90,7 +90,7 @@ def test_footprint_aug_visit():
 
 def test_footprint_update_position(test_config, test_data_dir):
     fqn = f'{TEST_FILES_DIR}/{TEST_FILE}'
-    omm_name = OmmName(file_name=TEST_FILE, source_names=[fqn])
+    omm_name = OmmName(source_names=[fqn])
     test_kwargs = {'storage_name': omm_name}
     test_fqn = os.path.join(test_data_dir, f'{omm_name.product_id}.expected.xml')
     test_obs = read_obs_from_file(test_fqn)
@@ -121,7 +121,7 @@ def test_preview_aug_visit():
 
 def test_preview_augment_plane(test_config, test_data_dir):
     fqn = f'{TEST_FILES_DIR}/{TEST_FILE}'
-    omm_name = OmmName(file_name=TEST_FILE, source_names=[fqn])
+    omm_name = OmmName(source_names=[fqn])
     preview = os.path.join(TEST_FILES_DIR, omm_name.prev)
     thumb = os.path.join(TEST_FILES_DIR, omm_name.thumb)
     if os.path.exists(preview):
@@ -153,29 +153,29 @@ def test_preview_augment_plane(test_config, test_data_dir):
     assert os.path.exists(thumb)
     test_plane = test_result.planes[omm_name.product_id]
     assert test_plane.artifacts[preva].content_checksum == ChecksumURI(
-        'md5:1c4370b57413adb059d0ef7bad538d54'
+        'md5:6fc37f04e7d16adf40f6279db9c5c8e1'
     ), 'prev checksum failure'
     assert test_plane.artifacts[thumba].content_checksum == ChecksumURI(
-        'md5:86cf537f70f5dd6e1d572631f6d424b1'
+        'md5:f755cf9a75f1fb08ee020f3cd6c9b930'
     ), 'thumb checksum failure'
 
     # now do updates
     test_obs.planes[omm_name.product_id].artifacts[
         preva
-    ].content_checksum = ChecksumURI('de9f39804f172682ea9b001f8ca11f15')
+    ].content_checksum = ChecksumURI('md5:de9f39804f172682ea9b001f8ca11f15')
     test_obs.planes[omm_name.product_id].artifacts[
         thumba
-    ].content_checksum = ChecksumURI('cd118dae04391f6bea93ba4bf2711adf')
+    ].content_checksum = ChecksumURI('m5:cd118dae04391f6bea93ba4bf2711adf')
     test_result = preview_augmentation.visit(test_obs, **test_kwargs)
     assert test_result is not None, 'expected update visit return value'
     assert len(test_result.planes[omm_name.product_id].artifacts) == 3
     assert os.path.exists(preview)
     assert os.path.exists(thumb)
     assert test_plane.artifacts[preva].content_checksum == ChecksumURI(
-        'md5:1c4370b57413adb059d0ef7bad538d54'
+        'md5:6fc37f04e7d16adf40f6279db9c5c8e1'
     ), 'prev update failed'
     assert test_plane.artifacts[thumba].content_checksum == ChecksumURI(
-        'md5:86cf537f70f5dd6e1d572631f6d424b1'
+        'md5:f755cf9a75f1fb08ee020f3cd6c9b930'
     ), 'prev_256 update failed'
 
     assert len(test_observable.metrics.history) == 0, 'wrong history, client is not None'

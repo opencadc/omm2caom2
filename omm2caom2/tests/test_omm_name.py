@@ -2,7 +2,7 @@
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 #
-#  (c) 2018.                            (c) 2018.
+#  (c) 2025.                            (c) 2025.
 #  Government of Canada                 Gouvernement du Canada
 #  National Research Council            Conseil national de recherches
 #  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -70,42 +70,30 @@ from os.path import basename
 
 import pytest
 
-from caom2pipe.manage_composable import CadcException, Config, StorageName
-from omm2caom2 import OmmName, OmmBuilder
+from caom2pipe.manage_composable import CadcException
+from omm2caom2 import OmmName
 
 
 def test_is_valid(test_config):
-    assert OmmName(file_name='C121212_00001_SCI.fits.gz').is_valid()
-    assert not OmmName(file_name='c121212_00001_SCI.fits.gz').is_valid()
-    assert OmmName(file_name='C121212_00001_CAL.fits.gz').is_valid()
-    assert not OmmName(file_name='c121212_00001_CAL.fits.gz').is_valid()
-    assert OmmName(
-        file_name='C121212_domeflat_K_CALRED.fits.gz'
-    ).is_valid()
-    assert not OmmName(
-        file_name='C121212_DOMEFLAT_K_CALRED.fits.gz'
-    ).is_valid()
-    assert OmmName(
-        file_name='C121212_sh2-132_J_old_SCIRED.fits.gz'
-    ).is_valid()
-    assert OmmName(
-        file_name='C121212_J0454+8024_J_SCIRED.fits.gz'
-    ).is_valid()
-    assert OmmName(file_name='C121212_00001_TEST.fits.gz').is_valid()
-    assert OmmName(file_name='C121212_00001_FOCUS.fits.gz').is_valid()
-    assert OmmName(
-        file_name='C121121_J024345.57-021326.4_K_SCIRED.fits.gz'
-    ).is_valid()
+    assert OmmName(source_names=['/tmp/C121212_00001_SCI.fits.gz']).is_valid()
+    assert not OmmName(source_names=['/tmp/c121212_00001_SCI.fits.gz']).is_valid()
+    assert OmmName(source_names=['/tmp/C121212_00001_CAL.fits.gz']).is_valid()
+    assert not OmmName(source_names=['/tmp/c121212_00001_CAL.fits.gz']).is_valid()
+    assert OmmName(source_names=['/tmp/C121212_domeflat_K_CALRED.fits.gz']).is_valid()
+    assert not OmmName(source_names=['/tmp/C121212_DOMEFLAT_K_CALRED.fits.gz']).is_valid()
+    assert OmmName(source_names=['/tmp/C121212_sh2-132_J_old_SCIRED.fits.gz']).is_valid()
+    assert OmmName(source_names=['/tmp/C121212_J0454+8024_J_SCIRED.fits.gz']).is_valid()
+    assert OmmName(source_names=['/tmp/C121212_00001_TEST.fits.gz']).is_valid()
+    assert OmmName(source_names=['/tmp/C121212_00001_FOCUS.fits.gz']).is_valid()
+    assert OmmName(source_names=['/tmp/C121121_J024345.57-021326.4_K_SCIRED.fits.gz']).is_valid()
 
-    test_subject = OmmName(file_name='C121212_00001_SCI.fits')
+    test_subject = OmmName(source_names=['/tmp/C121212_00001_SCI.fits.gz'])
     assert test_subject.is_valid()
     assert test_subject.obs_id == 'C121212_00001'
-    test_subject = OmmName(file_name='C121212_00001_SCI.fits.gz')
+    test_subject = OmmName(source_names=['/tmp/C121212_00001_SCI.fits.gz'])
     assert test_subject.is_valid()
     assert test_subject.obs_id == 'C121212_00001'
-    test_subject = OmmName(
-        file_name='C121212_00001_SCI.fits.gz',
-    )
+    test_subject = OmmName(source_names=['/tmp/C121212_00001_SCI.fits.gz'])
     assert test_subject.is_valid()
     assert test_subject.obs_id == 'C121212_00001'
     assert (
@@ -113,55 +101,41 @@ def test_is_valid(test_config):
     ), 'wrong file uri'
 
     with pytest.raises(CadcException):
-        ignore = OmmName._add_extensions('C121212_00001_SCI')
+        _ = OmmName._add_extensions('C121212_00001_SCI')
 
     with pytest.raises(CadcException):
-        ignore = OmmName._add_extensions('C121212_00001_FOCUS')
+        _ = OmmName._add_extensions('C121212_00001_FOCUS')
 
     with pytest.raises(CadcException):
-        ignore = OmmName._add_extensions('C121212_00001_FOCUS_prev.png')
+        _ = OmmName._add_extensions('C121212_00001_FOCUS_prev.png')
 
-    test_subject = OmmName(file_name='C121212_00001_FOCUS.fits.gz')
+    test_subject = OmmName(source_names=['/tmp/C121212_00001_FOCUS.fits.gz'])
     assert test_subject.is_valid()
 
 
 def test_omm_name(test_config):
     test_config.task_types = []
     test_config.use_local_files = True
-    test_config.data_sources = ['/test_files']
-    test_builder = OmmBuilder(test_config)
     test_name = 'C170324_0054_SCI'
     for entry in [f'{test_name}', f'/tmp/{test_name}']:
-        test_subject = test_builder.build(f'{entry}.fits')
+        test_subject = OmmName(source_names=[f'{entry}.fits'])
         assert f'{test_config.scheme}:{test_config.collection}/{test_name}.fits' == test_subject.file_uri
-        temp = basename(entry)
-        assert test_subject.source_names == [
-            f'/test_files/{temp}.fits'
-        ], 'wrong source name'
+        assert test_subject.source_names == [f'{entry}.fits'], 'wrong source name'
         assert (
             test_subject.destination_uris[0]
             == f'{test_config.scheme}:{test_config.collection}/{test_name}.fits'
         ), 'wrong source name'
 
     test_name = 'C121212_sh2-132_J_old_SCIRED'
-    test_subject = OmmName(file_name=f'{test_name}.fits')
+    test_subject = OmmName(source_names=['/tmp/C121212_sh2-132_J_old_SCIRED.fits.gz'])
     assert test_subject.product_id == test_name, 'product id'
-    assert f'{test_name}_prev.jpg' == test_subject.prev
-    assert f'{test_name}_prev_256.jpg' == test_subject.thumb
-
-    test_name = 'C121212_sh2-132_J_old_SCIRED'
-    test_subject = OmmName(file_name=f'{test_name}.fits')
     assert f'{test_name}_prev.jpg' == test_subject.prev
     assert f'{test_name}_prev_256.jpg' == test_subject.thumb
 
     test_obs_id = 'C121121_J024345.57-021326.4_K'
     test_name = f'{test_obs_id}_SCIRED'
-    file_name = f'{test_name}.fits.gz'
-    test_subject = OmmName(file_name=file_name)
+    test_subject = OmmName(source_names=[f'/tmp/{test_name}.fits.gz'])
     assert f'{test_name}_prev.jpg' == test_subject.prev
     assert f'{test_name}_prev_256.jpg' == test_subject.thumb
     assert test_subject.obs_id == test_obs_id
-    assert (
-        test_subject.get_file_fqn('/tmp')
-        == f'/tmp/{test_subject.file_id}.fits'
-    )
+    assert test_subject.get_file_fqn('/tmp') == f'/tmp/{test_subject.file_id}.fits.gz'
