@@ -2,7 +2,7 @@
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 #
-#  (c) 2018.                            (c) 2018.
+#  (c) 2025.                            (c) 2025.
 #  Government of Canada                 Gouvernement du Canada
 #  National Research Council            Conseil national de recherches
 #  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -76,13 +76,16 @@ from mock import Mock
 
 
 def test_update_cal_provenance(test_config, test_data_dir):
-    test_obs = 'C170323_domeflat_K_CALRED'
-    test_obs_file = os.path.join(test_data_dir, f'{test_obs}.expected.xml')
-    test_header_file = os.path.join(test_data_dir, f'{test_obs}.fits.header')
+    test_config.change_working_directory(test_data_dir)
+    test_obs_id = 'C170323_domeflat_K_CALRED'
+    test_obs_file = os.path.join(test_data_dir, f'{test_obs_id}.expected.xml')
+    test_header_file = os.path.join(test_data_dir, f'{test_obs_id}.fits.header')
     test_obs = mc.read_obs_from_file(test_obs_file)
     headers = data_util.get_local_file_headers(test_header_file)
-    test_storage_name = OmmName(file_name=f'{test_obs}.fits')
-    telescope = Telescope(test_storage_name, headers, None, Mock(), test_obs, test_config)
+    test_storage_name = OmmName(source_names=[f'/tmp/{test_obs_id}.fits'])
+    test_storage_name.metadata = {test_storage_name.file_uri: headers}
+    test_reporter = mc.ExecutionReporter2(test_config)
+    telescope = Telescope(test_storage_name, Mock(), test_reporter, test_obs, test_config)
     telescope._update_cal_provenance(test_obs)
     assert test_obs is not None, 'no test_obs'
     assert test_obs.members is not None, 'no members'
@@ -105,13 +108,16 @@ def test_update_cal_provenance(test_config, test_data_dir):
 
 
 def test_update_sci_provenance(test_config, test_data_dir):
-    test_obs = 'C160929_NGC7419_K_SCIRED'
-    test_obs_file = os.path.join(test_data_dir, f'{test_obs}.expected.xml')
-    test_header_file = os.path.join(test_data_dir, f'{test_obs}.fits.header')
+    test_config.change_working_directory(test_data_dir)
+    test_obs_id = 'C160929_NGC7419_K_SCIRED'
+    test_obs_file = os.path.join(test_data_dir, f'{test_obs_id}.expected.xml')
+    test_header_file = os.path.join(test_data_dir, f'{test_obs_id}.fits.header')
     test_obs = mc.read_obs_from_file(test_obs_file)
     headers = data_util.get_local_file_headers(test_header_file)
-    test_storage_name = OmmName(file_name=f'{test_obs}.fits')
-    telescope = Telescope(test_storage_name, headers, None, Mock(), test_obs, test_config)
+    test_storage_name = OmmName(source_names=[f'/tmp/{test_obs_id}.fits'])
+    test_storage_name.metadata = {test_storage_name.file_uri: headers}
+    test_reporter = mc.ExecutionReporter2(test_config)
+    telescope = Telescope(test_storage_name, Mock(), test_reporter, test_obs, test_config)
     telescope._update_science_provenance(test_obs)
     assert test_obs is not None, 'no test_obs'
     assert test_obs.members is not None, 'no members'

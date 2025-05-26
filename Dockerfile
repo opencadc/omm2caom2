@@ -1,6 +1,5 @@
 ARG OPENCADC_PYTHON_VERSION=3.12
-FROM opencadc/matplotlib:${OPENCADC_PYTHON_VERSION}-slim as builder
-ARG OPENCADC_PYTHON_VERSION
+FROM opencadc/matplotlib:${OPENCADC_PYTHON_VERSION}-slim AS builder
 
 RUN apt-get update --no-install-recommends && \
     apt-get install -y build-essential git && \

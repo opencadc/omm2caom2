@@ -2,7 +2,7 @@
 # ******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 # *************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 #
-#  (c) 2018.                            (c) 2018.
+#  (c) 2025.                            (c) 2025.
 #  Government of Canada                 Gouvernement du Canada
 #  National Research Council            Conseil national de recherches
 #  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -76,8 +76,7 @@ from cadcdata import FileInfo
 from caom2.diff import get_differences
 from omm2caom2 import OmmName, fits2caom2_augmentation
 from caom2pipe import astro_composable as ac
-from caom2pipe.manage_composable import read_obs_from_file, write_obs_to_file
-from caom2pipe import reader_composable as rdc
+from caom2pipe.manage_composable import ExecutionReporter2, read_obs_from_file, write_obs_to_file
 
 
 THIS_DIR = dirname(realpath(__file__))
@@ -93,26 +92,23 @@ def pytest_generate_tests(metafunc):
     metafunc.parametrize('test_name', files)
 
 
-def test_visitor(test_name, test_config):
+def test_visitor(test_name, test_config, tmp_path):
+    test_config.change_working_directory(tmp_path.as_posix())
     warnings.simplefilter('ignore', category=FITSFixedWarning)
-    storage_name = OmmName(
-        file_name=basename(test_name).replace('.header', '.gz'),
-        source_names=[test_name],
-    )
-    storage_name.destination_uris[0] = storage_name.destination_uris[
-        0
-    ].replace('.header', '')
-    file_info = FileInfo(
-        id=storage_name.file_uri, file_type='application/fits'
-    )
+    storage_name = OmmName(source_names=[test_name])
+    storage_name.destination_uris[0] = storage_name.destination_uris[0].replace('.header', '')
+    file_info = FileInfo(id=storage_name.file_uri, file_type='application/fits')
     headers = ac.make_headers_from_file(test_name)
-    metadata_reader = rdc.FileMetadataReader()
-    metadata_reader._headers = {storage_name.file_uri: headers}
-    metadata_reader._file_info = {storage_name.file_uri: file_info}
+    storage_name.file_info = {storage_name.file_uri: file_info}
+    storage_name.metadata = {storage_name.file_uri: headers}
+    test_reporter = ExecutionReporter2(test_config)
+    test_config.log_file_directory = TEST_DATA_DIR
+    test_config.log_to_file = True
+    test_config.dump_blueprint = True
     kwargs = {
         'storage_name': storage_name,
-        'metadata_reader': metadata_reader,
         'config': test_config,
+        'reporter': test_reporter,
     }
     observation = None
     input_file = f'{TEST_DATA_DIR}/in.{storage_name.product_id}.fits.xml'
