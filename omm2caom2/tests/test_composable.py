@@ -141,9 +141,9 @@ def test_run_rc_todo(client_mock, exec_mock, test_config, tmp_path, change_test_
 uris = {
     'C170324_0054': FileInfo(
         'cadc:OMM/C170324_0054_SCI.fits',
-        size=16799040,
+        size=16793280,
         file_type='application/fits',
-        md5sum='md5:420d1aa2279a6adbae2ed4fb6eb8cef7',
+        md5sum='md5:0e3dd1bd509460333eb13e0ff07315f7',
     ),
 }
 
